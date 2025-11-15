@@ -1,13 +1,9 @@
-# ARTIFACT 5: .github/workflows/daily-update.yml
-# Daily Stock Data Update - Runs Monday-Thursday at 4:05 PM EST
-
 name: Daily Stock Data Update
 
 on:
   schedule:
-    # Runs Monday-Thursday at 4:05 PM EST (21:05 UTC)
     - cron: '5 21 * * 1-4'
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   update-data:
