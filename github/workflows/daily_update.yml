@@ -1,3 +1,4 @@
+# GitHub Actions Workflow
 name: Daily Stock Data Update
 
 on:
