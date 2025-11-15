@@ -1,13 +1,9 @@
-# ARTIFACT 4: .github/workflows/weekly-refresh.yml
-# Weekly Stock Data Refresh - Runs every Friday at 4:05 PM EST
-
 name: Weekly Stock Data Refresh
 
 on:
   schedule:
-    # Runs every Friday at 4:05 PM EST (21:05 UTC)
     - cron: '5 21 * * 5'
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   refresh-data:
