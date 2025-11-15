@@ -1,7 +1,8 @@
 """
-ARTIFACT 1: process_stocks.py
-Weekly Stock Data Collection Script
+ARTIFACT 1 (UPDATED): process_stocks.py
+Weekly Stock Data Collection Script + Recent IPO Tracking
 Fetches 12 months of historical data for all common stocks to calculate RS scores
+PLUS tracks stocks that IPOed in the last 90 days
 Runs every Friday at 4:05 PM EST
 """
 
@@ -61,6 +62,102 @@ def get_all_tickers() -> List[str]:
     
     print(f"✅ Total tickers fetched: {len(all_tickers)}")
     return all_tickers
+
+def get_recent_ipos() -> List[Dict]:
+    """Fetch stocks that IPOed in the last 90 days"""
+    print("\n=== Fetching Recent IPOs (Last 90 Days) ===")
+    
+    # Calculate date 90 days ago
+    ninety_days_ago = datetime.now() - timedelta(days=90)
+    date_filter = ninety_days_ago.strftime('%Y-%m-%d')
+    
+    recent_ipos = []
+    next_url = f"{BASE_URL}/v3/reference/tickers"
+    
+    params = {
+        'market': 'stocks',
+        'type': 'CS',
+        'active': 'true',
+        'limit': 1000,
+        'list_date.gte': date_filter,  # IPO date >= 90 days ago
+        'apiKey': API_KEY
+    }
+    
+    page = 1
+    while next_url:
+        try:
+            if page > 1:
+                response = requests.get(next_url)
+            else:
+                response = requests.get(next_url, params=params)
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            if 'results' in data and data['results']:
+                for ticker_data in data['results']:
+                    recent_ipos.append({
+                        'ticker': ticker_data['ticker'],
+                        'name': ticker_data.get('name', 'N/A'),
+                        'list_date': ticker_data.get('list_date'),
+                        'locale': ticker_data.get('locale')
+                    })
+                
+                print(f"  Page {page}: Found {len(data['results'])} recent IPOs")
+            
+            next_url = data.get('next_url')
+            if next_url:
+                next_url = f"{next_url}&apiKey={API_KEY}"
+            
+            page += 1
+            time.sleep(0.1)
+            
+        except Exception as e:
+            print(f"Error fetching recent IPOs page {page}: {e}")
+            break
+    
+    print(f"✅ Found {len(recent_ipos)} stocks that IPOed in last 90 days")
+    return recent_ipos
+
+def get_current_price_and_volume(ticker: str) -> Optional[Dict]:
+    """Get current price and recent volume for a ticker"""
+    try:
+        # Get last 5 days of data to calculate average volume and current price
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
+        
+        url = f"{BASE_URL}/v2/aggs/ticker/{ticker}/range/1/day/{start_date}/{end_date}"
+        params = {
+            'adjusted': 'true',
+            'sort': 'desc',
+            'limit': 10,
+            'apiKey': API_KEY
+        }
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        if data.get('results'):
+            bars = data['results']
+            current_price = bars[0]['c']  # Most recent close
+            volumes = [bar['v'] for bar in bars]
+            avg_volume = np.mean(volumes) if volumes else 0
+            
+            # Try to get IPO price (first day's open)
+            ipo_price = bars[-1]['o'] if len(bars) > 0 else None
+            
+            return {
+                'current_price': current_price,
+                'avg_volume': int(avg_volume),
+                'ipo_price': ipo_price,
+                'has_data': True
+            }
+        
+        return None
+        
+    except Exception as e:
+        return None
 
 def get_ipo_date(ticker: str) -> Optional[str]:
     """Get IPO date from Polygon ticker details"""
@@ -189,6 +286,52 @@ def format_return(return_val: float) -> str:
     """Format return as percentage"""
     return f"{return_val*100:.1f}%"
 
+def process_recent_ipos(recent_ipos: List[Dict]) -> List[Dict]:
+    """Process recent IPO data to get current prices and stats"""
+    print("\nProcessing recent IPO data...")
+    
+    processed_ipos = []
+    
+    for i, ipo in enumerate(recent_ipos):
+        ticker = ipo['ticker']
+        
+        try:
+            if i % 20 == 0:
+                print(f"  Progress: {i}/{len(recent_ipos)}")
+            
+            # Get current price and volume
+            price_data = get_current_price_and_volume(ticker)
+            
+            if price_data and price_data['has_data']:
+                ipo_date = datetime.strptime(ipo['list_date'], '%Y-%m-%d')
+                days_since_ipo = (datetime.now() - ipo_date).days
+                
+                # Calculate percent change from IPO if we have IPO price
+                percent_from_ipo = None
+                if price_data.get('ipo_price'):
+                    percent_from_ipo = ((price_data['current_price'] - price_data['ipo_price']) / price_data['ipo_price']) * 100
+                
+                processed_ipos.append({
+                    'symbol': ticker,
+                    'company_name': ipo['name'],
+                    'ipo_date': ipo['list_date'],
+                    'days_since_ipo': days_since_ipo,
+                    'current_price': round(price_data['current_price'], 2),
+                    'ipo_price': round(price_data['ipo_price'], 2) if price_data.get('ipo_price') else None,
+                    'percent_from_ipo': round(percent_from_ipo, 1) if percent_from_ipo is not None else None,
+                    'avg_volume': format_volume(price_data['avg_volume']),
+                    'raw_volume': price_data['avg_volume']
+                })
+            
+            time.sleep(0.5)  # Rate limiting
+            
+        except Exception as e:
+            print(f"  Error processing {ticker}: {e}")
+            continue
+    
+    print(f"✅ Processed {len(processed_ipos)} recent IPOs with data")
+    return processed_ipos
+
 def main():
     print("=== IBD-Style Relative Strength Stock Processor (WEEKLY FULL REBUILD) ===")
     print("Formula: RS = 2×(3m relative) + 6m + 9m + 12m relative performance vs S&P 500")
@@ -296,8 +439,8 @@ def main():
             else:
                 failed += 1
             
-            # Rate limiting - 5 calls per second
-            time.sleep(0.2)
+            # Rate limiting - 2 calls per second
+            time.sleep(0.5)
             
         except Exception as e:
             print(f"Error processing {ticker}: {e}")
@@ -395,10 +538,43 @@ def main():
         
         high_rs_count = len([s for s in output_data if s['rs_rank'] >= 90])
         print(f"   Stocks with RS ≥ 90: {high_rs_count}")
-        
-        print(f"\n✅ Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     else:
         print("❌ No stock data was successfully processed!")
+    
+    # PROCESS RECENT IPOs
+    print("\n" + "="*60)
+    recent_ipos = get_recent_ipos()
+    
+    if recent_ipos:
+        processed_ipos = process_recent_ipos(recent_ipos)
+        
+        # Sort by IPO date (newest first)
+        processed_ipos.sort(key=lambda x: x['ipo_date'], reverse=True)
+        
+        # Save recent_ipos.json
+        ipo_output = {
+            'last_updated': datetime.now().isoformat(),
+            'total_recent_ipos': len(processed_ipos),
+            'lookback_days': 90,
+            'note': 'Stocks that IPOed in the last 90 days. May not have RS scores due to insufficient history.',
+            'data': processed_ipos
+        }
+        
+        with open('recent_ipos.json', 'w') as f:
+            json.dump(ipo_output, f, indent=2)
+        
+        print(f"\n✅ Saved {len(processed_ipos)} recent IPOs to 'recent_ipos.json'")
+        
+        # Show most recent IPOs
+        if processed_ipos:
+            print(f"\n🆕 Most Recent IPOs:")
+            print("Symbol | Company | IPO Date | Days | Price | Change")
+            print("-" * 70)
+            for ipo in processed_ipos[:10]:
+                change_str = f"{ipo['percent_from_ipo']:+.1f}%" if ipo['percent_from_ipo'] is not None else "N/A"
+                print(f"{ipo['symbol']:6s} | {ipo['company_name'][:20]:20s} | {ipo['ipo_date']} | {ipo['days_since_ipo']:3d}d | ${ipo['current_price']:6.2f} | {change_str}")
+    
+    print(f"\n✅ Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 if __name__ == "__main__":
     main()
