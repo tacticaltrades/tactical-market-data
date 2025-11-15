@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-11-15T22:01:53.513449",
+  "last_updated": "2025-11-15T23:19:01.183138",
   "formula_used": "RS = 2\u00d7(3m relative vs S&P500) + 6m + 9m + 12m relative performance",
   "total_stocks": 4598,
   "benchmark": "S&P 500 (SPY)",
