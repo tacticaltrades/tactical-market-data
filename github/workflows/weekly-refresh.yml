@@ -1,0 +1,67 @@
+# ARTIFACT 4: .github/workflows/weekly-refresh.yml
+# Weekly Stock Data Refresh - Runs every Friday at 4:05 PM EST
+
+name: Weekly Stock Data Refresh
+
+on:
+  schedule:
+    # Runs every Friday at 4:05 PM EST (21:05 UTC)
+    - cron: '5 21 * * 5'
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  refresh-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run weekly refresh
+      env:
+        POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      run: |
+        python process_stocks.py
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+    
+    - name: Commit and push changes
+      run: |
+        git add rankings.json historical_data.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Weekly data refresh - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
+    
+    - name: Send failure notification
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        secure: true
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: 'Stock Data Weekly Refresh FAILED'
+        to: tacticaltrades1@gmail.com
+        from: GitHub Actions
+        body: |
+          The weekly stock data refresh failed.
+          
+          Repository: ${{ github.repository }}
+          Workflow: ${{ github.workflow }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Please check the logs for details.
