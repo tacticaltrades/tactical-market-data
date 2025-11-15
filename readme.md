@@ -1,5 +1,5 @@
 ARTIFACT 6: README.md
-Stock Data Repository
+Stock Data Repository 
 Automated stock data collection and RS (Relative Strength) scoring system using Polygon.io API. Generates JSON files for consumption by React web applications.
 Overview
 This repository automatically:
