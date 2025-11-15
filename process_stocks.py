@@ -299,12 +299,26 @@ def process_recent_ipos(recent_ipos: List[Dict]) -> List[Dict]:
             if i % 20 == 0:
                 print(f"  Progress: {i}/{len(recent_ipos)}")
             
+            # Skip if list_date is None or invalid
+            if not ipo.get('list_date'):
+                continue
+            
+            # Verify the date is actually recent (within 90 days)
+            try:
+                ipo_date = datetime.strptime(ipo['list_date'], '%Y-%m-%d')
+            except (ValueError, TypeError):
+                continue
+            
+            days_since_ipo = (datetime.now() - ipo_date).days
+            
+            # Double-check it's actually within 90 days (Polygon filter seems broken)
+            if days_since_ipo > 90 or days_since_ipo < 0:
+                continue
+            
             # Get current price and volume
             price_data = get_current_price_and_volume(ticker)
             
             if price_data and price_data['has_data']:
-                ipo_date = datetime.strptime(ipo['list_date'], '%Y-%m-%d')
-                days_since_ipo = (datetime.now() - ipo_date).days
                 
                 # Calculate percent change from IPO if we have IPO price
                 percent_from_ipo = None
