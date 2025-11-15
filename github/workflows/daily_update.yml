@@ -1,0 +1,67 @@
+# ARTIFACT 5: .github/workflows/daily-update.yml
+# Daily Stock Data Update - Runs Monday-Thursday at 4:05 PM EST
+
+name: Daily Stock Data Update
+
+on:
+  schedule:
+    # Runs Monday-Thursday at 4:05 PM EST (21:05 UTC)
+    - cron: '5 21 * * 1-4'
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run daily update
+      env:
+        POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      run: |
+        python process_stocks_daily.py
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+    
+    - name: Commit and push changes
+      run: |
+        git add rankings.json historical_data.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Daily data update - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
+    
+    - name: Send failure notification
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        secure: true
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: 'Stock Data Daily Update FAILED'
+        to: tacticaltrades1@gmail.com
+        from: GitHub Actions
+        body: |
+          The daily stock data update failed.
+          
+          Repository: ${{ github.repository }}
+          Workflow: ${{ github.workflow }}
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          Please check the logs for details.
