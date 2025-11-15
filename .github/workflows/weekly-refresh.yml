@@ -1,3 +1,6 @@
+# ARTIFACT 4 (UPDATED): .github/workflows/weekly-refresh.yml
+# Weekly Stock Data Refresh - Runs every Friday at 4:05 PM EST
+
 name: Weekly Stock Data Refresh
 
 on:
@@ -38,5 +41,5 @@ jobs:
     
     - name: Commit and push changes
       run: |
-        git add rankings.json historical_data.json
+        git add rankings.json historical_data.json recent_ipos.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "Weekly data refresh - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
