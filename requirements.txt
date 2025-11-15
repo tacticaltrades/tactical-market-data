@@ -1,0 +1,5 @@
+# ARTIFACT 3: requirements.txt
+# Python dependencies for stock data collection
+
+requests==2.31.0
+numpy==1.24.3
