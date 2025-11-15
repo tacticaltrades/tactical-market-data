@@ -1,4 +1,4 @@
-# ARTIFACT 5 (UPDATED): .github/workflows/daily-update.yml
+# ARTIFACT 5 (REVERTED): .github/workflows/daily-update.yml
 # Daily Stock Data Update - Runs Monday-Thursday at 4:05 PM EST
 
 name: Daily Stock Data Update
@@ -41,5 +41,5 @@ jobs:
     
     - name: Commit and push changes
       run: |
-        git add rankings.json historical_data.json recent_ipos.json
+        git add rankings.json historical_data.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "Daily data update - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
