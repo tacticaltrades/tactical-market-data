@@ -64,7 +64,7 @@ def get_all_tickers() -> List[str]:
     return all_tickers
 
 def get_recent_ipos() -> List[Dict]:
-    """Fetch stocks that IPOed in the last 90 days"""
+    """Fetch stocks that IPOed in the last 90 days using dedicated IPO endpoint"""
     print("\n=== Fetching Recent IPOs (Last 90 Days) ===")
     
     # Calculate date 90 days ago
@@ -72,14 +72,12 @@ def get_recent_ipos() -> List[Dict]:
     date_filter = ninety_days_ago.strftime('%Y-%m-%d')
     
     recent_ipos = []
-    next_url = f"{BASE_URL}/v3/reference/tickers"
+    next_url = f"{BASE_URL}/v3/reference/ipos"
     
     params = {
-        'market': 'stocks',
-        'type': 'CS',
-        'active': 'true',
+        'listing_date_gte': date_filter,  # IPO listing date >= 90 days ago
+        'ipo_status': 'priced',  # Only get IPOs that have priced/completed
         'limit': 1000,
-        'list_date.gte': date_filter,  # IPO date >= 90 days ago
         'apiKey': API_KEY
     }
     
@@ -95,12 +93,13 @@ def get_recent_ipos() -> List[Dict]:
             data = response.json()
             
             if 'results' in data and data['results']:
-                for ticker_data in data['results']:
+                for ipo_data in data['results']:
                     recent_ipos.append({
-                        'ticker': ticker_data['ticker'],
-                        'name': ticker_data.get('name', 'N/A'),
-                        'list_date': ticker_data.get('list_date'),
-                        'locale': ticker_data.get('locale')
+                        'ticker': ipo_data.get('ticker'),
+                        'name': ipo_data.get('name', 'N/A'),
+                        'list_date': ipo_data.get('listing_date'),
+                        'ipo_price': ipo_data.get('ipo_price'),
+                        'us_code': ipo_data.get('us_code')
                     })
                 
                 print(f"  Page {page}: Found {len(data['results'])} recent IPOs")
@@ -114,6 +113,7 @@ def get_recent_ipos() -> List[Dict]:
             
         except Exception as e:
             print(f"Error fetching recent IPOs page {page}: {e}")
+            print(f"  Response: {e}")
             break
     
     print(f"✅ Found {len(recent_ipos)} stocks that IPOed in last 90 days")
@@ -303,17 +303,13 @@ def process_recent_ipos(recent_ipos: List[Dict]) -> List[Dict]:
             if not ipo.get('list_date'):
                 continue
             
-            # Verify the date is actually recent (within 90 days)
+            # Verify the date format
             try:
                 ipo_date = datetime.strptime(ipo['list_date'], '%Y-%m-%d')
             except (ValueError, TypeError):
                 continue
             
             days_since_ipo = (datetime.now() - ipo_date).days
-            
-            # Double-check it's actually within 90 days (Polygon filter seems broken)
-            if days_since_ipo > 90 or days_since_ipo < 0:
-                continue
             
             # Get current price and volume
             price_data = get_current_price_and_volume(ticker)
