@@ -16,7 +16,7 @@ from typing import Dict, List, Any, Optional, Tuple
 
 # Configuration
 API_KEY = os.environ.get('POLYGON_API_KEY')
-BASE_URL = 'https://api.polygon.io'
+BASE_URL = 'https://api.massive.com'
 
 def get_all_tickers() -> List[str]:
     """Fetch all common stock tickers from Polygon, paginated"""
@@ -72,11 +72,10 @@ def get_recent_ipos() -> List[Dict]:
     date_filter = ninety_days_ago.strftime('%Y-%m-%d')
     
     recent_ipos = []
-    next_url = f"{BASE_URL}/v3/reference/ipos"
+    next_url = f"https://api.massive.com/vX/reference/ipos"
     
     params = {
-        'listing_date_gte': date_filter,  # IPO listing date >= 90 days ago
-        'ipo_status': 'priced',  # Only get IPOs that have priced/completed
+        'listing_date_gte': date_filter,
         'limit': 1000,
         'apiKey': API_KEY
     }
@@ -94,29 +93,36 @@ def get_recent_ipos() -> List[Dict]:
             
             if 'results' in data and data['results']:
                 for ipo_data in data['results']:
-                    recent_ipos.append({
-                        'ticker': ipo_data.get('ticker'),
-                        'name': ipo_data.get('name', 'N/A'),
-                        'list_date': ipo_data.get('listing_date'),
-                        'ipo_price': ipo_data.get('ipo_price'),
-                        'us_code': ipo_data.get('us_code')
-                    })
+                    # Only include completed/priced IPOs, not just pending announcements
+                    ipo_status = ipo_data.get('ipo_status', '')
+                    if ipo_status in ['priced', 'new']:
+                        # Use announced_date as the IPO date
+                        announced = ipo_data.get('announced_date')
+                        if announced:
+                            recent_ipos.append({
+                                'ticker': ipo_data.get('ticker'),
+                                'name': ipo_data.get('issuer_name', 'N/A'),
+                                'list_date': announced,  # Using announced_date as list_date
+                                'ipo_price': ipo_data.get('final_issue_price'),
+                                'ipo_status': ipo_status
+                            })
                 
-                print(f"  Page {page}: Found {len(data['results'])} recent IPOs")
+                print(f"  Page {page}: Found {len(data['results'])} IPO records")
             
             next_url = data.get('next_url')
-            if next_url:
+            if next_url and '?' in next_url:
                 next_url = f"{next_url}&apiKey={API_KEY}"
+            elif next_url:
+                next_url = f"{next_url}?apiKey={API_KEY}"
             
             page += 1
             time.sleep(0.1)
             
         except Exception as e:
             print(f"Error fetching recent IPOs page {page}: {e}")
-            print(f"  Response: {e}")
             break
     
-    print(f"✅ Found {len(recent_ipos)} stocks that IPOed in last 90 days")
+    print(f"✅ Found {len(recent_ipos)} completed/priced IPOs")
     return recent_ipos
 
 def get_current_price_and_volume(ticker: str) -> Optional[Dict]:
@@ -551,38 +557,13 @@ def main():
     else:
         print("❌ No stock data was successfully processed!")
     
-    # PROCESS RECENT IPOs
+    # IPO SCANNING TEMPORARILY DISABLED
+    # Massive.com IPO endpoint is currently experiencing issues
+    # Will re-enable when their system is fixed
+    # Check status: http://massive-status.com
     print("\n" + "="*60)
-    recent_ipos = get_recent_ipos()
-    
-    if recent_ipos:
-        processed_ipos = process_recent_ipos(recent_ipos)
-        
-        # Sort by IPO date (newest first)
-        processed_ipos.sort(key=lambda x: x['ipo_date'], reverse=True)
-        
-        # Save recent_ipos.json
-        ipo_output = {
-            'last_updated': datetime.now().isoformat(),
-            'total_recent_ipos': len(processed_ipos),
-            'lookback_days': 90,
-            'note': 'Stocks that IPOed in the last 90 days. May not have RS scores due to insufficient history.',
-            'data': processed_ipos
-        }
-        
-        with open('recent_ipos.json', 'w') as f:
-            json.dump(ipo_output, f, indent=2)
-        
-        print(f"\n✅ Saved {len(processed_ipos)} recent IPOs to 'recent_ipos.json'")
-        
-        # Show most recent IPOs
-        if processed_ipos:
-            print(f"\n🆕 Most Recent IPOs:")
-            print("Symbol | Company | IPO Date | Days | Price | Change")
-            print("-" * 70)
-            for ipo in processed_ipos[:10]:
-                change_str = f"{ipo['percent_from_ipo']:+.1f}%" if ipo['percent_from_ipo'] is not None else "N/A"
-                print(f"{ipo['symbol']:6s} | {ipo['company_name'][:20]:20s} | {ipo['ipo_date']} | {ipo['days_since_ipo']:3d}d | ${ipo['current_price']:6.2f} | {change_str}")
+    print("ℹ️  IPO scanning temporarily disabled due to Massive API issues")
+    print("   Check http://massive-status.com for status updates")
     
     print(f"\n✅ Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
