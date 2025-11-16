@@ -1,7 +1,7 @@
 {
-  "last_updated": "2025-11-15T23:19:01.183138",
+  "last_updated": "2025-11-16T01:43:54.027649",
   "formula_used": "RS = 2\u00d7(3m relative vs S&P500) + 6m + 9m + 12m relative performance",
-  "total_stocks": 4598,
+  "total_stocks": 4597,
   "benchmark": "S&P 500 (SPY)",
   "update_type": "full_rebuild",
   "data": [
@@ -5859,7 +5859,7 @@
     },
     {
       "symbol": "DFLI",
-      "rs_rank": 91,
+      "rs_rank": 90,
       "rs_score": 2.3427,
       "avg_volume": "44.2M",
       "raw_volume": 44185115,
@@ -10409,7 +10409,7 @@
     },
     {
       "symbol": "DYN",
-      "rs_rank": 84,
+      "rs_rank": 83,
       "rs_score": 1.1394,
       "avg_volume": "2.7M",
       "raw_volume": 2662438,
@@ -11711,7 +11711,7 @@
     },
     {
       "symbol": "TLRY",
-      "rs_rank": 82,
+      "rs_rank": 81,
       "rs_score": 0.9246,
       "avg_volume": "74.0M",
       "raw_volume": 74022910,
@@ -14959,7 +14959,7 @@
     },
     {
       "symbol": "BWMX",
-      "rs_rank": 77,
+      "rs_rank": 76,
       "rs_score": 0.4778,
       "avg_volume": "39k",
       "raw_volume": 39160,
@@ -16261,7 +16261,7 @@
     },
     {
       "symbol": "BRFH",
-      "rs_rank": 75,
+      "rs_rank": 74,
       "rs_score": 0.3611,
       "avg_volume": "90k",
       "raw_volume": 90113,
@@ -17563,7 +17563,7 @@
     },
     {
       "symbol": "CAAP",
-      "rs_rank": 73,
+      "rs_rank": 72,
       "rs_score": 0.2451,
       "avg_volume": "240k",
       "raw_volume": 239802,
@@ -20811,7 +20811,7 @@
     },
     {
       "symbol": "CPRI",
-      "rs_rank": 68,
+      "rs_rank": 67,
       "rs_score": 0.0115,
       "avg_volume": "2.5M",
       "raw_volume": 2479873,
@@ -22113,7 +22113,7 @@
     },
     {
       "symbol": "DAC",
-      "rs_rank": 66,
+      "rs_rank": 65,
       "rs_score": -0.0922,
       "avg_volume": "68k",
       "raw_volume": 67620,
@@ -23415,7 +23415,7 @@
     },
     {
       "symbol": "ELSE",
-      "rs_rank": 64,
+      "rs_rank": 63,
       "rs_score": -0.1731,
       "avg_volume": "3k",
       "raw_volume": 3496,
@@ -25361,7 +25361,7 @@
     },
     {
       "symbol": "CVRX",
-      "rs_rank": 61,
+      "rs_rank": 60,
       "rs_score": -0.2718,
       "avg_volume": "213k",
       "raw_volume": 212752,
@@ -25386,20 +25386,6 @@
       "stock_return_3m": "5.9%",
       "stock_return_12m": "-11.1%",
       "ipo_date": "1979-12-13"
-    },
-    {
-      "symbol": "CUB",
-      "rs_rank": 60,
-      "rs_score": -0.2725,
-      "avg_volume": "39k",
-      "raw_volume": 39441,
-      "relative_3m": "-3.5%",
-      "relative_6m": "-9.3%",
-      "relative_9m": "-4.6%",
-      "relative_12m": "-6.3%",
-      "stock_return_3m": "1.5%",
-      "stock_return_12m": "6.2%",
-      "ipo_date": "2024-08-09"
     },
     {
       "symbol": "AS",
@@ -26019,7 +26005,7 @@
     },
     {
       "symbol": "SXT",
-      "rs_rank": 59,
+      "rs_rank": 60,
       "rs_score": -0.2973,
       "avg_volume": "481k",
       "raw_volume": 480712,
@@ -27321,7 +27307,7 @@
     },
     {
       "symbol": "AN",
-      "rs_rank": 57,
+      "rs_rank": 58,
       "rs_score": -0.3533,
       "avg_volume": "462k",
       "raw_volume": 461720,
@@ -28623,7 +28609,7 @@
     },
     {
       "symbol": "CHY",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.4059,
       "avg_volume": "201k",
       "raw_volume": 201364,
@@ -29267,7 +29253,7 @@
     },
     {
       "symbol": "ARR",
-      "rs_rank": 54,
+      "rs_rank": 55,
       "rs_score": -0.4319,
       "avg_volume": "3.2M",
       "raw_volume": 3173795,
@@ -30569,7 +30555,7 @@
     },
     {
       "symbol": "RWAYL",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.489,
       "avg_volume": "7k",
       "raw_volume": 6693,
@@ -31871,7 +31857,7 @@
     },
     {
       "symbol": "GAINL",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.5414,
       "avg_volume": "4k",
       "raw_volume": 4339,
@@ -33173,7 +33159,7 @@
     },
     {
       "symbol": "WAFD",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.6034,
       "avg_volume": "537k",
       "raw_volume": 537455,
@@ -34475,7 +34461,7 @@
     },
     {
       "symbol": "UCB",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.6636,
       "avg_volume": "646k",
       "raw_volume": 645907,
@@ -36421,7 +36407,7 @@
     },
     {
       "symbol": "BOH",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.7565,
       "avg_volume": "424k",
       "raw_volume": 423809,
@@ -37723,7 +37709,7 @@
     },
     {
       "symbol": "SLM",
-      "rs_rank": 41,
+      "rs_rank": 42,
       "rs_score": -0.8168,
       "avg_volume": "3.3M",
       "raw_volume": 3265661,
@@ -39025,7 +39011,7 @@
     },
     {
       "symbol": "LXFR",
-      "rs_rank": 39,
+      "rs_rank": 40,
       "rs_score": -0.8795,
       "avg_volume": "109k",
       "raw_volume": 108729,
@@ -42273,7 +42259,7 @@
     },
     {
       "symbol": "GBCI",
-      "rs_rank": 34,
+      "rs_rank": 35,
       "rs_score": -1.0465,
       "avg_volume": "983k",
       "raw_volume": 982697,
@@ -43575,7 +43561,7 @@
     },
     {
       "symbol": "FSUN",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -1.1177,
       "avg_volume": "167k",
       "raw_volume": 166736,
@@ -46823,7 +46809,7 @@
     },
     {
       "symbol": "ENOV",
-      "rs_rank": 27,
+      "rs_rank": 28,
       "rs_score": -1.3157,
       "avg_volume": "808k",
       "raw_volume": 808386,
@@ -48125,7 +48111,7 @@
     },
     {
       "symbol": "EBON",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -1.4066,
       "avg_volume": "16k",
       "raw_volume": 16420,
@@ -49427,7 +49413,7 @@
     },
     {
       "symbol": "OSPN",
-      "rs_rank": 23,
+      "rs_rank": 24,
       "rs_score": -1.4943,
       "avg_volume": "462k",
       "raw_volume": 461503,
@@ -53977,7 +53963,7 @@
     },
     {
       "symbol": "VSEE",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -1.8954,
       "avg_volume": "17.3M",
       "raw_volume": 17345859,
