@@ -297,7 +297,8 @@ def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     ma_200 = np.mean(closes[-200:])
     
     # Determine if stock is in Stage 2 (50dma > 150dma > 200dma)
-    is_stage_2 = (ma_50 > ma_150) and (ma_150 > ma_200)
+    # Convert to regular Python bool for JSON serialization
+    is_stage_2 = bool((ma_50 > ma_150) and (ma_150 > ma_200))
     
     return {
         'ma_50': round(ma_50, 2),
