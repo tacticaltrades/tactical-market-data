@@ -1,8 +1,9 @@
 """
 ARTIFACT 1 (FINAL): process_stocks.py
-Weekly Stock Data Collection Script + Recent IPO Tracking
+Weekly Stock Data Collection Script + Recent IPO Tracking + Stage 2 Calculation
 Fetches 12 months of historical data for all common stocks to calculate RS scores
 PLUS tracks stocks that IPOed in the last 90 days using Massive.com IPO endpoint
+PLUS calculates Stage 2 status (50dma > 150dma > 200dma)
 Runs every Friday at 4:05 PM EST
 """
 
@@ -282,6 +283,29 @@ def calculate_return(prices: List[Dict], days_back: int) -> Optional[float]:
     
     return (end_price - start_price) / start_price
 
+def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
+    """Calculate 50-day, 150-day, and 200-day moving averages and Stage 2 status"""
+    if len(stock_prices) < 200:
+        return None
+    
+    # Extract closing prices
+    closes = [bar['c'] for bar in stock_prices]
+    
+    # Calculate MAs using numpy
+    ma_50 = np.mean(closes[-50:])
+    ma_150 = np.mean(closes[-150:])
+    ma_200 = np.mean(closes[-200:])
+    
+    # Determine if stock is in Stage 2 (50dma > 150dma > 200dma)
+    is_stage_2 = (ma_50 > ma_150) and (ma_150 > ma_200)
+    
+    return {
+        'ma_50': round(ma_50, 2),
+        'ma_150': round(ma_150, 2),
+        'ma_200': round(ma_200, 2),
+        'is_stage_2': is_stage_2
+    }
+
 def calculate_aligned_returns(stock_prices: List[Dict], sp500_prices: List[Dict]) -> Tuple[Optional[Dict], Optional[Dict], float]:
     """Calculate returns aligned with S&P 500 benchmark"""
     if not stock_prices or not sp500_prices:
@@ -355,8 +379,9 @@ def format_return(return_val: float) -> str:
     return f"{return_val*100:.1f}%"
 
 def main():
-    print("=== IBD-Style Relative Strength Stock Processor (WEEKLY FULL REBUILD) ===")
+    print("=== IBD-Style Relative Strength Stock Processor with Stage 2 Analysis ===")
     print("Formula: RS = 2×(3m relative) + 6m + 9m + 12m relative performance vs S&P 500")
+    print("Stage 2: 50dma > 150dma > 200dma")
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     if not API_KEY:
@@ -392,12 +417,13 @@ def main():
     historical_stocks = []
     processed = 0
     failed = 0
+    stage_2_count = 0
     
     for i, ticker in enumerate(tickers):
         try:
             # Progress indicator every 100 stocks
             if i % 100 == 0:
-                print(f"Progress: {i}/{len(tickers)} ({i/len(tickers)*100:.1f}%) - Processed: {processed}, Failed: {failed}")
+                print(f"Progress: {i}/{len(tickers)} ({i/len(tickers)*100:.1f}%) - Processed: {processed}, Failed: {failed}, Stage 2: {stage_2_count}")
             
             # Get historical data
             stock_prices = get_stock_data(ticker, start_date_str, end_date_str)
@@ -408,8 +434,15 @@ def main():
                     relative_returns, stock_returns, avg_volume = result
                     rs_score = calculate_ibd_rs_score(relative_returns)
                     
+                    # Calculate moving averages and Stage 2 status
+                    ma_data = calculate_moving_averages(stock_prices)
+                    
                     # Get IPO date
                     ipo_date = get_ipo_date(ticker)
+                    
+                    # Count Stage 2 stocks
+                    if ma_data and ma_data['is_stage_2']:
+                        stage_2_count += 1
                     
                     all_stock_data.append({
                         'symbol': ticker,
@@ -421,7 +454,12 @@ def main():
                         'relative_12m': relative_returns['12m'],
                         'stock_return_3m': stock_returns['3m'],
                         'stock_return_12m': stock_returns['12m'],
-                        'ipo_date': ipo_date
+                        'ipo_date': ipo_date,
+                        # Add MA data
+                        'ma_50': ma_data['ma_50'] if ma_data else None,
+                        'ma_150': ma_data['ma_150'] if ma_data else None,
+                        'ma_200': ma_data['ma_200'] if ma_data else None,
+                        'is_stage_2': ma_data['is_stage_2'] if ma_data else False
                     })
                     
                     # Store minimal historical data
@@ -472,6 +510,7 @@ def main():
     print(f"\n✅ Processing complete!")
     print(f"   Successfully processed: {processed} stocks")
     print(f"   Failed: {failed} stocks")
+    print(f"   Stage 2 stocks: {stage_2_count}")
     
     # Calculate percentile rankings
     if all_stock_data:
@@ -499,14 +538,21 @@ def main():
                 'relative_12m': format_return(stock['relative_12m']),
                 'stock_return_3m': format_return(stock['stock_return_3m']),
                 'stock_return_12m': format_return(stock['stock_return_12m']),
-                'ipo_date': stock.get('ipo_date')
+                'ipo_date': stock.get('ipo_date'),
+                # Add MA fields
+                'ma_50': stock.get('ma_50'),
+                'ma_150': stock.get('ma_150'),
+                'ma_200': stock.get('ma_200'),
+                'is_stage_2': stock.get('is_stage_2', False)
             })
         
         # Save rankings.json
         rankings_output = {
             'last_updated': datetime.now().isoformat(),
             'formula_used': 'RS = 2×(3m relative vs S&P500) + 6m + 9m + 12m relative performance',
+            'stage_2_criteria': '50dma > 150dma > 200dma',
             'total_stocks': len(output_data),
+            'stage_2_stocks': stage_2_count,
             'benchmark': 'S&P 500 (SPY)',
             'update_type': 'full_rebuild',
             'data': output_data
@@ -545,10 +591,26 @@ def main():
         
         # Show top 20 performers
         print(f"\n🏆 Top 20 RS Rankings:")
-        print("Rank | Symbol | RS | 3M Rel | 12M Rel | Volume")
-        print("-" * 60)
+        print("Rank | Symbol | RS | Stage2 | 50MA | 150MA | 200MA | 3M Rel | 12M Rel | Volume")
+        print("-" * 90)
         for i, stock in enumerate(output_data[:20]):
-            print(f"{i+1:2d}   | {stock['symbol']:6s} | {stock['rs_rank']:2d} | {stock['relative_3m']:7s} | {stock['relative_12m']:8s} | {stock['avg_volume']:>8s}")
+            stage2_symbol = "✓" if stock['is_stage_2'] else " "
+            ma50 = f"${stock['ma_50']:.2f}" if stock['ma_50'] else "N/A"
+            ma150 = f"${stock['ma_150']:.2f}" if stock['ma_150'] else "N/A"
+            ma200 = f"${stock['ma_200']:.2f}" if stock['ma_200'] else "N/A"
+            print(f"{i+1:2d}   | {stock['symbol']:6s} | {stock['rs_rank']:2d} | {stage2_symbol:^6s} | {ma50:>8s} | {ma150:>8s} | {ma200:>8s} | {stock['relative_3m']:7s} | {stock['relative_12m']:8s} | {stock['avg_volume']:>8s}")
+        
+        # Show top Stage 2 stocks
+        stage_2_stocks = [s for s in output_data if s['is_stage_2']]
+        if stage_2_stocks:
+            print(f"\n📈 Top 20 Stage 2 Stocks:")
+            print("Rank | Symbol | RS | 50MA | 150MA | 200MA | Volume")
+            print("-" * 70)
+            for i, stock in enumerate(stage_2_stocks[:20]):
+                ma50 = f"${stock['ma_50']:.2f}" if stock['ma_50'] else "N/A"
+                ma150 = f"${stock['ma_150']:.2f}" if stock['ma_150'] else "N/A"
+                ma200 = f"${stock['ma_200']:.2f}" if stock['ma_200'] else "N/A"
+                print(f"{i+1:2d}   | {stock['symbol']:6s} | {stock['rs_rank']:2d} | {ma50:>8s} | {ma150:>8s} | {ma200:>8s} | {stock['avg_volume']:>8s}")
         
         # Statistics
         rs_scores = [s['rs_score'] for s in all_stock_data]
@@ -560,6 +622,7 @@ def main():
         
         high_rs_count = len([s for s in output_data if s['rs_rank'] >= 90])
         print(f"   Stocks with RS ≥ 90: {high_rs_count}")
+        print(f"   Stocks in Stage 2: {stage_2_count} ({stage_2_count/len(output_data)*100:.1f}%)")
     else:
         print("❌ No stock data was successfully processed!")
     
