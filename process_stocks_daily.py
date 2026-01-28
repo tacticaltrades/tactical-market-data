@@ -242,6 +242,9 @@ def main():
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
             
+            # Get current price (most recent closing price)
+            current_price = round(full_history[-1]['c'], 2) if full_history else None
+            
             all_stock_data.append({
                 'symbol': stock_data['s'],
                 'rs_score': rs_score,
@@ -253,6 +256,7 @@ def main():
                 'days_of_data': days_available,
                 'is_partial': is_partial,
                 'ipo_date': stock_data.get('i'),
+                'current_price': current_price,
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
                 'ma_200': ma_data['ma_200'] if ma_data else None,
@@ -283,6 +287,7 @@ def main():
                 'days_of_data': stock['days_of_data'],
                 'is_partial': stock['is_partial'],
                 'ipo_date': stock.get('ipo_date'),
+                'current_price': stock.get('current_price'),
                 'ma_50': stock.get('ma_50'),
                 'ma_150': stock.get('ma_150'),
                 'ma_200': stock.get('ma_200'),
