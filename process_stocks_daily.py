@@ -1,9 +1,7 @@
 """
-CORRECTED: process_stocks_daily.py
-Daily Stock Data Update Script
-Updates yesterday's OHLC data for all stocks in historical_data.json
-Uses CORRECTED formula (no S&P 500 comparison)
-Runs Monday-Thursday at 4:05 PM EST
+UPDATED: process_stocks_daily.py (FLEXIBLE)
+Daily update script matching the flexible weekly script
+Handles stocks with partial data (<252 days)
 """
 
 import os
@@ -12,9 +10,8 @@ import requests
 import time
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Optional
 
-# Configuration
 API_KEY = os.environ.get('POLYGON_API_KEY')
 BASE_URL = 'https://api.polygon.io'
 
@@ -22,10 +19,8 @@ def get_previous_trading_day() -> str:
     """Get the previous trading day (skip weekends)"""
     today = datetime.now()
     
-    # If today is Monday, go back to Friday
     if today.weekday() == 0:  # Monday
         previous_day = today - timedelta(days=3)
-    # If today is Sunday, go back to Friday
     elif today.weekday() == 6:  # Sunday
         previous_day = today - timedelta(days=2)
     else:
@@ -66,39 +61,99 @@ def calculate_return_from_history(history: List[Dict], days_back: int) -> Option
     
     return (end_price - start_price) / start_price
 
-def calculate_stock_returns_from_history(stock_history: List[Dict]) -> tuple:
-    """Calculate absolute returns (NO S&P 500 COMPARISON)"""
-    if not stock_history or len(stock_history) < 252:
-        return None, 0
+def calculate_total_return(history: List[Dict]) -> float:
+    """Calculate total return from first to last"""
+    if len(history) < 2:
+        return 0.0
     
-    periods = {'3m': 63, '6m': 126, '9m': 189, '12m': 252}
+    start_price = history[0]['c']
+    end_price = history[-1]['c']
+    
+    return (end_price - start_price) / start_price
+
+def calculate_stock_returns_from_history(stock_history: List[Dict]) -> tuple:
+    """Calculate returns with flexible formula (matches weekly script)"""
+    days_available = len(stock_history)
+    
+    if days_available < 10:
+        return None, 0, days_available, False
+    
+    periods = {
+        '3m': min(63, days_available),
+        '6m': min(126, days_available),
+        '9m': min(189, days_available),
+        '12m': min(252, days_available)
+    }
     
     stock_returns = {}
-    for period_name, days in periods.items():
-        ret = calculate_return_from_history(stock_history, days)
-        stock_returns[period_name] = ret if ret is not None else 0
     
-    # Calculate average volume
+    for period_name, days in periods.items():
+        if days <= days_available and days >= 10:
+            ret = calculate_return_from_history(stock_history, days)
+            stock_returns[period_name] = ret if ret is not None else 0
+        else:
+            stock_returns[period_name] = 0
+    
+    stock_returns['total'] = calculate_total_return(stock_history)
+    
+    # Calculate volume
     recent_with_volume = [p for p in stock_history if 'v' in p][-50:]
     volumes = [p['v'] for p in recent_with_volume]
     avg_volume = np.mean(volumes) if volumes else 0
     
-    return stock_returns, avg_volume
+    is_partial = days_available < 252
+    
+    return stock_returns, avg_volume, days_available, is_partial
 
-def calculate_ibd_rs_score(stock_returns: Dict) -> float:
-    """Calculate RS using CORRECTED formula (no S&P 500)"""
+def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) -> float:
+    """Flexible RS calculation (matches weekly script)"""
     if not stock_returns:
         return 0
     
-    return (
-        0.4 * stock_returns.get('3m', 0) +
-        0.2 * stock_returns.get('6m', 0) +
-        0.2 * stock_returns.get('9m', 0) +
-        0.2 * stock_returns.get('12m', 0)
-    )
+    if days_available >= 252:
+        return (
+            0.4 * stock_returns.get('3m', 0) +
+            0.2 * stock_returns.get('6m', 0) +
+            0.2 * stock_returns.get('9m', 0) +
+            0.2 * stock_returns.get('12m', 0)
+        )
+    elif days_available >= 189:
+        return (
+            0.5 * stock_returns.get('3m', 0) +
+            0.25 * stock_returns.get('6m', 0) +
+            0.25 * stock_returns.get('9m', 0)
+        )
+    elif days_available >= 126:
+        return (
+            0.6 * stock_returns.get('3m', 0) +
+            0.4 * stock_returns.get('6m', 0)
+        )
+    elif days_available >= 63:
+        return stock_returns.get('3m', 0)
+    else:
+        return stock_returns.get('total', 0)
+
+def calculate_moving_averages(stock_history: List[Dict]) -> Optional[Dict]:
+    """Calculate MAs and Stage 2 status"""
+    if len(stock_history) < 200:
+        return None
+    
+    closes = [bar['c'] for bar in stock_history]
+    
+    ma_50 = np.mean(closes[-50:])
+    ma_150 = np.mean(closes[-150:])
+    ma_200 = np.mean(closes[-200:])
+    
+    is_stage_2 = bool((ma_50 > ma_150) and (ma_150 > ma_200))
+    
+    return {
+        'ma_50': round(ma_50, 2),
+        'ma_150': round(ma_150, 2),
+        'ma_200': round(ma_200, 2),
+        'is_stage_2': is_stage_2
+    }
 
 def format_volume(volume: float) -> str:
-    """Format volume"""
     if volume >= 1000000:
         return f"{volume/1000000:.1f}M"
     elif volume >= 1000:
@@ -106,12 +161,11 @@ def format_volume(volume: float) -> str:
     return str(int(volume))
 
 def format_return(return_val: float) -> str:
-    """Format return"""
     return f"{return_val*100:.1f}%"
 
 def main():
     print("="*80)
-    print("Daily Stock Update (CORRECTED FORMULA)")
+    print("Daily Stock Update (FLEXIBLE - Supports Partial Data)")
     print("="*80)
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
@@ -149,6 +203,8 @@ def main():
             if len(stock_data['h']) > 365:
                 stock_data['h'] = stock_data['h'][-365:]
             stock_data['u'] = datetime.now().isoformat()
+            # Update days count
+            stock_data['d'] = len(stock_data['h'])
             success += 1
         else:
             failed += 1
@@ -162,26 +218,45 @@ def main():
     print(f"\n✅ Updates: {success} success, {failed} failed\n")
     
     # Recalculate RS
-    print("Recalculating RS scores...")
+    print("Recalculating RS scores (flexible formula)...")
     all_stock_data = []
+    full_calc = 0
+    partial_calc = 0
+    stage_2_count = 0
     
     for stock_data in updated_stocks:
         full_history = [{'c': bar['c'], 'v': bar.get('v', 0)} for bar in stock_data['h']]
         result = calculate_stock_returns_from_history(full_history)
         
         if result[0] is not None:
-            stock_returns, avg_volume = result
-            rs_score = calculate_ibd_rs_score(stock_returns)
+            stock_returns, avg_volume, days_available, is_partial = result
+            rs_score = calculate_ibd_rs_score_flexible(stock_returns, days_available)
+            
+            if is_partial:
+                partial_calc += 1
+            else:
+                full_calc += 1
+            
+            # Calculate MAs
+            ma_data = calculate_moving_averages(full_history)
+            if ma_data and ma_data['is_stage_2']:
+                stage_2_count += 1
             
             all_stock_data.append({
                 'symbol': stock_data['s'],
                 'rs_score': rs_score,
                 'avg_volume': int(avg_volume),
-                'stock_return_3m': stock_returns['3m'],
-                'stock_return_6m': stock_returns['6m'],
-                'stock_return_9m': stock_returns['9m'],
-                'stock_return_12m': stock_returns['12m'],
-                'ipo_date': stock_data.get('i')
+                'stock_return_3m': stock_returns.get('3m', 0),
+                'stock_return_6m': stock_returns.get('6m', 0),
+                'stock_return_9m': stock_returns.get('9m', 0),
+                'stock_return_12m': stock_returns.get('12m', 0),
+                'days_of_data': days_available,
+                'is_partial': is_partial,
+                'ipo_date': stock_data.get('i'),
+                'ma_50': ma_data['ma_50'] if ma_data else None,
+                'ma_150': ma_data['ma_150'] if ma_data else None,
+                'ma_200': ma_data['ma_200'] if ma_data else None,
+                'is_stage_2': ma_data['is_stage_2'] if ma_data else False
             })
     
     # Rank
@@ -205,16 +280,26 @@ def main():
                 'stock_return_6m': format_return(stock['stock_return_6m']),
                 'stock_return_9m': format_return(stock['stock_return_9m']),
                 'stock_return_12m': format_return(stock['stock_return_12m']),
-                'ipo_date': stock.get('ipo_date')
+                'days_of_data': stock['days_of_data'],
+                'is_partial': stock['is_partial'],
+                'ipo_date': stock.get('ipo_date'),
+                'ma_50': stock.get('ma_50'),
+                'ma_150': stock.get('ma_150'),
+                'ma_200': stock.get('ma_200'),
+                'is_stage_2': stock.get('is_stage_2', False)
             })
         
         # Save
         rankings_output = {
             'last_updated': datetime.now().isoformat(),
-            'formula_used': 'RS = 0.4×ROC(63) + 0.2×ROC(126) + 0.2×ROC(189) + 0.2×ROC(252) [CORRECTED]',
+            'formula_used': 'Flexible: Adapts to available data',
+            'stage_2_criteria': '50dma > 150dma > 200dma',
             'total_stocks': len(output_data),
+            'full_calculations': full_calc,
+            'partial_calculations': partial_calc,
+            'stage_2_stocks': stage_2_count,
             'update_type': 'daily_update',
-            'note': 'Absolute returns only, no S&P 500 comparison',
+            'note': 'Includes stocks with <252 days',
             'data': output_data
         }
         
@@ -224,14 +309,17 @@ def main():
         with open('historical_data.json', 'w') as f:
             json.dump(historical_data, f, indent=2)
         
-        print(f"✅ Saved {len(output_data)} stocks\n")
+        print(f"✅ Saved {len(output_data)} stocks")
+        print(f"   Full data: {full_calc}, Partial data: {partial_calc}")
+        print(f"   Stage 2: {stage_2_count}\n")
         
         # Top 10
-        print("🏆 TOP 10 RS RANKINGS")
-        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'3M':<10} {'12M':<10}")
+        print("🏆 TOP 10")
+        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'Partial':<8} {'3M':<10}")
         print("-" * 50)
         for i, s in enumerate(output_data[:10]):
-            print(f"{i+1:<5} {s['symbol']:<8} {s['rs_rank']:<4} {s['stock_return_3m']:<10} {s['stock_return_12m']:<10}")
+            partial = "Yes" if s['is_partial'] else "No"
+            print(f"{i+1:<5} {s['symbol']:<8} {s['rs_rank']:<4} {s['days_of_data']:<6} {partial:<8} {s['stock_return_3m']:<10}")
         
         print(f"\n✅ Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     else:
