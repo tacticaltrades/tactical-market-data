@@ -38,7 +38,7 @@ jobs:
     - name: Adjust RS rankings with phantom stocks
       run: |
         echo "Adding phantom stocks to match IBD's 8,000 stock universe..."
-        python adjust_phantoms.py
+        python adjust_phantom.py
         
         # Replace rankings.json with adjusted version
         cp rankings_adjusted.json rankings.json
