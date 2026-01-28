@@ -1,7 +1,8 @@
 """
-ARTIFACT 2 (REVERTED): process_stocks_daily.py
+CORRECTED: process_stocks_daily.py
 Daily Stock Data Update Script
 Updates yesterday's OHLC data for all stocks in historical_data.json
+Uses CORRECTED formula (no S&P 500 comparison)
 Runs Monday-Thursday at 4:05 PM EST
 """
 
@@ -43,7 +44,6 @@ def get_daily_bar(ticker: str, date: str) -> Optional[Dict]:
         data = response.json()
         
         if data.get('status') == 'OK':
-            # Convert to same format as historical data
             return {
                 't': int(datetime.strptime(date, '%Y-%m-%d').timestamp() * 1000),
                 'o': data.get('open'),
@@ -52,9 +52,8 @@ def get_daily_bar(ticker: str, date: str) -> Optional[Dict]:
                 'c': data.get('close'),
                 'v': data.get('volume', 0)
             }
-        
         return None
-    except Exception as e:
+    except:
         return None
 
 def calculate_return_from_history(history: List[Dict], days_back: int) -> Optional[float]:
@@ -67,207 +66,133 @@ def calculate_return_from_history(history: List[Dict], days_back: int) -> Option
     
     return (end_price - start_price) / start_price
 
-def calculate_aligned_returns_from_history(stock_history: List[Dict], sp500_history: List[Dict]) -> tuple:
-    """Calculate returns from historical data"""
-    if not stock_history or not sp500_history:
-        return None, None, 0
+def calculate_stock_returns_from_history(stock_history: List[Dict]) -> tuple:
+    """Calculate absolute returns (NO S&P 500 COMPARISON)"""
+    if not stock_history or len(stock_history) < 252:
+        return None, 0
     
-    if len(stock_history) < 252:
-        return None, None, 0
-    
-    periods = {
-        '3m': 63,
-        '6m': 126,
-        '9m': 189,
-        '12m': 252
-    }
+    periods = {'3m': 63, '6m': 126, '9m': 189, '12m': 252}
     
     stock_returns = {}
-    sp500_returns = {}
-    relative_returns = {}
-    
     for period_name, days in periods.items():
-        stock_ret = calculate_return_from_history(stock_history, days)
-        sp500_ret = calculate_return_from_history(sp500_history, days)
-        
-        if stock_ret is not None and sp500_ret is not None:
-            stock_returns[period_name] = stock_ret
-            sp500_returns[period_name] = sp500_ret
-            relative_returns[period_name] = stock_ret - sp500_ret
-        else:
-            stock_returns[period_name] = 0
-            sp500_returns[period_name] = 0
-            relative_returns[period_name] = 0
+        ret = calculate_return_from_history(stock_history, days)
+        stock_returns[period_name] = ret if ret is not None else 0
     
-    # Calculate average volume over last 50 days
+    # Calculate average volume
     recent_with_volume = [p for p in stock_history if 'v' in p][-50:]
     volumes = [p['v'] for p in recent_with_volume]
     avg_volume = np.mean(volumes) if volumes else 0
     
-    return relative_returns, stock_returns, avg_volume
+    return stock_returns, avg_volume
 
-def calculate_ibd_rs_score(relative_returns: Dict) -> float:
-    """Calculate IBD-style RS score"""
-    if not relative_returns:
+def calculate_ibd_rs_score(stock_returns: Dict) -> float:
+    """Calculate RS using CORRECTED formula (no S&P 500)"""
+    if not stock_returns:
         return 0
     
-    rs_score = (
-        2 * relative_returns.get('3m', 0) +
-        1 * relative_returns.get('6m', 0) +
-        1 * relative_returns.get('9m', 0) +
-        1 * relative_returns.get('12m', 0)
+    return (
+        0.4 * stock_returns.get('3m', 0) +
+        0.2 * stock_returns.get('6m', 0) +
+        0.2 * stock_returns.get('9m', 0) +
+        0.2 * stock_returns.get('12m', 0)
     )
-    
-    return rs_score
 
 def format_volume(volume: float) -> str:
-    """Format volume as XXXk or XXXm"""
+    """Format volume"""
     if volume >= 1000000:
         return f"{volume/1000000:.1f}M"
     elif volume >= 1000:
         return f"{volume/1000:.0f}k"
-    else:
-        return str(int(volume))
+    return str(int(volume))
 
 def format_return(return_val: float) -> str:
-    """Format return as percentage"""
+    """Format return"""
     return f"{return_val*100:.1f}%"
 
 def main():
-    print("=== Daily Stock Data Update ===")
-    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("="*80)
+    print("Daily Stock Update (CORRECTED FORMULA)")
+    print("="*80)
+    print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
     if not API_KEY:
         print("ERROR: POLYGON_API_KEY not found!")
         return
     
-    # Get previous trading day
     update_date = get_previous_trading_day()
-    print(f"Updating data for: {update_date}")
+    print(f"Updating data for: {update_date}\n")
     
-    # Load historical data
     try:
         with open('historical_data.json', 'r') as f:
             historical_data = json.load(f)
     except FileNotFoundError:
-        print("ERROR: historical_data.json not found! Run weekly refresh first.")
+        print("ERROR: historical_data.json not found!")
         return
     
-    print(f"Loaded historical data for {historical_data['n']} stocks")
+    print(f"Loaded {historical_data['n']} stocks\n")
     
-    # Update S&P 500 benchmark first
-    print("\nUpdating S&P 500 benchmark...")
-    spy_bar = get_daily_bar('SPY', update_date)
-    
-    if not spy_bar:
-        print("ERROR: Could not fetch S&P 500 data for update date!")
-        return
-    
-    # Add new SPY bar and maintain rolling window
-    sp500_data = historical_data['s']
-    sp500_data.append(spy_bar)
-    
-    # Keep only last ~365 days of data
-    if len(sp500_data) > 365:
-        sp500_data = sp500_data[-365:]
-    
-    historical_data['s'] = sp500_data
-    print(f"✅ Updated S&P 500 ({len(sp500_data)} days of data)")
-    
-    # Update all stocks
-    print(f"\nUpdating {len(historical_data['d'])} stocks...")
-    
+    # Update stocks
+    print("Updating stocks...")
     updated_stocks = []
-    failed_updates = 0
+    success = 0
+    failed = 0
     
     for i, stock_data in enumerate(historical_data['d']):
-        ticker = stock_data['s']
+        if i % 100 == 0 and i > 0:
+            print(f"  {i}/{len(historical_data['d'])} - Success: {success}, Failed: {failed}")
         
-        try:
-            if i % 100 == 0:
-                print(f"Progress: {i}/{len(historical_data['d'])} ({i/len(historical_data['d'])*100:.1f}%)")
-            
-            # Fetch new bar
-            new_bar = get_daily_bar(ticker, update_date)
-            
-            if new_bar:
-                # Add new bar to history
-                stock_history = stock_data['h']
-                stock_history.append(new_bar)
-                
-                # Keep rolling 365-day window
-                if len(stock_history) > 365:
-                    stock_history = stock_history[-365:]
-                
-                stock_data['h'] = stock_history
-                stock_data['u'] = datetime.now().isoformat()
-                
-                updated_stocks.append(stock_data)
-            else:
-                # Keep existing data if update fails
-                updated_stocks.append(stock_data)
-                failed_updates += 1
-            
-            # Rate limiting
-            time.sleep(0.5)
-            
-        except Exception as e:
-            print(f"Error updating {ticker}: {e}")
-            updated_stocks.append(stock_data)
-            failed_updates += 1
-            continue
+        ticker = stock_data['s']
+        new_bar = get_daily_bar(ticker, update_date)
+        
+        if new_bar:
+            stock_data['h'].append(new_bar)
+            if len(stock_data['h']) > 365:
+                stock_data['h'] = stock_data['h'][-365:]
+            stock_data['u'] = datetime.now().isoformat()
+            success += 1
+        else:
+            failed += 1
+        
+        updated_stocks.append(stock_data)
+        time.sleep(0.5)
     
     historical_data['d'] = updated_stocks
     historical_data['u'] = datetime.now().isoformat()
     
-    print(f"\n✅ Stock updates complete!")
-    print(f"   Successfully updated: {len(updated_stocks) - failed_updates}")
-    print(f"   Failed: {failed_updates}")
+    print(f"\n✅ Updates: {success} success, {failed} failed\n")
     
-    # Recalculate RS scores for all stocks
-    print("\nRecalculating RS scores...")
-    
+    # Recalculate RS
+    print("Recalculating RS scores...")
     all_stock_data = []
     
     for stock_data in updated_stocks:
-        ticker = stock_data['s']
-        stock_history = stock_data['h']
-        
-        # Reconstruct full history with close prices
-        full_history = [{'c': bar['c'], 'v': bar.get('v', 0), 't': bar['t']} for bar in stock_history]
-        sp500_full = [{'c': bar['c'], 'v': bar.get('v', 0), 't': bar['t']} for bar in sp500_data]
-        
-        result = calculate_aligned_returns_from_history(full_history, sp500_full)
+        full_history = [{'c': bar['c'], 'v': bar.get('v', 0)} for bar in stock_data['h']]
+        result = calculate_stock_returns_from_history(full_history)
         
         if result[0] is not None:
-            relative_returns, stock_returns, avg_volume = result
-            rs_score = calculate_ibd_rs_score(relative_returns)
+            stock_returns, avg_volume = result
+            rs_score = calculate_ibd_rs_score(stock_returns)
             
             all_stock_data.append({
-                'symbol': ticker,
+                'symbol': stock_data['s'],
                 'rs_score': rs_score,
                 'avg_volume': int(avg_volume),
-                'relative_3m': relative_returns['3m'],
-                'relative_6m': relative_returns['6m'],
-                'relative_9m': relative_returns['9m'],
-                'relative_12m': relative_returns['12m'],
                 'stock_return_3m': stock_returns['3m'],
+                'stock_return_6m': stock_returns['6m'],
+                'stock_return_9m': stock_returns['9m'],
                 'stock_return_12m': stock_returns['12m'],
                 'ipo_date': stock_data.get('i')
             })
     
-    # Calculate percentile rankings
+    # Rank
     if all_stock_data:
-        print("Calculating RS percentile rankings...")
-        
         all_stock_data.sort(key=lambda x: x['rs_score'], reverse=True)
+        total = len(all_stock_data)
         
-        total_stocks = len(all_stock_data)
         for i, stock in enumerate(all_stock_data):
-            percentile = int(((total_stocks - i) / total_stocks) * 99) + 1
-            stock['rs_rank'] = min(percentile, 99)
+            stock['rs_rank'] = min(int(((total - i) / total) * 99) + 1, 99)
         
-        # Format for output
+        # Format output
         output_data = []
         for stock in all_stock_data:
             output_data.append({
@@ -276,46 +201,41 @@ def main():
                 'rs_score': round(stock['rs_score'], 4),
                 'avg_volume': format_volume(stock['avg_volume']),
                 'raw_volume': stock['avg_volume'],
-                'relative_3m': format_return(stock['relative_3m']),
-                'relative_6m': format_return(stock['relative_6m']),
-                'relative_9m': format_return(stock['relative_9m']),
-                'relative_12m': format_return(stock['relative_12m']),
                 'stock_return_3m': format_return(stock['stock_return_3m']),
+                'stock_return_6m': format_return(stock['stock_return_6m']),
+                'stock_return_9m': format_return(stock['stock_return_9m']),
                 'stock_return_12m': format_return(stock['stock_return_12m']),
                 'ipo_date': stock.get('ipo_date')
             })
         
-        # Save rankings.json
+        # Save
         rankings_output = {
             'last_updated': datetime.now().isoformat(),
-            'formula_used': 'RS = 2×(3m relative vs S&P500) + 6m + 9m + 12m relative performance',
+            'formula_used': 'RS = 0.4×ROC(63) + 0.2×ROC(126) + 0.2×ROC(189) + 0.2×ROC(252) [CORRECTED]',
             'total_stocks': len(output_data),
-            'benchmark': 'S&P 500 (SPY)',
             'update_type': 'daily_update',
+            'note': 'Absolute returns only, no S&P 500 comparison',
             'data': output_data
         }
         
         with open('rankings.json', 'w') as f:
             json.dump(rankings_output, f, indent=2)
         
-        print(f"✅ Updated rankings.json with {len(output_data)} stocks")
-        
-        # Save historical_data.json
         with open('historical_data.json', 'w') as f:
             json.dump(historical_data, f, indent=2)
         
-        print(f"✅ Updated historical_data.json")
+        print(f"✅ Saved {len(output_data)} stocks\n")
         
-        # Show top 10
-        print(f"\n🏆 Top 10 RS Rankings:")
-        print("Rank | Symbol | RS | 3M Rel | Volume")
-        print("-" * 45)
-        for i, stock in enumerate(output_data[:10]):
-            print(f"{i+1:2d}   | {stock['symbol']:6s} | {stock['rs_rank']:2d} | {stock['relative_3m']:7s} | {stock['avg_volume']:>8s}")
+        # Top 10
+        print("🏆 TOP 10 RS RANKINGS")
+        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'3M':<10} {'12M':<10}")
+        print("-" * 50)
+        for i, s in enumerate(output_data[:10]):
+            print(f"{i+1:<5} {s['symbol']:<8} {s['rs_rank']:<4} {s['stock_return_3m']:<10} {s['stock_return_12m']:<10}")
         
-        print(f"\n✅ Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"\n✅ Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     else:
-        print("❌ No stock data was successfully processed!")
+        print("❌ No data processed!")
 
 if __name__ == "__main__":
     main()
