@@ -25,7 +25,6 @@ def check_total_ticker_count():
     params = {
         'market': 'stocks',
         'type': 'CS',  # Common Stock only
-        'active': 'true',
         'limit': 1,  # Only need 1 result to see the count
         'apiKey': API_KEY
     }
