@@ -323,6 +323,9 @@ def main():
             # Get IPO date
             ipo_date = get_ipo_date(ticker)
             
+            # Get current price (most recent closing price)
+            current_price = round(stock_prices[-1]['c'], 2) if stock_prices else None
+            
             # Count Stage 2 stocks
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
@@ -338,6 +341,7 @@ def main():
                 'days_of_data': days_available,
                 'is_partial': is_partial,
                 'ipo_date': ipo_date,
+                'current_price': current_price,
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
                 'ma_200': ma_data['ma_200'] if ma_data else None,
@@ -416,6 +420,7 @@ def main():
                 'days_of_data': stock['days_of_data'],
                 'is_partial': stock['is_partial'],
                 'ipo_date': stock.get('ipo_date'),
+                'current_price': stock.get('current_price'),  # Current closing price
                 'ma_50': stock.get('ma_50'),
                 'ma_150': stock.get('ma_150'),
                 'ma_200': stock.get('ma_200'),
