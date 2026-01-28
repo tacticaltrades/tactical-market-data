@@ -133,18 +133,31 @@ def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) ->
     else:
         return stock_returns.get('total', 0)
 
-def calculate_moving_averages(stock_history: List[Dict]) -> Optional[Dict]:
-    """Calculate MAs and Stage 2 status"""
-    if len(stock_history) < 200:
+def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
+    """Calculate moving averages and Stage 2 status"""
+    if len(stock_prices) < 220:  # Need extra days to check 200dma trend
         return None
     
-    closes = [bar['c'] for bar in stock_history]
+    closes = [bar['c'] for bar in stock_prices]
+    current_price = closes[-1]
     
     ma_50 = np.mean(closes[-50:])
     ma_150 = np.mean(closes[-150:])
     ma_200 = np.mean(closes[-200:])
     
-    is_stage_2 = bool((ma_50 > ma_150) and (ma_150 > ma_200))
+    # Calculate 200dma from 1 month ago (~20 trading days)
+    ma_200_1month_ago = np.mean(closes[-220:-20])
+    
+    # TRUE Stage 2 criteria:
+    # 1. MA alignment: 50 > 150 > 200
+    # 2. Price above 150dma
+    # 3. 200dma is rising (current 200dma > 200dma from 1 month ago)
+    is_stage_2 = bool(
+        (ma_50 > ma_150) and 
+        (ma_150 > ma_200) and 
+        (current_price > ma_150) and
+        (ma_200 > ma_200_1month_ago)  # ← 200dma trending UP
+    )
     
     return {
         'ma_50': round(ma_50, 2),
