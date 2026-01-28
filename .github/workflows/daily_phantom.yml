@@ -2,7 +2,7 @@
 # Runs Monday-Thursday at 4:05 PM EST
 # Includes automatic RS adjustment to match IBD's 8,000 stock universe
 
-name: Daily Stock Data Update with Phantom Adjustment
+name: Daily Phantom Adjustment
 
 on:
   schedule:
