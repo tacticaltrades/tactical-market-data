@@ -1,14 +1,14 @@
 """
-CORRECTED: process_stocks.py
-Weekly Stock Data Collection Script + Recent IPO Tracking + Stage 2 Calculation
-Fetches 12 months of historical data for all common stocks to calculate RS scores
+UPDATED: process_stocks.py (FLEXIBLE RS CALCULATION)
+Now includes stocks with <252 days of data (recent IPOs)
+Calculates RS using whatever historical data is available
 
-CRITICAL FIX: Now uses CORRECT IBD formula (absolute returns, NOT relative to S&P 500)
-Formula: RS = 0.4 × ROC(63) + 0.2 × ROC(126) + 0.2 × ROC(189) + 0.2 × ROC(252)
-Where ROC = (Current Price - Past Price) / Past Price (ABSOLUTE RETURN)
-
-Stage 2: 50dma > 150dma > 200dma
-Runs every Friday at 4:05 PM EST
+Formula adapts based on data availability:
+- 252+ days: Full formula (0.4×3m + 0.2×6m + 0.2×9m + 0.2×12m)
+- 189-251 days: 3m, 6m, 9m only (reweighted)
+- 126-188 days: 3m, 6m only (reweighted)
+- 63-125 days: 3m only
+- 10-62 days: Total return since listing
 """
 
 import os
@@ -31,7 +31,7 @@ def get_all_tickers() -> List[str]:
     
     params = {
         'market': 'stocks',
-        'type': 'CS',  # Common Stock only
+        'type': 'CS',
         'active': 'true',
         'limit': 1000,
         'apiKey': API_KEY
@@ -53,13 +53,12 @@ def get_all_tickers() -> List[str]:
                 all_tickers.extend(tickers)
                 print(f"  Page {page}: Got {len(tickers)} tickers (Total: {len(all_tickers)})")
             
-            # Check for next page
             next_url = data.get('next_url')
             if next_url:
                 next_url = f"{next_url}&apiKey={API_KEY}"
             
             page += 1
-            time.sleep(0.1)  # Rate limiting
+            time.sleep(0.1)
             
         except Exception as e:
             print(f"Error fetching tickers page {page}: {e}")
@@ -67,159 +66,6 @@ def get_all_tickers() -> List[str]:
     
     print(f"✅ Total tickers fetched: {len(all_tickers)}")
     return all_tickers
-
-def get_recent_ipos() -> List[Dict]:
-    """Fetch stocks that IPOed in the last 2 years using Massive IPO endpoint"""
-    print("\n=== Fetching Recent IPOs (Last 2 Years) ===")
-    
-    # Calculate date 2 years ago
-    two_years_ago = datetime.now() - timedelta(days=730)
-    date_filter = two_years_ago.strftime('%Y-%m-%d')
-    
-    recent_ipos = []
-    next_url = f"https://api.massive.com/vX/reference/ipos"
-    
-    params = {
-        'listing_date_gte': date_filter,
-        'limit': 1000,
-        'apiKey': API_KEY
-    }
-    
-    page = 1
-    while next_url:
-        try:
-            if page > 1:
-                response = requests.get(next_url)
-            else:
-                response = requests.get(next_url, params=params)
-            
-            response.raise_for_status()
-            data = response.json()
-            
-            if 'results' in data and data['results']:
-                print(f"  Page {page}: Found {len(data['results'])} IPO records")
-                
-                for ipo_data in data['results']:
-                    announced = ipo_data.get('announced_date')
-                    if announced:
-                        try:
-                            ipo_date = datetime.strptime(announced, '%Y-%m-%d')
-                            days_ago = (datetime.now() - ipo_date).days
-                            
-                            if 0 <= days_ago <= 730:
-                                recent_ipos.append({
-                                    'ticker': ipo_data.get('ticker'),
-                                    'name': ipo_data.get('issuer_name', 'N/A'),
-                                    'list_date': announced,
-                                    'ipo_price': ipo_data.get('final_issue_price'),
-                                    'ipo_status': ipo_data.get('ipo_status', 'unknown')
-                                })
-                        except (ValueError, TypeError):
-                            continue
-            
-            next_url = data.get('next_url')
-            if next_url and '?' in next_url:
-                next_url = f"{next_url}&apiKey={API_KEY}"
-            elif next_url:
-                next_url = f"{next_url}?apiKey={API_KEY}"
-            
-            page += 1
-            time.sleep(0.1)
-            
-        except Exception as e:
-            print(f"Error fetching recent IPOs page {page}: {e}")
-            break
-    
-    print(f"✅ Found {len(recent_ipos)} IPOs in last 2 years")
-    return recent_ipos
-
-def get_current_price_and_volume(ticker: str) -> Optional[Dict]:
-    """Get current price and recent volume for a ticker"""
-    try:
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
-        
-        url = f"{BASE_URL}/v2/aggs/ticker/{ticker}/range/1/day/{start_date}/{end_date}"
-        params = {
-            'adjusted': 'true',
-            'sort': 'desc',
-            'limit': 10,
-            'apiKey': API_KEY
-        }
-        
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        
-        if data.get('results'):
-            bars = data['results']
-            current_price = bars[0]['c']
-            volumes = [bar['v'] for bar in bars]
-            avg_volume = np.mean(volumes) if volumes else 0
-            ipo_price = bars[-1]['o'] if len(bars) > 0 else None
-            
-            return {
-                'current_price': current_price,
-                'avg_volume': int(avg_volume),
-                'ipo_price': ipo_price,
-                'has_data': True
-            }
-        
-        return None
-        
-    except Exception as e:
-        return None
-
-def process_recent_ipos(recent_ipos: List[Dict]) -> List[Dict]:
-    """Process recent IPO data to get current prices and stats"""
-    print("\nProcessing recent IPO data...")
-    
-    processed_ipos = []
-    
-    for i, ipo in enumerate(recent_ipos):
-        ticker = ipo['ticker']
-        
-        try:
-            if i % 20 == 0:
-                print(f"  Progress: {i}/{len(recent_ipos)}")
-            
-            if not ipo.get('list_date'):
-                continue
-            
-            try:
-                ipo_date = datetime.strptime(ipo['list_date'], '%Y-%m-%d')
-            except (ValueError, TypeError):
-                continue
-            
-            days_since_ipo = (datetime.now() - ipo_date).days
-            
-            price_data = get_current_price_and_volume(ticker)
-            
-            if price_data and price_data['has_data']:
-                percent_from_ipo = None
-                if price_data.get('ipo_price'):
-                    percent_from_ipo = ((price_data['current_price'] - price_data['ipo_price']) / price_data['ipo_price']) * 100
-                
-                processed_ipos.append({
-                    'symbol': ticker,
-                    'company_name': ipo['name'],
-                    'ipo_date': ipo['list_date'],
-                    'days_since_ipo': days_since_ipo,
-                    'current_price': round(price_data['current_price'], 2),
-                    'ipo_price': round(price_data['ipo_price'], 2) if price_data.get('ipo_price') else None,
-                    'percent_from_ipo': round(percent_from_ipo, 1) if percent_from_ipo is not None else None,
-                    'avg_volume': format_volume(price_data['avg_volume']),
-                    'raw_volume': price_data['avg_volume']
-                })
-            
-            time.sleep(0.5)
-            
-        except Exception as e:
-            print(f"  Error processing {ticker}: {e}")
-            continue
-    
-    print(f"✅ Processed {len(processed_ipos)} recent IPOs with data")
-    return processed_ipos
 
 def get_ipo_date(ticker: str) -> Optional[str]:
     """Get IPO date from Polygon ticker details"""
@@ -270,8 +116,18 @@ def calculate_return(prices: List[Dict], days_back: int) -> Optional[float]:
     
     return (end_price - start_price) / start_price
 
+def calculate_total_return(prices: List[Dict]) -> float:
+    """Calculate total return from first to last price"""
+    if len(prices) < 2:
+        return 0.0
+    
+    start_price = prices[0]['c']
+    end_price = prices[-1]['c']
+    
+    return (end_price - start_price) / start_price
+
 def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
-    """Calculate 50-day, 150-day, and 200-day moving averages and Stage 2 status"""
+    """Calculate moving averages and Stage 2 status"""
     if len(stock_prices) < 200:
         return None
     
@@ -281,7 +137,6 @@ def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     ma_150 = np.mean(closes[-150:])
     ma_200 = np.mean(closes[-200:])
     
-    # Stage 2: 50dma > 150dma > 200dma
     is_stage_2 = bool((ma_50 > ma_150) and (ma_150 > ma_200))
     
     return {
@@ -291,60 +146,86 @@ def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
         'is_stage_2': is_stage_2
     }
 
-def calculate_stock_returns(stock_prices: List[Dict]) -> Tuple[Optional[Dict], float]:
-    """Calculate absolute returns for stock (NO BENCHMARK COMPARISON)
+def calculate_stock_returns_flexible(stock_prices: List[Dict]) -> Tuple[Optional[Dict], float, int, bool]:
+    """Calculate returns with whatever data is available (FLEXIBLE)
     
-    This is the CORRECT method - IBD ranks stocks by absolute performance,
-    NOT performance relative to S&P 500
+    Returns: (stock_returns, avg_volume, days_available, is_partial)
     """
-    if not stock_prices or len(stock_prices) < 252:
-        return None, 0
+    days_available = len(stock_prices)
     
-    # Calculate periods (approximate trading days)
+    # Minimum threshold: at least 10 days
+    if days_available < 10:
+        return None, 0, days_available, False
+    
+    # Calculate periods based on available data
     periods = {
-        '3m': 63,   # ~3 months (most recent quarter)
-        '6m': 126,  # ~6 months
-        '9m': 189,  # ~9 months
-        '12m': 252  # ~12 months
+        '3m': min(63, days_available),
+        '6m': min(126, days_available),
+        '9m': min(189, days_available),
+        '12m': min(252, days_available)
     }
     
     stock_returns = {}
     
     for period_name, days in periods.items():
-        ret = calculate_return(stock_prices, days)
-        stock_returns[period_name] = ret if ret is not None else 0
+        if days <= days_available and days >= 10:  # Need at least 10 days
+            ret = calculate_return(stock_prices, days)
+            stock_returns[period_name] = ret if ret is not None else 0
+        else:
+            stock_returns[period_name] = 0
     
-    # Calculate average volume over last 50 days
+    # For very new stocks, also calculate total return
+    stock_returns['total'] = calculate_total_return(stock_prices)
+    
+    # Calculate average volume
     recent_prices = stock_prices[-50:] if len(stock_prices) >= 50 else stock_prices
     volumes = [p['v'] for p in recent_prices if 'v' in p]
     avg_volume = np.mean(volumes) if volumes else 0
     
-    return stock_returns, avg_volume
+    # Is this a partial calculation?
+    is_partial = days_available < 252
+    
+    return stock_returns, avg_volume, days_available, is_partial
 
-def calculate_ibd_rs_score(stock_returns: Dict) -> float:
-    """Calculate IBD-style RS score using CORRECTED formula
+def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) -> float:
+    """Calculate RS score using FLEXIBLE formula based on data availability
     
-    CORRECT Formula: RS = 0.4 × ROC(63) + 0.2 × ROC(126) + 0.2 × ROC(189) + 0.2 × ROC(252)
-    
-    Where:
-    - ROC = Rate of Change = (Current Price - Past Price) / Past Price
-    - This is ABSOLUTE stock performance, NOT relative to any benchmark
-    - 63 days = ~3 months (weighted 40% - most important)
-    - 126 days = ~6 months (weighted 20%)
-    - 189 days = ~9 months (weighted 20%)
-    - 252 days = ~12 months (weighted 20%)
-    
-    Note: The old formula that compared to S&P 500 was WRONG and caused 10-15 point errors!
+    Adapts the weighting based on how much historical data is available
     """
     if not stock_returns:
         return 0
     
-    rs_score = (
-        0.4 * stock_returns.get('3m', 0) +   # 40% weight on recent quarter
-        0.2 * stock_returns.get('6m', 0) +   # 20% weight
-        0.2 * stock_returns.get('9m', 0) +   # 20% weight
-        0.2 * stock_returns.get('12m', 0)    # 20% weight
-    )
+    # FULL FORMULA: 252+ days (12+ months)
+    if days_available >= 252:
+        rs_score = (
+            0.4 * stock_returns.get('3m', 0) +
+            0.2 * stock_returns.get('6m', 0) +
+            0.2 * stock_returns.get('9m', 0) +
+            0.2 * stock_returns.get('12m', 0)
+        )
+    
+    # PARTIAL: 189-251 days (9-12 months) - Use 3m, 6m, 9m only
+    elif days_available >= 189:
+        rs_score = (
+            0.5 * stock_returns.get('3m', 0) +   # Reweight: 40% → 50%
+            0.25 * stock_returns.get('6m', 0) +  # Reweight: 20% → 25%
+            0.25 * stock_returns.get('9m', 0)    # Reweight: 20% → 25%
+        )
+    
+    # PARTIAL: 126-188 days (6-9 months) - Use 3m, 6m only
+    elif days_available >= 126:
+        rs_score = (
+            0.6 * stock_returns.get('3m', 0) +   # Reweight: 40% → 60%
+            0.4 * stock_returns.get('6m', 0)     # Reweight: 20% → 40%
+        )
+    
+    # PARTIAL: 63-125 days (3-6 months) - Use 3m only
+    elif days_available >= 63:
+        rs_score = stock_returns.get('3m', 0)
+    
+    # VERY NEW: 10-62 days - Use total return since listing
+    else:
+        rs_score = stock_returns.get('total', 0)
     
     return rs_score
 
@@ -363,13 +244,16 @@ def format_return(return_val: float) -> str:
 
 def main():
     print("="*80)
-    print("IBD-Style Relative Strength Stock Processor with Stage 2 Analysis")
-    print("CORRECTED FORMULA (No S&P 500 comparison)")
+    print("IBD-Style RS Calculator (FLEXIBLE - Includes Recent IPOs)")
     print("="*80)
     print()
-    print("Formula: RS = 0.4×ROC(63) + 0.2×ROC(126) + 0.2×ROC(189) + 0.2×ROC(252)")
-    print("Where ROC = Absolute stock return (NOT relative to benchmark)")
-    print("Stage 2: 50dma > 150dma > 200dma")
+    print("Formula adapts to available data:")
+    print("  252+ days: 0.4×3m + 0.2×6m + 0.2×9m + 0.2×12m")
+    print("  189-251 days: 0.5×3m + 0.25×6m + 0.25×9m")
+    print("  126-188 days: 0.6×3m + 0.4×6m")
+    print("  63-125 days: 3m return only")
+    print("  10-62 days: Total return since listing")
+    print()
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
@@ -377,9 +261,9 @@ def main():
         print("ERROR: POLYGON_API_KEY not found!")
         return
     
-    # Date range for historical data
+    # Date range
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=450)  # Extra buffer for weekends/holidays
+    start_date = end_date - timedelta(days=450)
     
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')
@@ -393,23 +277,22 @@ def main():
         print("ERROR: Failed to get tickers!")
         return
     
-    print(f"\nProcessing {len(tickers)} stocks...")
-    print("Note: Stocks with <252 days of history will be skipped")
+    print(f"\nProcessing {len(tickers)} stocks (including recent IPOs)...")
     print()
     
     all_stock_data = []
     historical_stocks = []
     processed = 0
     failed = 0
-    insufficient_data = 0
+    partial_calculations = 0
+    full_calculations = 0
     stage_2_count = 0
     
     for i, ticker in enumerate(tickers):
         try:
-            # Progress indicator every 100 stocks
             if i % 100 == 0 and i > 0:
                 print(f"Progress: {i}/{len(tickers)} ({i/len(tickers)*100:.1f}%)")
-                print(f"  Processed: {processed}, Failed: {failed}, Insufficient data: {insufficient_data}, Stage 2: {stage_2_count}")
+                print(f"  Full data: {full_calculations}, Partial data: {partial_calculations}, Failed: {failed}, Stage 2: {stage_2_count}")
             
             # Get historical data
             stock_prices = get_stock_data(ticker, start_date_str, end_date_str)
@@ -418,17 +301,23 @@ def main():
                 failed += 1
                 continue
             
-            # Calculate returns (no benchmark needed!)
-            result = calculate_stock_returns(stock_prices)
+            # Calculate returns (FLEXIBLE - works with any amount of data)
+            result = calculate_stock_returns_flexible(stock_prices)
             
             if result[0] is None:
-                insufficient_data += 1
+                failed += 1
                 continue
             
-            stock_returns, avg_volume = result
-            rs_score = calculate_ibd_rs_score(stock_returns)
+            stock_returns, avg_volume, days_available, is_partial = result
+            rs_score = calculate_ibd_rs_score_flexible(stock_returns, days_available)
             
-            # Calculate moving averages and Stage 2 status
+            # Track partial vs full calculations
+            if is_partial:
+                partial_calculations += 1
+            else:
+                full_calculations += 1
+            
+            # Calculate moving averages (if enough data)
             ma_data = calculate_moving_averages(stock_prices)
             
             # Get IPO date
@@ -442,10 +331,12 @@ def main():
                 'symbol': ticker,
                 'rs_score': rs_score,
                 'avg_volume': int(avg_volume),
-                'stock_return_3m': stock_returns['3m'],
-                'stock_return_6m': stock_returns['6m'],
-                'stock_return_9m': stock_returns['9m'],
-                'stock_return_12m': stock_returns['12m'],
+                'stock_return_3m': stock_returns.get('3m', 0),
+                'stock_return_6m': stock_returns.get('6m', 0),
+                'stock_return_9m': stock_returns.get('9m', 0),
+                'stock_return_12m': stock_returns.get('12m', 0),
+                'days_of_data': days_available,
+                'is_partial': is_partial,
                 'ipo_date': ipo_date,
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
@@ -453,38 +344,30 @@ def main():
                 'is_stage_2': ma_data['is_stage_2'] if ma_data else False
             })
             
-            # Store minimal historical data
+            # Store historical data (simplified)
             minimal_history = []
             
             if len(stock_prices) > 30:
                 older_data = stock_prices[:-30:5]
             else:
-                older_data = stock_prices[:-10:5] if len(stock_prices) > 10 else stock_prices[:-1:5] if len(stock_prices) > 1 else []
+                older_data = stock_prices[:-10:5] if len(stock_prices) > 10 else []
             
             for price in older_data:
-                minimal_history.append({
-                    't': price['t'],
-                    'c': price['c']
-                })
+                minimal_history.append({'t': price['t'], 'c': price['c']})
             
-            recent_data = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices[-10:] if len(stock_prices) >= 10 else stock_prices
+            recent_data = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices
             for price in recent_data:
-                minimal_history.append({
-                    't': price['t'],
-                    'c': price['c'],
-                    'v': price['v']
-                })
+                minimal_history.append({'t': price['t'], 'c': price['c'], 'v': price['v']})
             
             historical_stocks.append({
                 's': ticker,
                 'h': minimal_history,
                 'u': datetime.now().isoformat(),
-                'i': ipo_date
+                'i': ipo_date,
+                'd': days_available
             })
             
             processed += 1
-            
-            # Rate limiting - 2 calls per second
             time.sleep(0.5)
             
         except Exception as e:
@@ -497,35 +380,27 @@ def main():
     print("PROCESSING COMPLETE")
     print("="*80)
     print(f"Successfully processed: {processed} stocks")
-    print(f"Insufficient data (<252 days): {insufficient_data} stocks")
-    print(f"Failed (errors): {failed} stocks")
-    print(f"Stage 2 stocks: {stage_2_count} ({stage_2_count/processed*100:.1f}% of processed)")
+    print(f"  Full calculations (252+ days): {full_calculations}")
+    print(f"  Partial calculations (<252 days): {partial_calculations}")
+    print(f"Failed (errors): {failed}")
+    print(f"Stage 2 stocks: {stage_2_count} ({stage_2_count/processed*100:.1f}%)")
     print()
     
     # Calculate percentile rankings
     if all_stock_data:
         print("Calculating RS percentile rankings (1-99)...")
         
-        # Sort by RS score (highest first)
         all_stock_data.sort(key=lambda x: x['rs_score'], reverse=True)
         
         total_stocks = len(all_stock_data)
         print(f"Total stocks in ranking: {total_stocks}")
-        
-        if total_stocks < 6000:
-            print(f"⚠️  WARNING: Only {total_stocks} stocks processed. IBD uses ~8,000 stocks.")
-            print(f"   This may cause percentile rankings to differ from IBD by several points.")
-            print(f"   Consider investigating why {len(tickers) - total_stocks} stocks failed to process.")
-        
         print()
         
-        # Assign percentile ranks
         for i, stock in enumerate(all_stock_data):
-            # Percentile formula: (number of stocks below this one / total stocks) * 99 + 1
             percentile = int(((total_stocks - i) / total_stocks) * 99) + 1
             stock['rs_rank'] = min(percentile, 99)
         
-        # Format for output
+        # Format output
         output_data = []
         for stock in all_stock_data:
             output_data.append({
@@ -538,6 +413,8 @@ def main():
                 'stock_return_6m': format_return(stock['stock_return_6m']),
                 'stock_return_9m': format_return(stock['stock_return_9m']),
                 'stock_return_12m': format_return(stock['stock_return_12m']),
+                'days_of_data': stock['days_of_data'],
+                'is_partial': stock['is_partial'],
                 'ipo_date': stock.get('ipo_date'),
                 'ma_50': stock.get('ma_50'),
                 'ma_150': stock.get('ma_150'),
@@ -545,15 +422,17 @@ def main():
                 'is_stage_2': stock.get('is_stage_2', False)
             })
         
-        # Save rankings.json
+        # Save rankings
         rankings_output = {
             'last_updated': datetime.now().isoformat(),
-            'formula_used': 'RS = 0.4×ROC(63) + 0.2×ROC(126) + 0.2×ROC(189) + 0.2×ROC(252) [CORRECTED - No S&P 500 comparison]',
+            'formula_used': 'Flexible: Adapts to available data (see documentation)',
             'stage_2_criteria': '50dma > 150dma > 200dma',
             'total_stocks': len(output_data),
+            'full_calculations': full_calculations,
+            'partial_calculations': partial_calculations,
             'stage_2_stocks': stage_2_count,
             'update_type': 'full_rebuild',
-            'note': 'This version uses ABSOLUTE stock returns, not relative to S&P 500. Should match IBD much better.',
+            'note': 'Includes stocks with <252 days. Check is_partial field.',
             'data': output_data
         }
         
@@ -562,12 +441,11 @@ def main():
         
         print(f"✅ Saved {len(output_data)} stocks to 'rankings.json'")
         
-        # Save historical_data.json
+        # Save historical data
         historical_output = {
             'u': datetime.now().isoformat(),
             'n': len(historical_stocks),
-            'd': historical_stocks,
-            'note': 'No S&P 500 data needed - using absolute returns only'
+            'd': historical_stocks
         }
         
         with open('historical_data.json', 'w') as f:
@@ -576,103 +454,47 @@ def main():
         print(f"✅ Historical data saved ({len(historical_stocks)} stocks)")
         print()
         
-        # Show top 20 performers
+        # Show top 20
         print("="*100)
         print("🏆 TOP 20 RS RANKINGS")
         print("="*100)
-        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Stage2':<7} {'50MA':<10} {'150MA':<10} {'200MA':<10} {'3M Ret':<8} {'12M Ret':<9} {'Volume':<10}")
+        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'Partial':<8} {'Stage2':<7} {'3M Ret':<8} {'12M Ret':<9}")
         print("-" * 100)
         
         for i, stock in enumerate(output_data[:20]):
-            stage2_symbol = "✓" if stock['is_stage_2'] else " "
-            ma50 = f"${stock['ma_50']:.2f}" if stock['ma_50'] else "N/A"
-            ma150 = f"${stock['ma_150']:.2f}" if stock['ma_150'] else "N/A"
-            ma200 = f"${stock['ma_200']:.2f}" if stock['ma_200'] else "N/A"
-            print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stage2_symbol:^7} {ma50:<10} {ma150:<10} {ma200:<10} {stock['stock_return_3m']:<8} {stock['stock_return_12m']:<9} {stock['avg_volume']:<10}")
+            partial_flag = "Yes" if stock['is_partial'] else "No"
+            stage2_flag = "✓" if stock['is_stage_2'] else " "
+            print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['days_of_data']:<6} {partial_flag:<8} {stage2_flag:^7} {stock['stock_return_3m']:<8} {stock['stock_return_12m']:<9}")
         
         print()
         
-        # Show top Stage 2 stocks
-        stage_2_stocks = [s for s in output_data if s['is_stage_2']]
-        if stage_2_stocks:
+        # Show recent IPOs
+        recent_ipos = [s for s in output_data if s['is_partial']]
+        if recent_ipos:
             print("="*90)
-            print("📈 TOP 20 STAGE 2 STOCKS")
+            print(f"🆕 RECENT IPOs (<252 days of data): {len(recent_ipos)} stocks")
             print("="*90)
-            print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'50MA':<10} {'150MA':<10} {'200MA':<10} {'Volume':<10}")
+            print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'IPO Date':<12} {'3M Ret':<8}")
             print("-" * 90)
             
-            for i, stock in enumerate(stage_2_stocks[:20]):
-                ma50 = f"${stock['ma_50']:.2f}" if stock['ma_50'] else "N/A"
-                ma150 = f"${stock['ma_150']:.2f}" if stock['ma_150'] else "N/A"
-                ma200 = f"${stock['ma_200']:.2f}" if stock['ma_200'] else "N/A"
-                print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {ma50:<10} {ma150:<10} {ma200:<10} {stock['avg_volume']:<10}")
+            for i, stock in enumerate(recent_ipos[:20]):
+                ipo = stock.get('ipo_date', 'N/A')[:10]
+                print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['days_of_data']:<6} {ipo:<12} {stock['stock_return_3m']:<8}")
             
             print()
         
         # Statistics
-        rs_scores = [s['rs_score'] for s in all_stock_data]
-        print("="*60)
-        print("📊 RS SCORE STATISTICS")
-        print("="*60)
-        print(f"Highest RS Score:        {max(rs_scores):.3f}")
-        print(f"Lowest RS Score:         {min(rs_scores):.3f}")
-        print(f"Average RS Score:        {np.mean(rs_scores):.3f}")
-        print(f"Median RS Score:         {np.median(rs_scores):.3f}")
-        print()
-        
-        high_rs_count = len([s for s in output_data if s['rs_rank'] >= 90])
-        print(f"Stocks with RS ≥ 90:     {high_rs_count} ({high_rs_count/len(output_data)*100:.1f}%)")
-        print(f"Stocks in Stage 2:       {stage_2_count} ({stage_2_count/len(output_data)*100:.1f}%)")
+        print("="*80)
+        print("📊 STATISTICS")
+        print("="*80)
+        print(f"Total stocks ranked: {len(output_data)}")
+        print(f"Full calculations: {full_calculations} ({full_calculations/len(output_data)*100:.1f}%)")
+        print(f"Partial calculations: {partial_calculations} ({partial_calculations/len(output_data)*100:.1f}%)")
+        print(f"Stocks in Stage 2: {stage_2_count} ({stage_2_count/len(output_data)*100:.1f}%)")
         print()
         
     else:
-        print("❌ No stock data was successfully processed!")
-        return
-    
-    # PROCESS RECENT IPOs
-    print("="*80)
-    print("PROCESSING RECENT IPOs")
-    print("="*80)
-    
-    recent_ipos = get_recent_ipos()
-    
-    if recent_ipos:
-        processed_ipos = process_recent_ipos(recent_ipos)
-        
-        # Sort by IPO date (newest first)
-        processed_ipos.sort(key=lambda x: x['ipo_date'], reverse=True)
-        
-        # Save recent_ipos.json
-        ipo_output = {
-            'last_updated': datetime.now().isoformat(),
-            'total_recent_ipos': len(processed_ipos),
-            'lookback_days': 730,
-            'note': 'Stocks that completed IPO in the last 2 years. May not have RS scores due to insufficient history.',
-            'data': processed_ipos
-        }
-        
-        with open('recent_ipos.json', 'w') as f:
-            json.dump(ipo_output, f, indent=2)
-        
-        print(f"✅ Saved {len(processed_ipos)} recent IPOs to 'recent_ipos.json'")
-        print()
-        
-        # Show most recent IPOs
-        if processed_ipos:
-            print("🆕 MOST RECENT IPOs")
-            print("-" * 80)
-            print(f"{'Symbol':<8} {'Company':<25} {'IPO Date':<12} {'Days':<6} {'Price':<8} {'Change':<8}")
-            print("-" * 80)
-            
-            for ipo in processed_ipos[:10]:
-                change_str = f"{ipo['percent_from_ipo']:+.1f}%" if ipo['percent_from_ipo'] is not None else "N/A"
-                company_name = ipo['company_name'][:24]  # Truncate long names
-                print(f"{ipo['symbol']:<8} {company_name:<25} {ipo['ipo_date']:<12} {ipo['days_since_ipo']:>4}d  ${ipo['current_price']:>6.2f}  {change_str:>7}")
-            
-            print()
-    else:
-        print("⚠️  No IPOs found in the last 2 years")
-        print()
+        print("❌ No stock data processed!")
     
     print("="*80)
     print(f"✅ COMPLETED at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
