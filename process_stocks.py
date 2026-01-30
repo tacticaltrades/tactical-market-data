@@ -419,6 +419,7 @@ def main():
                 'symbol': ticker,
                 'rs_score': rs_score,
                 'avg_volume': int(avg_volume),
+                'stock_return_2m': stock_returns.get('2m', 0),
                 'stock_return_3m': stock_returns.get('3m', 0),
                 'stock_return_6m': stock_returns.get('6m', 0),
                 'stock_return_9m': stock_returns.get('9m', 0),
