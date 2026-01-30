@@ -235,6 +235,7 @@ def calculate_stock_returns_flexible(stock_prices: List[Dict]) -> Tuple[Optional
     
     # Calculate periods based on available data
     periods = {
+        '2m': min(42, days_available),
         '3m': min(63, days_available),
         '6m': min(126, days_available),
         '9m': min(189, days_available),
