@@ -1,7 +1,8 @@
 """
-UPDATED: process_stocks.py (FLEXIBLE RS CALCULATION)
+UPDATED: process_stocks.py (FLEXIBLE RS CALCULATION + ADR/ATR)
 Now includes stocks with <252 days of data (recent IPOs)
 Calculates RS using whatever historical data is available
+Includes ADR (Average Daily Range) and ATR (Average True Range)
 
 Formula adapts based on data availability:
 - 252+ days: Full formula (0.4×3m + 0.2×6m + 0.2×9m + 0.2×12m)
@@ -159,6 +160,68 @@ def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
         'is_stage_2': is_stage_2
     }
 
+def calculate_adr(stock_prices: List[Dict], period: int = 20) -> Optional[float]:
+    """Calculate Average Daily Range (ADR) over specified period
+    
+    ADR = Average of (High - Low) over last N days
+    Useful for identifying volatility and setting position sizes
+    """
+    if len(stock_prices) < period:
+        return None
+    
+    # Get the last N days
+    recent_prices = stock_prices[-period:]
+    
+    # Calculate daily ranges
+    daily_ranges = []
+    for bar in recent_prices:
+        if 'h' in bar and 'l' in bar:
+            daily_range = bar['h'] - bar['l']
+            daily_ranges.append(daily_range)
+    
+    if not daily_ranges:
+        return None
+    
+    return np.mean(daily_ranges)
+
+def calculate_atr(stock_prices: List[Dict], period: int = 14) -> Optional[float]:
+    """Calculate Average True Range (ATR) over specified period
+    
+    ATR accounts for gaps by using True Range:
+    TR = max(high - low, |high - prev_close|, |low - prev_close|)
+    
+    More accurate than ADR for stocks with gaps
+    """
+    if len(stock_prices) < period + 1:  # Need at least period+1 for prev_close
+        return None
+    
+    true_ranges = []
+    
+    # Start from index 1 since we need previous close
+    for i in range(1, len(stock_prices)):
+        current = stock_prices[i]
+        previous = stock_prices[i - 1]
+        
+        if 'h' in current and 'l' in current and 'c' in previous:
+            high = current['h']
+            low = current['l']
+            prev_close = previous['c']
+            
+            # True Range = max of three values
+            tr = max(
+                high - low,                    # Current range
+                abs(high - prev_close),        # Gap up
+                abs(low - prev_close)          # Gap down
+            )
+            
+            true_ranges.append(tr)
+    
+    if len(true_ranges) < period:
+        return None
+    
+    # Return average of last N true ranges
+    return np.mean(true_ranges[-period:])
+
 def calculate_stock_returns_flexible(stock_prices: List[Dict]) -> Tuple[Optional[Dict], float, int, bool]:
     """Calculate returns with whatever data is available (FLEXIBLE)
     
@@ -257,7 +320,7 @@ def format_return(return_val: float) -> str:
 
 def main():
     print("="*80)
-    print("IBD-Style RS Calculator (FLEXIBLE - Includes Recent IPOs)")
+    print("IBD-Style RS Calculator (FLEXIBLE - Includes Recent IPOs + ADR/ATR)")
     print("="*80)
     print()
     print("Formula adapts to available data:")
@@ -266,6 +329,10 @@ def main():
     print("  126-188 days: 0.6×3m + 0.4×6m")
     print("  63-125 days: 3m return only")
     print("  10-62 days: Total return since listing")
+    print()
+    print("Volatility Metrics:")
+    print("  ADR (20-day): Average Daily Range")
+    print("  ATR (14-day): Average True Range (accounts for gaps)")
     print()
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
@@ -333,6 +400,10 @@ def main():
             # Calculate moving averages (if enough data)
             ma_data = calculate_moving_averages(stock_prices)
             
+            # Calculate ADR and ATR
+            adr_20 = calculate_adr(stock_prices, period=20)
+            atr_14 = calculate_atr(stock_prices, period=14)
+            
             # Get IPO date
             ipo_date = get_ipo_date(ticker)
             
@@ -358,7 +429,9 @@ def main():
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
                 'ma_200': ma_data['ma_200'] if ma_data else None,
-                'is_stage_2': ma_data['is_stage_2'] if ma_data else False
+                'is_stage_2': ma_data['is_stage_2'] if ma_data else False,
+                'adr_20': round(adr_20, 2) if adr_20 is not None else None,
+                'atr_14': round(atr_14, 2) if atr_14 is not None else None
             })
             
             # Store historical data (simplified)
@@ -433,11 +506,13 @@ def main():
                 'days_of_data': stock['days_of_data'],
                 'is_partial': stock['is_partial'],
                 'ipo_date': stock.get('ipo_date'),
-                'current_price': stock.get('current_price'),  # Current closing price
+                'current_price': stock.get('current_price'),
                 'ma_50': stock.get('ma_50'),
                 'ma_150': stock.get('ma_150'),
                 'ma_200': stock.get('ma_200'),
-                'is_stage_2': stock.get('is_stage_2', False)
+                'is_stage_2': stock.get('is_stage_2', False),
+                'adr_20': stock.get('adr_20'),  # Average Daily Range (20-day)
+                'atr_14': stock.get('atr_14')   # Average True Range (14-day)
             })
         
         # Save rankings
@@ -445,6 +520,7 @@ def main():
             'last_updated': datetime.now().isoformat(),
             'formula_used': 'Flexible: Adapts to available data (see documentation)',
             'stage_2_criteria': '50dma > 150dma > 200dma',
+            'volatility_metrics': 'ADR (20-day), ATR (14-day)',
             'total_stocks': len(output_data),
             'full_calculations': full_calculations,
             'partial_calculations': partial_calculations,
@@ -473,18 +549,37 @@ def main():
         print()
         
         # Show top 20
-        print("="*100)
+        print("="*110)
         print("🏆 TOP 20 RS RANKINGS")
-        print("="*100)
-        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'Partial':<8} {'Stage2':<7} {'3M Ret':<8} {'12M Ret':<9}")
-        print("-" * 100)
+        print("="*110)
+        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'Part':<5} {'S2':<4} {'ADR':<7} {'ATR':<7} {'3M Ret':<8} {'12M Ret':<9}")
+        print("-" * 110)
         
         for i, stock in enumerate(output_data[:20]):
-            partial_flag = "Yes" if stock['is_partial'] else "No"
+            partial_flag = "Y" if stock['is_partial'] else "N"
             stage2_flag = "✓" if stock['is_stage_2'] else " "
-            print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['days_of_data']:<6} {partial_flag:<8} {stage2_flag:^7} {stock['stock_return_3m']:<8} {stock['stock_return_12m']:<9}")
+            adr_str = f"${stock['adr_20']}" if stock['adr_20'] else "N/A"
+            atr_str = f"${stock['atr_14']}" if stock['atr_14'] else "N/A"
+            print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['days_of_data']:<6} {partial_flag:^5} {stage2_flag:^4} {adr_str:<7} {atr_str:<7} {stock['stock_return_3m']:<8} {stock['stock_return_12m']:<9}")
         
         print()
+        
+        # Show high volatility stocks (high ADR/ATR)
+        stocks_with_adr = [s for s in output_data if s['adr_20'] is not None]
+        if stocks_with_adr:
+            high_volatility = sorted(stocks_with_adr, key=lambda x: x['adr_20'], reverse=True)[:20]
+            print("="*100)
+            print("🔥 TOP 20 HIGHEST VOLATILITY (ADR)")
+            print("="*100)
+            print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'ADR':<8} {'ATR':<8} {'Price':<8} {'Stage2':<7}")
+            print("-" * 100)
+            
+            for i, stock in enumerate(high_volatility):
+                stage2_flag = "✓" if stock['is_stage_2'] else " "
+                price = f"${stock['current_price']}" if stock['current_price'] else "N/A"
+                print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} ${stock['adr_20']:<7} ${stock['atr_14']:<7} {price:<8} {stage2_flag:^7}")
+            
+            print()
         
         # Show recent IPOs
         recent_ipos = [s for s in output_data if s['is_partial']]
@@ -509,6 +604,8 @@ def main():
         print(f"Full calculations: {full_calculations} ({full_calculations/len(output_data)*100:.1f}%)")
         print(f"Partial calculations: {partial_calculations} ({partial_calculations/len(output_data)*100:.1f}%)")
         print(f"Stocks in Stage 2: {stage_2_count} ({stage_2_count/len(output_data)*100:.1f}%)")
+        stocks_with_volatility = len([s for s in output_data if s['adr_20'] is not None])
+        print(f"Stocks with ADR/ATR data: {stocks_with_volatility} ({stocks_with_volatility/len(output_data)*100:.1f}%)")
         print()
         
     else:
