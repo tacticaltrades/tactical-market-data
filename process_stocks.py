@@ -501,6 +501,7 @@ def main():
                 'rs_score': round(stock['rs_score'], 4),
                 'avg_volume': format_volume(stock['avg_volume']),
                 'raw_volume': stock['avg_volume'],
+                'stock_return_2m': format_return(stock['stock_return_2m']),
                 'stock_return_3m': format_return(stock['stock_return_3m']),
                 'stock_return_6m': format_return(stock['stock_return_6m']),
                 'stock_return_9m': format_return(stock['stock_return_9m']),
