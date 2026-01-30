@@ -1,7 +1,8 @@
 """
-UPDATED: process_stocks_daily.py (FLEXIBLE)
+UPDATED: process_stocks_daily.py (FLEXIBLE + ADR/ATR + 2M)
 Daily update script matching the flexible weekly script
 Handles stocks with partial data (<252 days)
+Includes ADR, ATR, and 2-month returns
 """
 
 import os
@@ -79,6 +80,7 @@ def calculate_stock_returns_from_history(stock_history: List[Dict]) -> tuple:
         return None, 0, days_available, False
     
     periods = {
+        '2m': min(42, days_available),
         '3m': min(63, days_available),
         '6m': min(126, days_available),
         '9m': min(189, days_available),
@@ -133,6 +135,52 @@ def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) ->
     else:
         return stock_returns.get('total', 0)
 
+def calculate_adr(stock_prices: List[Dict], period: int = 20) -> Optional[float]:
+    """Calculate Average Daily Range (ADR) over specified period"""
+    if len(stock_prices) < period:
+        return None
+    
+    recent_prices = stock_prices[-period:]
+    daily_ranges = []
+    
+    for bar in recent_prices:
+        if 'h' in bar and 'l' in bar:
+            daily_ranges.append(bar['h'] - bar['l'])
+    
+    if not daily_ranges:
+        return None
+    
+    return np.mean(daily_ranges)
+
+def calculate_atr(stock_prices: List[Dict], period: int = 14) -> Optional[float]:
+    """Calculate Average True Range (ATR) over specified period"""
+    if len(stock_prices) < period + 1:
+        return None
+    
+    true_ranges = []
+    
+    for i in range(1, len(stock_prices)):
+        current = stock_prices[i]
+        previous = stock_prices[i - 1]
+        
+        if 'h' in current and 'l' in current and 'c' in previous:
+            high = current['h']
+            low = current['l']
+            prev_close = previous['c']
+            
+            tr = max(
+                high - low,
+                abs(high - prev_close),
+                abs(low - prev_close)
+            )
+            
+            true_ranges.append(tr)
+    
+    if len(true_ranges) < period:
+        return None
+    
+    return np.mean(true_ranges[-period:])
+
 def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     """Calculate moving averages and Stage 2 status"""
     if len(stock_prices) < 220:  # Need extra days to check 200dma trend
@@ -178,7 +226,7 @@ def format_return(return_val: float) -> str:
 
 def main():
     print("="*80)
-    print("Daily Stock Update (FLEXIBLE - Supports Partial Data)")
+    print("Daily Stock Update (FLEXIBLE - ADR/ATR/2M)")
     print("="*80)
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
@@ -231,14 +279,16 @@ def main():
     print(f"\n✅ Updates: {success} success, {failed} failed\n")
     
     # Recalculate RS
-    print("Recalculating RS scores (flexible formula)...")
+    print("Recalculating RS scores (flexible formula + volatility)...")
     all_stock_data = []
     full_calc = 0
     partial_calc = 0
     stage_2_count = 0
     
     for stock_data in updated_stocks:
-        full_history = [{'c': bar['c'], 'v': bar.get('v', 0)} for bar in stock_data['h']]
+        # Full history with all OHLCV data
+        full_history = stock_data['h']
+        
         result = calculate_stock_returns_from_history(full_history)
         
         if result[0] is not None:
@@ -255,6 +305,10 @@ def main():
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
             
+            # Calculate ADR and ATR
+            adr_20 = calculate_adr(full_history, period=20)
+            atr_14 = calculate_atr(full_history, period=14)
+            
             # Get current price (most recent closing price)
             current_price = round(full_history[-1]['c'], 2) if full_history else None
             
@@ -262,6 +316,7 @@ def main():
                 'symbol': stock_data['s'],
                 'rs_score': rs_score,
                 'avg_volume': int(avg_volume),
+                'stock_return_2m': stock_returns.get('2m', 0),
                 'stock_return_3m': stock_returns.get('3m', 0),
                 'stock_return_6m': stock_returns.get('6m', 0),
                 'stock_return_9m': stock_returns.get('9m', 0),
@@ -273,7 +328,9 @@ def main():
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
                 'ma_200': ma_data['ma_200'] if ma_data else None,
-                'is_stage_2': ma_data['is_stage_2'] if ma_data else False
+                'is_stage_2': ma_data['is_stage_2'] if ma_data else False,
+                'adr_20': round(adr_20, 2) if adr_20 is not None else None,
+                'atr_14': round(atr_14, 2) if atr_14 is not None else None
             })
     
     # Rank
@@ -293,6 +350,7 @@ def main():
                 'rs_score': round(stock['rs_score'], 4),
                 'avg_volume': format_volume(stock['avg_volume']),
                 'raw_volume': stock['avg_volume'],
+                'stock_return_2m': format_return(stock['stock_return_2m']),
                 'stock_return_3m': format_return(stock['stock_return_3m']),
                 'stock_return_6m': format_return(stock['stock_return_6m']),
                 'stock_return_9m': format_return(stock['stock_return_9m']),
@@ -304,7 +362,9 @@ def main():
                 'ma_50': stock.get('ma_50'),
                 'ma_150': stock.get('ma_150'),
                 'ma_200': stock.get('ma_200'),
-                'is_stage_2': stock.get('is_stage_2', False)
+                'is_stage_2': stock.get('is_stage_2', False),
+                'adr_20': stock.get('adr_20'),
+                'atr_14': stock.get('atr_14')
             })
         
         # Save
@@ -312,6 +372,7 @@ def main():
             'last_updated': datetime.now().isoformat(),
             'formula_used': 'Flexible: Adapts to available data',
             'stage_2_criteria': '50dma > 150dma > 200dma',
+            'volatility_metrics': 'ADR (20-day), ATR (14-day)',
             'total_stocks': len(output_data),
             'full_calculations': full_calc,
             'partial_calculations': partial_calc,
@@ -332,14 +393,19 @@ def main():
         print(f"   Stage 2: {stage_2_count}\n")
         
         # Top 10
+        print("="*90)
         print("🏆 TOP 10")
-        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'Partial':<8} {'3M':<10}")
-        print("-" * 50)
+        print("="*90)
+        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'Part':<5} {'ADR':<7} {'ATR':<7} {'2M':<8}")
+        print("-" * 90)
         for i, s in enumerate(output_data[:10]):
-            partial = "Yes" if s['is_partial'] else "No"
-            print(f"{i+1:<5} {s['symbol']:<8} {s['rs_rank']:<4} {s['days_of_data']:<6} {partial:<8} {s['stock_return_3m']:<10}")
+            partial = "Y" if s['is_partial'] else "N"
+            adr_str = f"${s['adr_20']}" if s['adr_20'] else "N/A"
+            atr_str = f"${s['atr_14']}" if s['atr_14'] else "N/A"
+            print(f"{i+1:<5} {s['symbol']:<8} {s['rs_rank']:<4} {s['days_of_data']:<6} {partial:^5} {adr_str:<7} {atr_str:<7} {s['stock_return_2m']:<8}")
         
         print(f"\n✅ Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("="*80)
     else:
         print("❌ No data processed!")
 
