@@ -3,6 +3,8 @@ UPDATED: process_stocks_daily.py (FLEXIBLE + ADR/ATR + 2M)
 Daily update script matching the flexible weekly script
 Handles stocks with partial data (<252 days)
 Includes ADR, ATR, and 2-month returns
+
+FIXED: get_previous_trading_day() function to correctly handle weekends
 """
 
 import os
@@ -17,13 +19,25 @@ API_KEY = os.environ.get('POLYGON_API_KEY')
 BASE_URL = 'https://api.polygon.io'
 
 def get_previous_trading_day() -> str:
-    """Get the previous trading day (skip weekends)"""
+    """Get the most recent completed trading day
+    
+    Logic:
+    - Saturday: Get Friday (1 day back)
+    - Sunday: Get Friday (2 days back)
+    - Monday: Get Friday (3 days back) - previous trading day
+    - Tuesday-Friday: Get yesterday (1 day back)
+    """
     today = datetime.now()
     
-    if today.weekday() == 0:  # Monday
-        previous_day = today - timedelta(days=3)
+    # If it's Saturday or Sunday, get Friday's data
+    if today.weekday() == 5:  # Saturday
+        previous_day = today - timedelta(days=1)
     elif today.weekday() == 6:  # Sunday
         previous_day = today - timedelta(days=2)
+    # If it's Monday, get Friday's data (since we want the previous trading day)
+    elif today.weekday() == 0:  # Monday
+        previous_day = today - timedelta(days=3)
+    # Any other weekday (Tue-Fri), get yesterday
     else:
         previous_day = today - timedelta(days=1)
     
@@ -235,13 +249,15 @@ def main():
         return
     
     update_date = get_previous_trading_day()
-    print(f"Updating data for: {update_date}\n")
+    print(f"Updating data for: {update_date}")
+    print(f"Day of week: {datetime.strptime(update_date, '%Y-%m-%d').strftime('%A')}\n")
     
     try:
         with open('historical_data.json', 'r') as f:
             historical_data = json.load(f)
     except FileNotFoundError:
         print("ERROR: historical_data.json not found!")
+        print("Please run process_stocks.py first to create the initial dataset.")
         return
     
     print(f"Loaded {historical_data['n']} stocks\n")
@@ -378,6 +394,7 @@ def main():
             'partial_calculations': partial_calc,
             'stage_2_stocks': stage_2_count,
             'update_type': 'daily_update',
+            'update_date': update_date,
             'note': 'Includes stocks with <252 days',
             'data': output_data
         }
