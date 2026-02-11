@@ -6,7 +6,7 @@ name: Weekly Phantom Adjustment
 
 on:
   schedule:
-    - cron: '5 21 * * 5'  # 4:05 PM EST = 21:05 UTC (Friday)
+    - cron: '20 21 * * *'  # 4:20 PM EST = 21:20 UTC (daily)
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
