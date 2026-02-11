@@ -2,7 +2,7 @@
 # Runs every Friday at 4:05 PM EST
 # Now includes automatic RS adjustment to match IBD's 8,000 stock universe
 
-name: Weekly Phantom Adjustment
+name: Main Phantom Adjustment
 
 on:
   schedule:
