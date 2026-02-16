@@ -1,8 +1,10 @@
 """
-UPDATED: process_stocks.py (FLEXIBLE RS CALCULATION + ADR/ATR)
+UPDATED: process_stocks.py (FLEXIBLE RS CALCULATION + ADR/ATR + SECTOR/INDUSTRY/MARKET CAP)
 Now includes stocks with <252 days of data (recent IPOs)
 Calculates RS using whatever historical data is available
 Includes ADR (Average Daily Range) and ATR (Average True Range)
+Includes: American Depositary Receipts (ADRs) - CS,ADRC types
+NEW: Market Cap, Industry/Sector data for filtering and analysis
 
 Formula adapts based on data availability:
 - 252+ days: Full formula (0.4×3m + 0.2×6m + 0.2×9m + 0.2×12m)
@@ -25,14 +27,15 @@ API_KEY = os.environ.get('POLYGON_API_KEY')
 BASE_URL = 'https://api.polygon.io'
 
 def get_all_tickers() -> List[str]:
-    """Fetch all common stock tickers from Polygon, paginated"""
-    print("Fetching all common stock tickers from Polygon...")
+    """Fetch all common stock tickers from Polygon, paginated
+    Includes ADRs (American Depositary Receipts)"""
+    print("Fetching all common stock tickers + ADRs from Polygon...")
     all_tickers = []
     next_url = f"{BASE_URL}/v3/reference/tickers"
     
     params = {
         'market': 'stocks',
-        'type': ['CS', 'ADRC'],
+        'type': ['CS', 'ADRC'],  # Common Stock + ADRs
         'active': 'true',
         'limit': 1000,
         'apiKey': API_KEY
@@ -65,11 +68,11 @@ def get_all_tickers() -> List[str]:
             print(f"Error fetching tickers page {page}: {e}")
             break
     
-    print(f"✅ Total tickers fetched: {len(all_tickers)}")
+    print(f"✅ Total tickers fetched (CS + ADRC): {len(all_tickers)}")
     return all_tickers
 
-def get_ipo_date(ticker: str) -> Optional[str]:
-    """Get IPO date from Polygon ticker details"""
+def get_ticker_details(ticker: str) -> Dict[str, Any]:
+    """Get ticker details including IPO date, market cap, industry, and sector"""
     try:
         url = f"{BASE_URL}/v3/reference/tickers/{ticker}"
         params = {'apiKey': API_KEY}
@@ -78,12 +81,46 @@ def get_ipo_date(ticker: str) -> Optional[str]:
         response.raise_for_status()
         data = response.json()
         
-        if 'results' in data and 'list_date' in data['results']:
-            return data['results']['list_date']
+        if 'results' in data:
+            results = data['results']
+            return {
+                'ipo_date': results.get('list_date'),
+                'market_cap': results.get('market_cap'),
+                'industry': results.get('sic_description'),
+                'ticker_type': results.get('type'),
+                'exchange': results.get('primary_exchange'),
+                'description': results.get('description', '')[:200] if results.get('description') else None
+            }
         
-        return None
-    except:
-        return None
+        return {}
+    except Exception as e:
+        return {}
+
+def get_market_cap_category(market_cap: Optional[float]) -> str:
+    """Categorize market cap into standard categories"""
+    if market_cap is None:
+        return 'Unknown'
+    
+    if market_cap >= 10_000_000_000:
+        return 'Large Cap'
+    elif market_cap >= 2_000_000_000:
+        return 'Mid Cap'
+    elif market_cap >= 300_000_000:
+        return 'Small Cap'
+    else:
+        return 'Micro Cap'
+
+def format_market_cap(market_cap: Optional[float]) -> str:
+    """Format market cap as readable string"""
+    if market_cap is None:
+        return 'N/A'
+    
+    if market_cap >= 1_000_000_000:
+        return f"${market_cap / 1_000_000_000:.2f}B"
+    elif market_cap >= 1_000_000:
+        return f"${market_cap / 1_000_000:.2f}M"
+    else:
+        return f"${market_cap:,.0f}"
 
 def get_stock_data(ticker: str, start_date: str, end_date: str) -> List[Dict]:
     """Fetch historical daily bars for a ticker"""
@@ -129,7 +166,7 @@ def calculate_total_return(prices: List[Dict]) -> float:
 
 def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     """Calculate moving averages and Stage 2 status"""
-    if len(stock_prices) < 220:  # Need extra days to check 200dma trend
+    if len(stock_prices) < 220:
         return None
     
     closes = [bar['c'] for bar in stock_prices]
@@ -139,18 +176,13 @@ def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     ma_150 = np.mean(closes[-150:])
     ma_200 = np.mean(closes[-200:])
     
-    # Calculate 200dma from 1 month ago (~20 trading days)
     ma_200_1month_ago = np.mean(closes[-220:-20])
     
-    # TRUE Stage 2 criteria:
-    # 1. MA alignment: 50 > 150 > 200
-    # 2. Price above 150dma
-    # 3. 200dma is rising (current 200dma > 200dma from 1 month ago)
     is_stage_2 = bool(
         (ma_50 > ma_150) and 
         (ma_150 > ma_200) and 
         (current_price > ma_150) and
-        (ma_200 > ma_200_1month_ago)  # ← 200dma trending UP
+        (ma_200 > ma_200_1month_ago)
     )
     
     return {
@@ -161,19 +193,13 @@ def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     }
 
 def calculate_adr(stock_prices: List[Dict], period: int = 20) -> Optional[float]:
-    """Calculate Average Daily Range (ADR) over specified period
-    
-    ADR = Average of (High - Low) over last N days
-    Useful for identifying volatility and setting position sizes
-    """
+    """Calculate Average Daily Range (ADR) over specified period"""
     if len(stock_prices) < period:
         return None
     
-    # Get the last N days
     recent_prices = stock_prices[-period:]
-    
-    # Calculate daily ranges
     daily_ranges = []
+    
     for bar in recent_prices:
         if 'h' in bar and 'l' in bar:
             daily_range = bar['h'] - bar['l']
@@ -185,19 +211,12 @@ def calculate_adr(stock_prices: List[Dict], period: int = 20) -> Optional[float]
     return np.mean(daily_ranges)
 
 def calculate_atr(stock_prices: List[Dict], period: int = 14) -> Optional[float]:
-    """Calculate Average True Range (ATR) over specified period
-    
-    ATR accounts for gaps by using True Range:
-    TR = max(high - low, |high - prev_close|, |low - prev_close|)
-    
-    More accurate than ADR for stocks with gaps
-    """
-    if len(stock_prices) < period + 1:  # Need at least period+1 for prev_close
+    """Calculate Average True Range (ATR) over specified period"""
+    if len(stock_prices) < period + 1:
         return None
     
     true_ranges = []
     
-    # Start from index 1 since we need previous close
     for i in range(1, len(stock_prices)):
         current = stock_prices[i]
         previous = stock_prices[i - 1]
@@ -207,11 +226,10 @@ def calculate_atr(stock_prices: List[Dict], period: int = 14) -> Optional[float]
             low = current['l']
             prev_close = previous['c']
             
-            # True Range = max of three values
             tr = max(
-                high - low,                    # Current range
-                abs(high - prev_close),        # Gap up
-                abs(low - prev_close)          # Gap down
+                high - low,
+                abs(high - prev_close),
+                abs(low - prev_close)
             )
             
             true_ranges.append(tr)
@@ -219,21 +237,15 @@ def calculate_atr(stock_prices: List[Dict], period: int = 14) -> Optional[float]
     if len(true_ranges) < period:
         return None
     
-    # Return average of last N true ranges
     return np.mean(true_ranges[-period:])
 
 def calculate_stock_returns_flexible(stock_prices: List[Dict]) -> Tuple[Optional[Dict], float, int, bool]:
-    """Calculate returns with whatever data is available (FLEXIBLE)
-    
-    Returns: (stock_returns, avg_volume, days_available, is_partial)
-    """
+    """Calculate returns with whatever data is available (FLEXIBLE)"""
     days_available = len(stock_prices)
     
-    # Minimum threshold: at least 10 days
     if days_available < 10:
         return None, 0, days_available, False
     
-    # Calculate periods based on available data
     periods = {
         '2m': min(42, days_available),
         '3m': min(63, days_available),
@@ -245,34 +257,27 @@ def calculate_stock_returns_flexible(stock_prices: List[Dict]) -> Tuple[Optional
     stock_returns = {}
     
     for period_name, days in periods.items():
-        if days <= days_available and days >= 10:  # Need at least 10 days
+        if days <= days_available and days >= 10:
             ret = calculate_return(stock_prices, days)
             stock_returns[period_name] = ret if ret is not None else 0
         else:
             stock_returns[period_name] = 0
     
-    # For very new stocks, also calculate total return
     stock_returns['total'] = calculate_total_return(stock_prices)
     
-    # Calculate average volume
     recent_prices = stock_prices[-50:] if len(stock_prices) >= 50 else stock_prices
     volumes = [p['v'] for p in recent_prices if 'v' in p]
     avg_volume = np.mean(volumes) if volumes else 0
     
-    # Is this a partial calculation?
     is_partial = days_available < 252
     
     return stock_returns, avg_volume, days_available, is_partial
 
 def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) -> float:
-    """Calculate RS score using FLEXIBLE formula based on data availability
-    
-    Adapts the weighting based on how much historical data is available
-    """
+    """Calculate RS score using FLEXIBLE formula based on data availability"""
     if not stock_returns:
         return 0
     
-    # FULL FORMULA: 252+ days (12+ months)
     if days_available >= 252:
         rs_score = (
             0.4 * stock_returns.get('3m', 0) +
@@ -280,27 +285,19 @@ def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) ->
             0.2 * stock_returns.get('9m', 0) +
             0.2 * stock_returns.get('12m', 0)
         )
-    
-    # PARTIAL: 189-251 days (9-12 months) - Use 3m, 6m, 9m only
     elif days_available >= 189:
         rs_score = (
-            0.5 * stock_returns.get('3m', 0) +   # Reweight: 40% → 50%
-            0.25 * stock_returns.get('6m', 0) +  # Reweight: 20% → 25%
-            0.25 * stock_returns.get('9m', 0)    # Reweight: 20% → 25%
+            0.5 * stock_returns.get('3m', 0) +
+            0.25 * stock_returns.get('6m', 0) +
+            0.25 * stock_returns.get('9m', 0)
         )
-    
-    # PARTIAL: 126-188 days (6-9 months) - Use 3m, 6m only
     elif days_available >= 126:
         rs_score = (
-            0.6 * stock_returns.get('3m', 0) +   # Reweight: 40% → 60%
-            0.4 * stock_returns.get('6m', 0)     # Reweight: 20% → 40%
+            0.6 * stock_returns.get('3m', 0) +
+            0.4 * stock_returns.get('6m', 0)
         )
-    
-    # PARTIAL: 63-125 days (3-6 months) - Use 3m only
     elif days_available >= 63:
         rs_score = stock_returns.get('3m', 0)
-    
-    # VERY NEW: 10-62 days - Use total return since listing
     else:
         rs_score = stock_returns.get('total', 0)
     
@@ -321,8 +318,14 @@ def format_return(return_val: float) -> str:
 
 def main():
     print("="*80)
-    print("IBD-Style RS Calculator (FLEXIBLE - Includes Recent IPOs + ADR/ATR)")
+    print("IBD-Style RS Calculator (FLEXIBLE + ADRs + SECTOR/INDUSTRY/MARKET CAP)")
     print("="*80)
+    print()
+    print("NOW INCLUDES:")
+    print("  - Common Stocks (CS) + ADRs (ADRC)")
+    print("  - Market Cap categories (Large/Mid/Small/Micro)")
+    print("  - Industry/Sector information")
+    print("  - Exchange data")
     print()
     print("Formula adapts to available data:")
     print("  252+ days: 0.4×3m + 0.2×6m + 0.2×9m + 0.2×12m")
@@ -331,10 +334,6 @@ def main():
     print("  63-125 days: 3m return only")
     print("  10-62 days: Total return since listing")
     print()
-    print("Volatility Metrics:")
-    print("  ADR (20-day): Average Daily Range")
-    print("  ATR (14-day): Average True Range (accounts for gaps)")
-    print()
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
@@ -342,7 +341,6 @@ def main():
         print("ERROR: POLYGON_API_KEY not found!")
         return
     
-    # Date range
     end_date = datetime.now()
     start_date = end_date - timedelta(days=450)
     
@@ -352,13 +350,12 @@ def main():
     print(f"Date range: {start_date_str} to {end_date_str}")
     print()
     
-    # Get all tickers
     tickers = get_all_tickers()
     if not tickers:
         print("ERROR: Failed to get tickers!")
         return
     
-    print(f"\nProcessing {len(tickers)} stocks (including recent IPOs)...")
+    print(f"\nProcessing {len(tickers)} stocks (CS + ADRs, including recent IPOs)...")
     print()
     
     all_stock_data = []
@@ -369,11 +366,22 @@ def main():
     full_calculations = 0
     stage_2_count = 0
     
+    # Market cap tracking
+    large_cap_count = 0
+    mid_cap_count = 0
+    small_cap_count = 0
+    micro_cap_count = 0
+    
     for i, ticker in enumerate(tickers):
         try:
             if i % 100 == 0 and i > 0:
                 print(f"Progress: {i}/{len(tickers)} ({i/len(tickers)*100:.1f}%)")
-                print(f"  Full data: {full_calculations}, Partial data: {partial_calculations}, Failed: {failed}, Stage 2: {stage_2_count}")
+                print(f"  Processed: {processed}, Failed: {failed}, Stage 2: {stage_2_count}")
+                print(f"  Large: {large_cap_count}, Mid: {mid_cap_count}, Small: {small_cap_count}, Micro: {micro_cap_count}")
+            
+            # Get ticker details (market cap, industry, etc.)
+            ticker_details = get_ticker_details(ticker)
+            time.sleep(0.15)  # Rate limiting
             
             # Get historical data
             stock_prices = get_stock_data(ticker, start_date_str, end_date_str)
@@ -382,7 +390,6 @@ def main():
                 failed += 1
                 continue
             
-            # Calculate returns (FLEXIBLE - works with any amount of data)
             result = calculate_stock_returns_flexible(stock_prices)
             
             if result[0] is None:
@@ -392,28 +399,32 @@ def main():
             stock_returns, avg_volume, days_available, is_partial = result
             rs_score = calculate_ibd_rs_score_flexible(stock_returns, days_available)
             
-            # Track partial vs full calculations
             if is_partial:
                 partial_calculations += 1
             else:
                 full_calculations += 1
             
-            # Calculate moving averages (if enough data)
             ma_data = calculate_moving_averages(stock_prices)
-            
-            # Calculate ADR and ATR
             adr_20 = calculate_adr(stock_prices, period=20)
             atr_14 = calculate_atr(stock_prices, period=14)
             
-            # Get IPO date
-            ipo_date = get_ipo_date(ticker)
-            
-            # Get current price (most recent closing price)
             current_price = round(stock_prices[-1]['c'], 2) if stock_prices else None
             
-            # Count Stage 2 stocks
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
+            
+            # Market cap categorization
+            market_cap = ticker_details.get('market_cap')
+            market_cap_category = get_market_cap_category(market_cap)
+            
+            if market_cap_category == 'Large Cap':
+                large_cap_count += 1
+            elif market_cap_category == 'Mid Cap':
+                mid_cap_count += 1
+            elif market_cap_category == 'Small Cap':
+                small_cap_count += 1
+            elif market_cap_category == 'Micro Cap':
+                micro_cap_count += 1
             
             all_stock_data.append({
                 'symbol': ticker,
@@ -426,14 +437,19 @@ def main():
                 'stock_return_12m': stock_returns.get('12m', 0),
                 'days_of_data': days_available,
                 'is_partial': is_partial,
-                'ipo_date': ipo_date,
+                'ipo_date': ticker_details.get('ipo_date'),
                 'current_price': current_price,
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
                 'ma_200': ma_data['ma_200'] if ma_data else None,
                 'is_stage_2': ma_data['is_stage_2'] if ma_data else False,
                 'adr_20': round(adr_20, 2) if adr_20 is not None else None,
-                'atr_14': round(atr_14, 2) if atr_14 is not None else None
+                'atr_14': round(atr_14, 2) if atr_14 is not None else None,
+                'market_cap': market_cap,
+                'market_cap_category': market_cap_category,
+                'industry': ticker_details.get('industry'),
+                'exchange': ticker_details.get('exchange'),
+                'ticker_type': ticker_details.get('ticker_type')
             })
             
             # Store historical data (simplified)
@@ -455,7 +471,7 @@ def main():
                 's': ticker,
                 'h': minimal_history,
                 'u': datetime.now().isoformat(),
-                'i': ipo_date,
+                'i': ticker_details.get('ipo_date'),
                 'd': days_available
             })
             
@@ -476,6 +492,12 @@ def main():
     print(f"  Partial calculations (<252 days): {partial_calculations}")
     print(f"Failed (errors): {failed}")
     print(f"Stage 2 stocks: {stage_2_count} ({stage_2_count/processed*100:.1f}%)")
+    print()
+    print("Market Cap Distribution:")
+    print(f"  Large Cap (>$10B): {large_cap_count} ({large_cap_count/processed*100:.1f}%)")
+    print(f"  Mid Cap ($2B-$10B): {mid_cap_count} ({mid_cap_count/processed*100:.1f}%)")
+    print(f"  Small Cap ($300M-$2B): {small_cap_count} ({small_cap_count/processed*100:.1f}%)")
+    print(f"  Micro Cap (<$300M): {micro_cap_count} ({micro_cap_count/processed*100:.1f}%)")
     print()
     
     # Calculate percentile rankings
@@ -514,8 +536,14 @@ def main():
                 'ma_150': stock.get('ma_150'),
                 'ma_200': stock.get('ma_200'),
                 'is_stage_2': stock.get('is_stage_2', False),
-                'adr_20': stock.get('adr_20'),  # Average Daily Range (20-day)
-                'atr_14': stock.get('atr_14')   # Average True Range (14-day)
+                'adr_20': stock.get('adr_20'),
+                'atr_14': stock.get('atr_14'),
+                'market_cap': stock.get('market_cap'),
+                'market_cap_formatted': format_market_cap(stock.get('market_cap')),
+                'market_cap_category': stock.get('market_cap_category'),
+                'industry': stock.get('industry'),
+                'exchange': stock.get('exchange'),
+                'ticker_type': stock.get('ticker_type')
             })
         
         # Save rankings
@@ -524,12 +552,20 @@ def main():
             'formula_used': 'Flexible: Adapts to available data (see documentation)',
             'stage_2_criteria': '50dma > 150dma > 200dma',
             'volatility_metrics': 'ADR (20-day), ATR (14-day)',
+            'includes_adrs': True,
+            'includes_market_data': True,
             'total_stocks': len(output_data),
             'full_calculations': full_calculations,
             'partial_calculations': partial_calculations,
             'stage_2_stocks': stage_2_count,
+            'market_cap_distribution': {
+                'large_cap': large_cap_count,
+                'mid_cap': mid_cap_count,
+                'small_cap': small_cap_count,
+                'micro_cap': micro_cap_count
+            },
             'update_type': 'full_rebuild',
-            'note': 'Includes stocks with <252 days. Check is_partial field.',
+            'note': 'Includes stocks with <252 days, ADRs, and market cap/industry data.',
             'data': output_data
         }
         
@@ -552,52 +588,34 @@ def main():
         print()
         
         # Show top 20
-        print("="*110)
-        print("🏆 TOP 20 RS RANKINGS")
-        print("="*110)
-        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'Part':<5} {'S2':<4} {'ADR':<7} {'ATR':<7} {'3M Ret':<8} {'12M Ret':<9}")
-        print("-" * 110)
+        print("="*130)
+        print("🏆 TOP 20 RS RANKINGS (with Market Cap & Industry)")
+        print("="*130)
+        print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Cap':<12} {'Industry':<30} {'Price':<8} {'3M Ret':<8}")
+        print("-" * 130)
         
         for i, stock in enumerate(output_data[:20]):
-            partial_flag = "Y" if stock['is_partial'] else "N"
-            stage2_flag = "✓" if stock['is_stage_2'] else " "
-            adr_str = f"${stock['adr_20']}" if stock['adr_20'] else "N/A"
-            atr_str = f"${stock['atr_14']}" if stock['atr_14'] else "N/A"
-            print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['days_of_data']:<6} {partial_flag:^5} {stage2_flag:^4} {adr_str:<7} {atr_str:<7} {stock['stock_return_3m']:<8} {stock['stock_return_12m']:<9}")
+            industry = (stock.get('industry') or 'N/A')[:28]
+            price = f"${stock['current_price']}" if stock['current_price'] else "N/A"
+            print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['market_cap_category']:<12} {industry:<30} {price:<8} {stock['stock_return_3m']:<8}")
         
         print()
         
-        # Show high volatility stocks (high ADR/ATR)
-        stocks_with_adr = [s for s in output_data if s['adr_20'] is not None]
-        if stocks_with_adr:
-            high_volatility = sorted(stocks_with_adr, key=lambda x: x['adr_20'], reverse=True)[:20]
-            print("="*100)
-            print("🔥 TOP 20 HIGHEST VOLATILITY (ADR)")
-            print("="*100)
-            print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'ADR':<8} {'ATR':<8} {'Price':<8} {'Stage2':<7}")
-            print("-" * 100)
-            
-            for i, stock in enumerate(high_volatility):
-                stage2_flag = "✓" if stock['is_stage_2'] else " "
-                price = f"${stock['current_price']}" if stock['current_price'] else "N/A"
-                print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} ${stock['adr_20']:<7} ${stock['atr_14']:<7} {price:<8} {stage2_flag:^7}")
-            
-            print()
-        
-        # Show recent IPOs
-        recent_ipos = [s for s in output_data if s['is_partial']]
-        if recent_ipos:
-            print("="*90)
-            print(f"🆕 RECENT IPOs (<252 days of data): {len(recent_ipos)} stocks")
-            print("="*90)
-            print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Days':<6} {'IPO Date':<12} {'3M Ret':<8}")
-            print("-" * 90)
-            
-            for i, stock in enumerate(recent_ipos[:20]):
-                ipo = stock.get('ipo_date', 'N/A')[:10]
-                print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['days_of_data']:<6} {ipo:<12} {stock['stock_return_3m']:<8}")
-            
-            print()
+        # Show top stocks by market cap category
+        for cap_category in ['Large Cap', 'Mid Cap', 'Small Cap']:
+            cap_stocks = [s for s in output_data if s['market_cap_category'] == cap_category and s['rs_rank'] >= 90]
+            if cap_stocks:
+                print("="*100)
+                print(f"🎯 TOP {cap_category.upper()} STOCKS (RS >= 90)")
+                print("="*100)
+                print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Market Cap':<15} {'Industry':<30} {'3M Ret':<8}")
+                print("-" * 100)
+                
+                for i, stock in enumerate(cap_stocks[:10]):
+                    industry = (stock.get('industry') or 'N/A')[:28]
+                    print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['market_cap_formatted']:<15} {industry:<30} {stock['stock_return_3m']:<8}")
+                
+                print()
         
         # Statistics
         print("="*80)
@@ -607,8 +625,12 @@ def main():
         print(f"Full calculations: {full_calculations} ({full_calculations/len(output_data)*100:.1f}%)")
         print(f"Partial calculations: {partial_calculations} ({partial_calculations/len(output_data)*100:.1f}%)")
         print(f"Stocks in Stage 2: {stage_2_count} ({stage_2_count/len(output_data)*100:.1f}%)")
-        stocks_with_volatility = len([s for s in output_data if s['adr_20'] is not None])
-        print(f"Stocks with ADR/ATR data: {stocks_with_volatility} ({stocks_with_volatility/len(output_data)*100:.1f}%)")
+        print()
+        print("Market Cap Distribution:")
+        print(f"  Large Cap: {large_cap_count} ({large_cap_count/len(output_data)*100:.1f}%)")
+        print(f"  Mid Cap: {mid_cap_count} ({mid_cap_count/len(output_data)*100:.1f}%)")
+        print(f"  Small Cap: {small_cap_count} ({small_cap_count/len(output_data)*100:.1f}%)")
+        print(f"  Micro Cap: {micro_cap_count} ({micro_cap_count/len(output_data)*100:.1f}%)")
         print()
         
     else:
