@@ -32,7 +32,7 @@ def get_all_tickers() -> List[str]:
     
     params = {
         'market': 'stocks',
-        'type': 'CS',
+        'type': 'CS, ADRC',
         'active': 'true',
         'limit': 1000,
         'apiKey': API_KEY
