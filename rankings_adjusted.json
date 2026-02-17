@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-02-16T23:27:12.015252",
+  "last_updated": "2026-02-17T01:21:18.315866",
   "formula_used": "Flexible: Adapts to available data (see documentation)",
   "stage_2_criteria": "50dma > 150dma > 200dma",
   "total_stocks": 5219,
@@ -10,7 +10,7 @@
   "adjustment_info": {
     "phantom_stocks_added": 2781,
     "target_universe_size": 8000,
-    "average_rank_change": 11.53,
+    "average_rank_change": 11.58,
     "adjustment_method": "Added ~2,800 phantom stocks in bottom 35% to match IBD universe"
   },
   "note": "RS ranks adjusted with phantom stocks to match IBD's ~8,000 stock universe",
@@ -102767,7 +102767,7 @@
     },
     {
       "symbol": "MZTI",
-      "rs_rank": 57,
+      "rs_rank": 56,
       "rs_score": -0.0919,
       "avg_volume": "174k",
       "raw_volume": 174395,
@@ -102793,7 +102793,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 35,
-      "rank_adjustment": 22
+      "rank_adjustment": 21
     },
     {
       "symbol": "OMC",
@@ -103847,7 +103847,7 @@
     },
     {
       "symbol": "LBRDK",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.0987,
       "avg_volume": "1.4M",
       "raw_volume": 1351194,
@@ -103873,11 +103873,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "RLI",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.0987,
       "avg_volume": "868k",
       "raw_volume": 867932,
@@ -103903,11 +103903,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "IDT",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.0988,
       "avg_volume": "185k",
       "raw_volume": 184905,
@@ -103933,11 +103933,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "INVE",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.0989,
       "avg_volume": "32k",
       "raw_volume": 31584,
@@ -103963,11 +103963,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "APO",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.0997,
       "avg_volume": "3.6M",
       "raw_volume": 3552757,
@@ -103993,11 +103993,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "CEVA",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.0999,
       "avg_volume": "446k",
       "raw_volume": 446383,
@@ -104023,11 +104023,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "FNKO",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.1,
       "avg_volume": "835k",
       "raw_volume": 835492,
@@ -104053,11 +104053,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "NHTC",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.1,
       "avg_volume": "38k",
       "raw_volume": 38126,
@@ -104083,11 +104083,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "KTB",
-      "rs_rank": 55,
+      "rs_rank": 56,
       "rs_score": -0.1001,
       "avg_volume": "761k",
       "raw_volume": 761347,
@@ -104113,7 +104113,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 34,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "KBDC",
@@ -104837,7 +104837,7 @@
     },
     {
       "symbol": "ZTS",
-      "rs_rank": 54,
+      "rs_rank": 55,
       "rs_score": -0.106,
       "avg_volume": "5.3M",
       "raw_volume": 5292054,
@@ -104863,11 +104863,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "CRVO",
-      "rs_rank": 54,
+      "rs_rank": 55,
       "rs_score": -0.106,
       "avg_volume": "68k",
       "raw_volume": 68183,
@@ -104893,11 +104893,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "WCN",
-      "rs_rank": 54,
+      "rs_rank": 55,
       "rs_score": -0.106,
       "avg_volume": "1.5M",
       "raw_volume": 1483911,
@@ -104923,11 +104923,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "PMVP",
-      "rs_rank": 54,
+      "rs_rank": 55,
       "rs_score": -0.1063,
       "avg_volume": "269k",
       "raw_volume": 268969,
@@ -104953,11 +104953,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "INFU",
-      "rs_rank": 54,
+      "rs_rank": 55,
       "rs_score": -0.1067,
       "avg_volume": "132k",
       "raw_volume": 131597,
@@ -104983,11 +104983,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "WTW",
-      "rs_rank": 54,
+      "rs_rank": 55,
       "rs_score": -0.1068,
       "avg_volume": "795k",
       "raw_volume": 794730,
@@ -105013,7 +105013,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 21
+      "rank_adjustment": 22
     },
     {
       "symbol": "PGNY",
@@ -105737,7 +105737,7 @@
     },
     {
       "symbol": "NKLR",
-      "rs_rank": 53,
+      "rs_rank": 54,
       "rs_score": -0.1134,
       "avg_volume": "767k",
       "raw_volume": 767050,
@@ -105763,11 +105763,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "CRCT",
-      "rs_rank": 53,
+      "rs_rank": 54,
       "rs_score": -0.1135,
       "avg_volume": "479k",
       "raw_volume": 478802,
@@ -105793,11 +105793,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "AON",
-      "rs_rank": 53,
+      "rs_rank": 54,
       "rs_score": -0.1137,
       "avg_volume": "1.3M",
       "raw_volume": 1283702,
@@ -105823,11 +105823,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "SFWL",
-      "rs_rank": 53,
+      "rs_rank": 54,
       "rs_score": -0.1143,
       "avg_volume": "46k",
       "raw_volume": 45586,
@@ -105853,7 +105853,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "KELYA",
@@ -106757,7 +106757,7 @@
     },
     {
       "symbol": "COLD",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.1199,
       "avg_volume": "5.5M",
       "raw_volume": 5481769,
@@ -106783,11 +106783,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 32,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "TU",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.1201,
       "avg_volume": "6.2M",
       "raw_volume": 6178009,
@@ -106813,11 +106813,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 32,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "FUSE",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.1202,
       "avg_volume": "4.4M",
       "raw_volume": 4430583,
@@ -106843,11 +106843,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 32,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "CGBD",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.1203,
       "avg_volume": "510k",
       "raw_volume": 510196,
@@ -106873,11 +106873,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 32,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "JAKK",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.1204,
       "avg_volume": "100k",
       "raw_volume": 99887,
@@ -106903,11 +106903,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 32,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "BBWI",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.1205,
       "avg_volume": "5.5M",
       "raw_volume": 5467802,
@@ -106933,11 +106933,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 32,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "HAE",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.1205,
       "avg_volume": "872k",
       "raw_volume": 872380,
@@ -106963,7 +106963,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 32,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "MWG",
@@ -107717,7 +107717,7 @@
     },
     {
       "symbol": "KEQU",
-      "rs_rank": 51,
+      "rs_rank": 52,
       "rs_score": -0.1272,
       "avg_volume": "6k",
       "raw_volume": 6354,
@@ -107743,11 +107743,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "RCMT",
-      "rs_rank": 51,
+      "rs_rank": 52,
       "rs_score": -0.1277,
       "avg_volume": "40k",
       "raw_volume": 40448,
@@ -107773,11 +107773,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "TGEN",
-      "rs_rank": 51,
+      "rs_rank": 52,
       "rs_score": -0.1281,
       "avg_volume": "603k",
       "raw_volume": 602791,
@@ -107803,11 +107803,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "HOOD",
-      "rs_rank": 51,
+      "rs_rank": 52,
       "rs_score": -0.1283,
       "avg_volume": "27.9M",
       "raw_volume": 27925404,
@@ -107833,11 +107833,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "BOLT",
-      "rs_rank": 51,
+      "rs_rank": 52,
       "rs_score": -0.129,
       "avg_volume": "41k",
       "raw_volume": 41251,
@@ -107863,7 +107863,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 20
+      "rank_adjustment": 21
     },
     {
       "symbol": "STXS",
@@ -108587,7 +108587,7 @@
     },
     {
       "symbol": "WALD",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1348,
       "avg_volume": "79k",
       "raw_volume": 78911,
@@ -108613,11 +108613,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "XZO",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1348,
       "avg_volume": "165k",
       "raw_volume": 164909,
@@ -108643,11 +108643,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "TSLX",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1354,
       "avg_volume": "564k",
       "raw_volume": 563832,
@@ -108673,11 +108673,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "CTSH",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1358,
       "avg_volume": "5.6M",
       "raw_volume": 5571254,
@@ -108703,11 +108703,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "DDOG",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1359,
       "avg_volume": "5.4M",
       "raw_volume": 5351420,
@@ -108733,11 +108733,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "SAH",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.136,
       "avg_volume": "179k",
       "raw_volume": 179357,
@@ -108763,11 +108763,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "CAL",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1362,
       "avg_volume": "800k",
       "raw_volume": 799846,
@@ -108793,11 +108793,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "ELUT",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1366,
       "avg_volume": "415k",
       "raw_volume": 414750,
@@ -108823,11 +108823,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "GBDC",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.1366,
       "avg_volume": "2.2M",
       "raw_volume": 2160070,
@@ -108853,7 +108853,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "SCM",
@@ -109637,7 +109637,7 @@
     },
     {
       "symbol": "LOAN",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1407,
       "avg_volume": "30k",
       "raw_volume": 30448,
@@ -109663,11 +109663,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "MIRA",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1407,
       "avg_volume": "190k",
       "raw_volume": 189613,
@@ -109693,11 +109693,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "RJET",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1408,
       "avg_volume": "58k",
       "raw_volume": 57586,
@@ -109723,11 +109723,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "VCEL",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1408,
       "avg_volume": "537k",
       "raw_volume": 537078,
@@ -109753,11 +109753,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "CHDN",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.141,
       "avg_volume": "730k",
       "raw_volume": 730111,
@@ -109783,11 +109783,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "RGNX",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.141,
       "avg_volume": "921k",
       "raw_volume": 921119,
@@ -109813,11 +109813,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "PEGA",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1415,
       "avg_volume": "1.8M",
       "raw_volume": 1817134,
@@ -109843,11 +109843,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "TTRX",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1418,
       "avg_volume": "56k",
       "raw_volume": 55728,
@@ -109873,11 +109873,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "REFI",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1421,
       "avg_volume": "141k",
       "raw_volume": 141224,
@@ -109903,11 +109903,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "EDTK",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1421,
       "avg_volume": "13k",
       "raw_volume": 12966,
@@ -109933,11 +109933,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "KIDS",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1422,
       "avg_volume": "154k",
       "raw_volume": 153756,
@@ -109963,11 +109963,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "BBY",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1425,
       "avg_volume": "4.4M",
       "raw_volume": 4433363,
@@ -109993,11 +109993,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "VRSN",
-      "rs_rank": 49,
+      "rs_rank": 50,
       "rs_score": -0.1428,
       "avg_volume": "770k",
       "raw_volume": 769680,
@@ -110023,7 +110023,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "NEU",
@@ -110447,7 +110447,7 @@
     },
     {
       "symbol": "ECX",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1481,
       "avg_volume": "3.8M",
       "raw_volume": 3778224,
@@ -110473,11 +110473,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "PSBD",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1482,
       "avg_volume": "103k",
       "raw_volume": 103260,
@@ -110503,11 +110503,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "BMM",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1482,
       "avg_volume": "146k",
       "raw_volume": 145671,
@@ -110533,11 +110533,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "SLNH",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1484,
       "avg_volume": "5.9M",
       "raw_volume": 5859795,
@@ -110563,11 +110563,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "AKA",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1484,
       "avg_volume": "6k",
       "raw_volume": 5784,
@@ -110593,11 +110593,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "MNDO",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1486,
       "avg_volume": "32k",
       "raw_volume": 32295,
@@ -110623,11 +110623,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "GSBD",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1489,
       "avg_volume": "1.5M",
       "raw_volume": 1509085,
@@ -110653,11 +110653,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "ELWT",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1491,
       "avg_volume": "65k",
       "raw_volume": 65091,
@@ -110683,11 +110683,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "SSNC",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1491,
       "avg_volume": "1.7M",
       "raw_volume": 1695953,
@@ -110713,11 +110713,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "PATH",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1493,
       "avg_volume": "29.3M",
       "raw_volume": 29334677,
@@ -110743,11 +110743,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 30,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "VKTX",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1494,
       "avg_volume": "3.1M",
       "raw_volume": 3125182,
@@ -110773,11 +110773,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "CCB",
-      "rs_rank": 48,
+      "rs_rank": 49,
       "rs_score": -0.1495,
       "avg_volume": "142k",
       "raw_volume": 142377,
@@ -110803,7 +110803,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 19
+      "rank_adjustment": 20
     },
     {
       "symbol": "HRTX",
@@ -111407,7 +111407,7 @@
     },
     {
       "symbol": "FSCO",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1548,
       "avg_volume": "1.3M",
       "raw_volume": 1295660,
@@ -111433,11 +111433,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "DPZ",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.155,
       "avg_volume": "694k",
       "raw_volume": 693867,
@@ -111463,11 +111463,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "TTWO",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.156,
       "avg_volume": "2.1M",
       "raw_volume": 2062760,
@@ -111493,11 +111493,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "BAX",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1562,
       "avg_volume": "9.2M",
       "raw_volume": 9152922,
@@ -111523,11 +111523,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "KRC",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1563,
       "avg_volume": "1.8M",
       "raw_volume": 1820757,
@@ -111553,11 +111553,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "BNTC",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1569,
       "avg_volume": "186k",
       "raw_volume": 185762,
@@ -111583,11 +111583,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "DCTH",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1574,
       "avg_volume": "506k",
       "raw_volume": 506309,
@@ -111613,11 +111613,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "SAVA",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1575,
       "avg_volume": "858k",
       "raw_volume": 857887,
@@ -111643,11 +111643,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "ELDN",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1575,
       "avg_volume": "773k",
       "raw_volume": 773325,
@@ -111673,11 +111673,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "XBIT",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1576,
       "avg_volume": "51k",
       "raw_volume": 50561,
@@ -111703,11 +111703,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "HYFT",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1576,
       "avg_volume": "496k",
       "raw_volume": 495891,
@@ -111733,11 +111733,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "PAL",
-      "rs_rank": 47,
+      "rs_rank": 48,
       "rs_score": -0.1578,
       "avg_volume": "238k",
       "raw_volume": 237781,
@@ -111763,7 +111763,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "OPTT",
@@ -112277,7 +112277,7 @@
     },
     {
       "symbol": "BGI",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1616,
       "avg_volume": "41k",
       "raw_volume": 40641,
@@ -112303,11 +112303,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 29,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "HLNE",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1616,
       "avg_volume": "528k",
       "raw_volume": 528029,
@@ -112333,11 +112333,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "TIGR",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1621,
       "avg_volume": "3.5M",
       "raw_volume": 3508880,
@@ -112363,11 +112363,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "MHH",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1622,
       "avg_volume": "24k",
       "raw_volume": 23509,
@@ -112393,11 +112393,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "WD",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1622,
       "avg_volume": "257k",
       "raw_volume": 256664,
@@ -112423,11 +112423,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "BXSL",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1624,
       "avg_volume": "2.1M",
       "raw_volume": 2083280,
@@ -112453,11 +112453,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "ALRM",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1624,
       "avg_volume": "388k",
       "raw_volume": 388300,
@@ -112483,11 +112483,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "APP",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1624,
       "avg_volume": "5.6M",
       "raw_volume": 5560991,
@@ -112513,11 +112513,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "SKYH",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1628,
       "avg_volume": "122k",
       "raw_volume": 121843,
@@ -112543,11 +112543,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "NTRP",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1629,
       "avg_volume": "59k",
       "raw_volume": 59272,
@@ -112573,11 +112573,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "TRU",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.163,
       "avg_volume": "2.5M",
       "raw_volume": 2478231,
@@ -112603,11 +112603,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "FKWL",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1633,
       "avg_volume": "12k",
       "raw_volume": 12124,
@@ -112633,11 +112633,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "KMX",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1636,
       "avg_volume": "3.8M",
       "raw_volume": 3815645,
@@ -112663,11 +112663,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "SPRY",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1636,
       "avg_volume": "1.6M",
       "raw_volume": 1599892,
@@ -112693,11 +112693,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "QUBT",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1637,
       "avg_volume": "17.1M",
       "raw_volume": 17072184,
@@ -112723,11 +112723,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "VYX",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1643,
       "avg_volume": "1.9M",
       "raw_volume": 1899229,
@@ -112753,11 +112753,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "CNK",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.1643,
       "avg_volume": "3.4M",
       "raw_volume": 3393728,
@@ -112783,7 +112783,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 18
+      "rank_adjustment": 19
     },
     {
       "symbol": "KNDI",
@@ -113567,7 +113567,7 @@
     },
     {
       "symbol": "IIPR",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.1685,
       "avg_volume": "389k",
       "raw_volume": 389320,
@@ -113593,11 +113593,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "AIV",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.1688,
       "avg_volume": "1.9M",
       "raw_volume": 1926333,
@@ -113623,11 +113623,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "BUR",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.169,
       "avg_volume": "1.7M",
       "raw_volume": 1701701,
@@ -113653,11 +113653,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "CION",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.1691,
       "avg_volume": "423k",
       "raw_volume": 422685,
@@ -113683,11 +113683,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "OXM",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.1691,
       "avg_volume": "487k",
       "raw_volume": 487289,
@@ -113713,11 +113713,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "TDUP",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.1696,
       "avg_volume": "1.9M",
       "raw_volume": 1872316,
@@ -113743,11 +113743,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "RWAY",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.1697,
       "avg_volume": "358k",
       "raw_volume": 357880,
@@ -113773,11 +113773,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "HPAI",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.1698,
       "avg_volume": "8k",
       "raw_volume": 7972,
@@ -113803,7 +113803,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 28,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "DOX",
@@ -114317,7 +114317,7 @@
     },
     {
       "symbol": "FLWS",
-      "rs_rank": 44,
+      "rs_rank": 45,
       "rs_score": -0.177,
       "avg_volume": "990k",
       "raw_volume": 989972,
@@ -114343,11 +114343,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "ZSTK",
-      "rs_rank": 44,
+      "rs_rank": 45,
       "rs_score": -0.1771,
       "avg_volume": "196k",
       "raw_volume": 195800,
@@ -114373,11 +114373,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "TREE",
-      "rs_rank": 44,
+      "rs_rank": 45,
       "rs_score": -0.1777,
       "avg_volume": "290k",
       "raw_volume": 290394,
@@ -114403,11 +114403,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "LUCK",
-      "rs_rank": 44,
+      "rs_rank": 45,
       "rs_score": -0.1778,
       "avg_volume": "274k",
       "raw_volume": 274390,
@@ -114433,11 +114433,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "EFX",
-      "rs_rank": 44,
+      "rs_rank": 45,
       "rs_score": -0.1779,
       "avg_volume": "1.9M",
       "raw_volume": 1875573,
@@ -114463,7 +114463,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 17
+      "rank_adjustment": 18
     },
     {
       "symbol": "RDGT",
@@ -115067,7 +115067,7 @@
     },
     {
       "symbol": "PSN",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1848,
       "avg_volume": "1.7M",
       "raw_volume": 1650520,
@@ -115093,11 +115093,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "ULH",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1851,
       "avg_volume": "56k",
       "raw_volume": 56086,
@@ -115123,11 +115123,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "SIEB",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1854,
       "avg_volume": "24k",
       "raw_volume": 24187,
@@ -115153,11 +115153,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "AUNA",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1855,
       "avg_volume": "305k",
       "raw_volume": 304633,
@@ -115183,11 +115183,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "VTSI",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1858,
       "avg_volume": "49k",
       "raw_volume": 49231,
@@ -115213,11 +115213,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "IOTR",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1859,
       "avg_volume": "1.8M",
       "raw_volume": 1799672,
@@ -115243,11 +115243,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "CCLD",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1863,
       "avg_volume": "310k",
       "raw_volume": 309708,
@@ -115273,11 +115273,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "CNMD",
-      "rs_rank": 43,
+      "rs_rank": 44,
       "rs_score": -0.1863,
       "avg_volume": "629k",
       "raw_volume": 629490,
@@ -115303,7 +115303,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 27,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "NWS",
@@ -115697,7 +115697,7 @@
     },
     {
       "symbol": "WOOF",
-      "rs_rank": 42,
+      "rs_rank": 43,
       "rs_score": -0.1914,
       "avg_volume": "1.9M",
       "raw_volume": 1880635,
@@ -115723,11 +115723,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "ORCL",
-      "rs_rank": 42,
+      "rs_rank": 43,
       "rs_score": -0.1914,
       "avg_volume": "29.8M",
       "raw_volume": 29818432,
@@ -115753,11 +115753,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "G",
-      "rs_rank": 42,
+      "rs_rank": 43,
       "rs_score": -0.1923,
       "avg_volume": "2.0M",
       "raw_volume": 1952460,
@@ -115783,11 +115783,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "NCEL",
-      "rs_rank": 42,
+      "rs_rank": 43,
       "rs_score": -0.1924,
       "avg_volume": "134k",
       "raw_volume": 133719,
@@ -115813,11 +115813,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "ARES",
-      "rs_rank": 42,
+      "rs_rank": 43,
       "rs_score": -0.1928,
       "avg_volume": "4.0M",
       "raw_volume": 4040262,
@@ -115843,7 +115843,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 16
+      "rank_adjustment": 17
     },
     {
       "symbol": "XOMA",
@@ -116657,7 +116657,7 @@
     },
     {
       "symbol": "ALLR",
-      "rs_rank": 41,
+      "rs_rank": 42,
       "rs_score": -0.1997,
       "avg_volume": "167k",
       "raw_volume": 167121,
@@ -116683,11 +116683,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 15
+      "rank_adjustment": 16
     },
     {
       "symbol": "PMEC",
-      "rs_rank": 41,
+      "rs_rank": 42,
       "rs_score": -0.1997,
       "avg_volume": "17k",
       "raw_volume": 17293,
@@ -116713,11 +116713,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 15
+      "rank_adjustment": 16
     },
     {
       "symbol": "HGBL",
-      "rs_rank": 41,
+      "rs_rank": 42,
       "rs_score": -0.1999,
       "avg_volume": "362k",
       "raw_volume": 361724,
@@ -116743,11 +116743,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 15
+      "rank_adjustment": 16
     },
     {
       "symbol": "NVCR",
-      "rs_rank": 41,
+      "rs_rank": 42,
       "rs_score": -0.2001,
       "avg_volume": "1.8M",
       "raw_volume": 1842294,
@@ -116773,7 +116773,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 26,
-      "rank_adjustment": 15
+      "rank_adjustment": 16
     },
     {
       "symbol": "EVTC",
@@ -117707,7 +117707,7 @@
     },
     {
       "symbol": "RUM",
-      "rs_rank": 40,
+      "rs_rank": 41,
       "rs_score": -0.2077,
       "avg_volume": "2.1M",
       "raw_volume": 2146190,
@@ -117733,11 +117733,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 25,
-      "rank_adjustment": 15
+      "rank_adjustment": 16
     },
     {
       "symbol": "ELBM",
-      "rs_rank": 40,
+      "rs_rank": 41,
       "rs_score": -0.2077,
       "avg_volume": "1.2M",
       "raw_volume": 1170565,
@@ -117763,7 +117763,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 25,
-      "rank_adjustment": 15
+      "rank_adjustment": 16
     },
     {
       "symbol": "RDDT",
@@ -119897,7 +119897,7 @@
     },
     {
       "symbol": "SVCO",
-      "rs_rank": 39,
+      "rs_rank": 38,
       "rs_score": -0.2304,
       "avg_volume": "188k",
       "raw_volume": 188349,
@@ -119923,11 +119923,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 24,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "NNE",
-      "rs_rank": 39,
+      "rs_rank": 38,
       "rs_score": -0.2304,
       "avg_volume": "2.0M",
       "raw_volume": 2001257,
@@ -119953,11 +119953,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 24,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "KPRX",
-      "rs_rank": 39,
+      "rs_rank": 38,
       "rs_score": -0.2305,
       "avg_volume": "52k",
       "raw_volume": 51882,
@@ -119983,11 +119983,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 24,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "SPPL",
-      "rs_rank": 39,
+      "rs_rank": 38,
       "rs_score": -0.2306,
       "avg_volume": "5k",
       "raw_volume": 5358,
@@ -120013,7 +120013,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 24,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "HHS",
@@ -121337,7 +121337,7 @@
     },
     {
       "symbol": "GBR",
-      "rs_rank": 38,
+      "rs_rank": 37,
       "rs_score": -0.2413,
       "avg_volume": "35k",
       "raw_volume": 35392,
@@ -121363,7 +121363,7 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 23,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "RENX",
@@ -122537,7 +122537,7 @@
     },
     {
       "symbol": "TNYA",
-      "rs_rank": 36,
+      "rs_rank": 37,
       "rs_score": -0.2523,
       "avg_volume": "5.4M",
       "raw_volume": 5381347,
@@ -122563,11 +122563,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 22,
-      "rank_adjustment": 14
+      "rank_adjustment": 15
     },
     {
       "symbol": "CTSO",
-      "rs_rank": 36,
+      "rs_rank": 37,
       "rs_score": -0.2523,
       "avg_volume": "103k",
       "raw_volume": 102902,
@@ -122593,11 +122593,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 22,
-      "rank_adjustment": 14
+      "rank_adjustment": 15
     },
     {
       "symbol": "ACM",
-      "rs_rank": 36,
+      "rs_rank": 37,
       "rs_score": -0.2523,
       "avg_volume": "1.6M",
       "raw_volume": 1564778,
@@ -122623,11 +122623,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 22,
-      "rank_adjustment": 14
+      "rank_adjustment": 15
     },
     {
       "symbol": "HUM",
-      "rs_rank": 36,
+      "rs_rank": 37,
       "rs_score": -0.2529,
       "avg_volume": "2.0M",
       "raw_volume": 1996166,
@@ -122653,7 +122653,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 22,
-      "rank_adjustment": 14
+      "rank_adjustment": 15
     },
     {
       "symbol": "WLY",
@@ -123617,7 +123617,7 @@
     },
     {
       "symbol": "DEI",
-      "rs_rank": 36,
+      "rs_rank": 35,
       "rs_score": -0.2656,
       "avg_volume": "2.5M",
       "raw_volume": 2495628,
@@ -123643,11 +123643,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 21,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "AERT",
-      "rs_rank": 36,
+      "rs_rank": 35,
       "rs_score": -0.2657,
       "avg_volume": "98k",
       "raw_volume": 97602,
@@ -123673,11 +123673,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 21,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "ASPS",
-      "rs_rank": 36,
+      "rs_rank": 35,
       "rs_score": -0.2658,
       "avg_volume": "26k",
       "raw_volume": 26383,
@@ -123703,11 +123703,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 21,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "OBTC",
-      "rs_rank": 36,
+      "rs_rank": 35,
       "rs_score": -0.266,
       "avg_volume": "55k",
       "raw_volume": 54894,
@@ -123733,7 +123733,7 @@
       "exchange": "OTC Link",
       "ticker_type": "UNIT",
       "rs_rank_original": 21,
-      "rank_adjustment": 15
+      "rank_adjustment": 14
     },
     {
       "symbol": "GEO",
@@ -126107,7 +126107,7 @@
     },
     {
       "symbol": "PMCB",
-      "rs_rank": 33,
+      "rs_rank": 34,
       "rs_score": -0.2903,
       "avg_volume": "3.2M",
       "raw_volume": 3165382,
@@ -126133,11 +126133,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 20,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "RNTX",
-      "rs_rank": 33,
+      "rs_rank": 34,
       "rs_score": -0.2903,
       "avg_volume": "181k",
       "raw_volume": 180813,
@@ -126163,11 +126163,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 20,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "STLA",
-      "rs_rank": 33,
+      "rs_rank": 34,
       "rs_score": -0.2904,
       "avg_volume": "14.7M",
       "raw_volume": 14730162,
@@ -126193,11 +126193,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 20,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "COOK",
-      "rs_rank": 33,
+      "rs_rank": 34,
       "rs_score": -0.2905,
       "avg_volume": "482k",
       "raw_volume": 482347,
@@ -126223,11 +126223,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 20,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "BMRA",
-      "rs_rank": 33,
+      "rs_rank": 34,
       "rs_score": -0.2908,
       "avg_volume": "70k",
       "raw_volume": 70470,
@@ -126253,7 +126253,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 20,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "VRSK",
@@ -127367,7 +127367,7 @@
     },
     {
       "symbol": "BBAI",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -0.3021,
       "avg_volume": "86.2M",
       "raw_volume": 86153348,
@@ -127393,11 +127393,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 19,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "RXST",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -0.3023,
       "avg_volume": "980k",
       "raw_volume": 980021,
@@ -127423,11 +127423,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 19,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "SLGB",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -0.3025,
       "avg_volume": "3.7M",
       "raw_volume": 3722039,
@@ -127453,11 +127453,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 19,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "NBY",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -0.3026,
       "avg_volume": "2.3M",
       "raw_volume": 2279086,
@@ -127483,11 +127483,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 19,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "QSI",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -0.3034,
       "avg_volume": "5.0M",
       "raw_volume": 4977168,
@@ -127513,11 +127513,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 19,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "SRPT",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -0.3042,
       "avg_volume": "2.9M",
       "raw_volume": 2909777,
@@ -127543,7 +127543,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 19,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "RAND",
@@ -128567,7 +128567,7 @@
     },
     {
       "symbol": "RICK",
-      "rs_rank": 31,
+      "rs_rank": 32,
       "rs_score": -0.3166,
       "avg_volume": "96k",
       "raw_volume": 96126,
@@ -128593,11 +128593,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 18,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "TTEC",
-      "rs_rank": 31,
+      "rs_rank": 32,
       "rs_score": -0.3169,
       "avg_volume": "288k",
       "raw_volume": 287949,
@@ -128623,11 +128623,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 18,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "CXM",
-      "rs_rank": 31,
+      "rs_rank": 32,
       "rs_score": -0.317,
       "avg_volume": "2.2M",
       "raw_volume": 2211389,
@@ -128653,11 +128653,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 18,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "DSGX",
-      "rs_rank": 31,
+      "rs_rank": 32,
       "rs_score": -0.3175,
       "avg_volume": "645k",
       "raw_volume": 645309,
@@ -128683,11 +128683,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 18,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "BHST",
-      "rs_rank": 31,
+      "rs_rank": 32,
       "rs_score": -0.3176,
       "avg_volume": "46k",
       "raw_volume": 46406,
@@ -128713,11 +128713,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 18,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "LTRN",
-      "rs_rank": 31,
+      "rs_rank": 32,
       "rs_score": -0.318,
       "avg_volume": "59k",
       "raw_volume": 58872,
@@ -128743,7 +128743,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 18,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "TOST",
@@ -129707,7 +129707,7 @@
     },
     {
       "symbol": "PHGE",
-      "rs_rank": 30,
+      "rs_rank": 31,
       "rs_score": -0.3286,
       "avg_volume": "1.2M",
       "raw_volume": 1247946,
@@ -129733,11 +129733,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 17,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "ALKT",
-      "rs_rank": 30,
+      "rs_rank": 31,
       "rs_score": -0.3288,
       "avg_volume": "1.5M",
       "raw_volume": 1533318,
@@ -129763,11 +129763,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 17,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "UPC",
-      "rs_rank": 30,
+      "rs_rank": 31,
       "rs_score": -0.329,
       "avg_volume": "110k",
       "raw_volume": 109924,
@@ -129793,11 +129793,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 17,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "GLOO",
-      "rs_rank": 30,
+      "rs_rank": 31,
       "rs_score": -0.3302,
       "avg_volume": "81k",
       "raw_volume": 80618,
@@ -129823,7 +129823,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 17,
-      "rank_adjustment": 13
+      "rank_adjustment": 14
     },
     {
       "symbol": "ZS",
@@ -130877,7 +130877,7 @@
     },
     {
       "symbol": "ARCT",
-      "rs_rank": 29,
+      "rs_rank": 30,
       "rs_score": -0.343,
       "avg_volume": "571k",
       "raw_volume": 570834,
@@ -130903,11 +130903,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 17,
-      "rank_adjustment": 12
+      "rank_adjustment": 13
     },
     {
       "symbol": "MAPS",
-      "rs_rank": 29,
+      "rs_rank": 30,
       "rs_score": -0.3433,
       "avg_volume": "1.3M",
       "raw_volume": 1289940,
@@ -130933,7 +130933,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 17,
-      "rank_adjustment": 12
+      "rank_adjustment": 13
     },
     {
       "symbol": "OSTX",
@@ -132977,7 +132977,7 @@
     },
     {
       "symbol": "BKYI",
-      "rs_rank": 28,
+      "rs_rank": 27,
       "rs_score": -0.3693,
       "avg_volume": "3.8M",
       "raw_volume": 3842928,
@@ -133003,11 +133003,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 15,
-      "rank_adjustment": 13
+      "rank_adjustment": 12
     },
     {
       "symbol": "TTAN",
-      "rs_rank": 28,
+      "rs_rank": 27,
       "rs_score": -0.3693,
       "avg_volume": "1.4M",
       "raw_volume": 1418605,
@@ -133033,7 +133033,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 15,
-      "rank_adjustment": 13
+      "rank_adjustment": 12
     },
     {
       "symbol": "IFRX",
@@ -133907,7 +133907,7 @@
     },
     {
       "symbol": "MWYN",
-      "rs_rank": 26,
+      "rs_rank": 27,
       "rs_score": -0.3838,
       "avg_volume": "211k",
       "raw_volume": 210702,
@@ -133933,11 +133933,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 15,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "ARX",
-      "rs_rank": 26,
+      "rs_rank": 27,
       "rs_score": -0.3841,
       "avg_volume": "1.1M",
       "raw_volume": 1093854,
@@ -133963,11 +133963,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 15,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "HMR",
-      "rs_rank": 26,
+      "rs_rank": 27,
       "rs_score": -0.3849,
       "avg_volume": "49k",
       "raw_volume": 48914,
@@ -133993,11 +133993,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 15,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "POLA",
-      "rs_rank": 26,
+      "rs_rank": 27,
       "rs_score": -0.3851,
       "avg_volume": "1.6M",
       "raw_volume": 1626386,
@@ -134023,11 +134023,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 15,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "INTU",
-      "rs_rank": 26,
+      "rs_rank": 27,
       "rs_score": -0.3852,
       "avg_volume": "2.9M",
       "raw_volume": 2867733,
@@ -134053,7 +134053,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 15,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "ALVO",
@@ -135017,7 +135017,7 @@
     },
     {
       "symbol": "FA",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.3969,
       "avg_volume": "723k",
       "raw_volume": 723199,
@@ -135043,11 +135043,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 14,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "VNTG",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.3974,
       "avg_volume": "61k",
       "raw_volume": 60973,
@@ -135073,11 +135073,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 14,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "DKNG",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.3974,
       "avg_volume": "13.8M",
       "raw_volume": 13805555,
@@ -135103,11 +135103,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 14,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "WDAY",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.3976,
       "avg_volume": "3.6M",
       "raw_volume": 3594150,
@@ -135133,11 +135133,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 14,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "FJET",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.3976,
       "avg_volume": "3.9M",
       "raw_volume": 3939080,
@@ -135163,11 +135163,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 14,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "ZG",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.3977,
       "avg_volume": "996k",
       "raw_volume": 996265,
@@ -135193,11 +135193,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 14,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "ACTU",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.398,
       "avg_volume": "78k",
       "raw_volume": 77870,
@@ -135223,7 +135223,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 14,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "TONX",
@@ -136247,7 +136247,7 @@
     },
     {
       "symbol": "RDAC",
-      "rs_rank": 24,
+      "rs_rank": 25,
       "rs_score": -0.4072,
       "avg_volume": "55k",
       "raw_volume": 54936,
@@ -136273,11 +136273,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "TNON",
-      "rs_rank": 24,
+      "rs_rank": 25,
       "rs_score": -0.4077,
       "avg_volume": "1.2M",
       "raw_volume": 1181110,
@@ -136303,11 +136303,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "KULR",
-      "rs_rank": 24,
+      "rs_rank": 25,
       "rs_score": -0.4085,
       "avg_volume": "2.1M",
       "raw_volume": 2147711,
@@ -136333,11 +136333,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "CVRX",
-      "rs_rank": 24,
+      "rs_rank": 25,
       "rs_score": -0.4087,
       "avg_volume": "284k",
       "raw_volume": 284136,
@@ -136363,11 +136363,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "DKI",
-      "rs_rank": 24,
+      "rs_rank": 25,
       "rs_score": -0.4088,
       "avg_volume": "5.7M",
       "raw_volume": 5715056,
@@ -136393,11 +136393,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "APUS",
-      "rs_rank": 24,
+      "rs_rank": 25,
       "rs_score": -0.4096,
       "avg_volume": "128k",
       "raw_volume": 127803,
@@ -136423,7 +136423,7 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "FORR",
@@ -137537,7 +137537,7 @@
     },
     {
       "symbol": "EAF",
-      "rs_rank": 23,
+      "rs_rank": 24,
       "rs_score": -0.4205,
       "avg_volume": "335k",
       "raw_volume": 334989,
@@ -137563,11 +137563,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "SLSN",
-      "rs_rank": 23,
+      "rs_rank": 24,
       "rs_score": -0.4211,
       "avg_volume": "36k",
       "raw_volume": 35956,
@@ -137593,11 +137593,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "SPSC",
-      "rs_rank": 23,
+      "rs_rank": 24,
       "rs_score": -0.4216,
       "avg_volume": "638k",
       "raw_volume": 637544,
@@ -137623,11 +137623,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 13,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "ICLR",
-      "rs_rank": 23,
+      "rs_rank": 24,
       "rs_score": -0.4224,
       "avg_volume": "1.7M",
       "raw_volume": 1722702,
@@ -137653,7 +137653,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 11
+      "rank_adjustment": 12
     },
     {
       "symbol": "PLCE",
@@ -138527,7 +138527,7 @@
     },
     {
       "symbol": "GSHD",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.4354,
       "avg_volume": "345k",
       "raw_volume": 345359,
@@ -138553,11 +138553,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "AURE",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.4356,
       "avg_volume": "676k",
       "raw_volume": 676254,
@@ -138583,11 +138583,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "CMRC",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.4358,
       "avg_volume": "1.0M",
       "raw_volume": 1003102,
@@ -138613,11 +138613,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "CFND",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.4362,
       "avg_volume": "46k",
       "raw_volume": 45918,
@@ -138643,11 +138643,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "KVYO",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.4363,
       "avg_volume": "3.6M",
       "raw_volume": 3629799,
@@ -138673,11 +138673,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "SG",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.4367,
       "avg_volume": "4.2M",
       "raw_volume": 4234336,
@@ -138703,11 +138703,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "INUV",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.4367,
       "avg_volume": "231k",
       "raw_volume": 230843,
@@ -138733,11 +138733,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "SMR",
-      "rs_rank": 22,
+      "rs_rank": 23,
       "rs_score": -0.437,
       "avg_volume": "27.3M",
       "raw_volume": 27306609,
@@ -138763,7 +138763,7 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 12,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "VS",
@@ -139487,7 +139487,7 @@
     },
     {
       "symbol": "CRVL",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4487,
       "avg_volume": "218k",
       "raw_volume": 217596,
@@ -139513,11 +139513,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "ALUR",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4489,
       "avg_volume": "86k",
       "raw_volume": 85757,
@@ -139543,11 +139543,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "AMPL",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4491,
       "avg_volume": "1.5M",
       "raw_volume": 1487684,
@@ -139573,11 +139573,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "CTEV",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4495,
       "avg_volume": "203k",
       "raw_volume": 203102,
@@ -139603,11 +139603,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "PTON",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4497,
       "avg_volume": "11.7M",
       "raw_volume": 11746314,
@@ -139633,11 +139633,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "DLXY",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4502,
       "avg_volume": "55k",
       "raw_volume": 54973,
@@ -139663,11 +139663,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "ALZN",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4503,
       "avg_volume": "72k",
       "raw_volume": 72186,
@@ -139693,11 +139693,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "BULL",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4504,
       "avg_volume": "12.7M",
       "raw_volume": 12653888,
@@ -139723,11 +139723,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "AEYE",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4515,
       "avg_volume": "130k",
       "raw_volume": 129606,
@@ -139753,11 +139753,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "EMPD",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.4518,
       "avg_volume": "874k",
       "raw_volume": 873792,
@@ -139783,11 +139783,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "TAOX",
-      "rs_rank": 21,
+      "rs_rank": 22,
       "rs_score": -0.452,
       "avg_volume": "160k",
       "raw_volume": 159691,
@@ -139813,7 +139813,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 10
+      "rank_adjustment": 11
     },
     {
       "symbol": "WLTH",
@@ -140447,7 +140447,7 @@
     },
     {
       "symbol": "RCT",
-      "rs_rank": 20,
+      "rs_rank": 21,
       "rs_score": -0.4649,
       "avg_volume": "144k",
       "raw_volume": 144141,
@@ -140473,11 +140473,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "FLUX",
-      "rs_rank": 20,
+      "rs_rank": 21,
       "rs_score": -0.466,
       "avg_volume": "355k",
       "raw_volume": 354797,
@@ -140503,11 +140503,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "OXLC",
-      "rs_rank": 20,
+      "rs_rank": 21,
       "rs_score": -0.4662,
       "avg_volume": "1.6M",
       "raw_volume": 1600985,
@@ -140533,11 +140533,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "BIVI",
-      "rs_rank": 20,
+      "rs_rank": 21,
       "rs_score": -0.4666,
       "avg_volume": "109k",
       "raw_volume": 108599,
@@ -140563,11 +140563,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "GMGI",
-      "rs_rank": 20,
+      "rs_rank": 21,
       "rs_score": -0.4688,
       "avg_volume": "230k",
       "raw_volume": 229600,
@@ -140593,11 +140593,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "FRSH",
-      "rs_rank": 20,
+      "rs_rank": 21,
       "rs_score": -0.4695,
       "avg_volume": "4.9M",
       "raw_volume": 4925577,
@@ -140623,11 +140623,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "CPOP",
-      "rs_rank": 20,
+      "rs_rank": 21,
       "rs_score": -0.4697,
       "avg_volume": "71k",
       "raw_volume": 70914,
@@ -140653,7 +140653,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 11,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "MATH",
@@ -141347,7 +141347,7 @@
     },
     {
       "symbol": "CURX",
-      "rs_rank": 19,
+      "rs_rank": 20,
       "rs_score": -0.4821,
       "avg_volume": "215k",
       "raw_volume": 215278,
@@ -141373,11 +141373,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "WKSP",
-      "rs_rank": 19,
+      "rs_rank": 20,
       "rs_score": -0.4822,
       "avg_volume": "225k",
       "raw_volume": 224689,
@@ -141403,11 +141403,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "LPA",
-      "rs_rank": 19,
+      "rs_rank": 20,
       "rs_score": -0.4826,
       "avg_volume": "24k",
       "raw_volume": 24306,
@@ -141433,11 +141433,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "SNAL",
-      "rs_rank": 19,
+      "rs_rank": 20,
       "rs_score": -0.485,
       "avg_volume": "34k",
       "raw_volume": 33859,
@@ -141463,11 +141463,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "HCWC",
-      "rs_rank": 19,
+      "rs_rank": 20,
       "rs_score": -0.4866,
       "avg_volume": "380k",
       "raw_volume": 380303,
@@ -141493,11 +141493,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "DCGO",
-      "rs_rank": 19,
+      "rs_rank": 20,
       "rs_score": -0.488,
       "avg_volume": "765k",
       "raw_volume": 764713,
@@ -141523,7 +141523,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 9
+      "rank_adjustment": 10
     },
     {
       "symbol": "HYFM",
@@ -141947,7 +141947,7 @@
     },
     {
       "symbol": "GMM",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.4987,
       "avg_volume": "30k",
       "raw_volume": 29667,
@@ -141973,11 +141973,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "VEEE",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.4987,
       "avg_volume": "390k",
       "raw_volume": 390090,
@@ -142003,11 +142003,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "TGHL",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.4987,
       "avg_volume": "689k",
       "raw_volume": 688571,
@@ -142033,11 +142033,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "BWIN",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.4999,
       "avg_volume": "1.4M",
       "raw_volume": 1404636,
@@ -142063,11 +142063,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "VNRX",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5001,
       "avg_volume": "2.3M",
       "raw_volume": 2302366,
@@ -142093,11 +142093,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "SILO",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5001,
       "avg_volume": "134k",
       "raw_volume": 133966,
@@ -142123,11 +142123,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "TOPP",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5019,
       "avg_volume": "78k",
       "raw_volume": 77522,
@@ -142153,11 +142153,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "VVOS",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5039,
       "avg_volume": "135k",
       "raw_volume": 134864,
@@ -142183,11 +142183,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "GSUN",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5046,
       "avg_volume": "134k",
       "raw_volume": 133955,
@@ -142213,11 +142213,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "ASAN",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5058,
       "avg_volume": "4.4M",
       "raw_volume": 4447757,
@@ -142243,11 +142243,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "HUBS",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5063,
       "avg_volume": "1.4M",
       "raw_volume": 1405262,
@@ -142273,11 +142273,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "EDSA",
-      "rs_rank": 18,
+      "rs_rank": 19,
       "rs_score": -0.5081,
       "avg_volume": "71k",
       "raw_volume": 71122,
@@ -142303,7 +142303,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 10,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "PINS",
@@ -142667,7 +142667,7 @@
     },
     {
       "symbol": "UP",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5181,
       "avg_volume": "5.4M",
       "raw_volume": 5437349,
@@ -142693,11 +142693,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "MLEC",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5201,
       "avg_volume": "1.4M",
       "raw_volume": 1404813,
@@ -142723,11 +142723,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "MSTR",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5203,
       "avg_volume": "22.6M",
       "raw_volume": 22623103,
@@ -142753,11 +142753,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "JANX",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5203,
       "avg_volume": "2.0M",
       "raw_volume": 1997538,
@@ -142783,11 +142783,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "MEHA",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5205,
       "avg_volume": "1.3M",
       "raw_volume": 1301904,
@@ -142813,11 +142813,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "MSW",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5214,
       "avg_volume": "172k",
       "raw_volume": 172018,
@@ -142843,11 +142843,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "WBUY",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5219,
       "avg_volume": "793k",
       "raw_volume": 792774,
@@ -142873,11 +142873,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "CHSN",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5222,
       "avg_volume": "20k",
       "raw_volume": 19593,
@@ -142903,11 +142903,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "VTAK",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5223,
       "avg_volume": "92k",
       "raw_volume": 91515,
@@ -142933,11 +142933,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "SPT",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5224,
       "avg_volume": "1.3M",
       "raw_volume": 1316666,
@@ -142963,11 +142963,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "XGN",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5226,
       "avg_volume": "490k",
       "raw_volume": 489966,
@@ -142993,11 +142993,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "DTSS",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5228,
       "avg_volume": "105k",
       "raw_volume": 105001,
@@ -143023,11 +143023,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "GAME",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5231,
       "avg_volume": "1.2M",
       "raw_volume": 1158023,
@@ -143053,11 +143053,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "FFAI",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5234,
       "avg_volume": "8.4M",
       "raw_volume": 8387347,
@@ -143083,11 +143083,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "HURA",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5249,
       "avg_volume": "1.7M",
       "raw_volume": 1699555,
@@ -143113,11 +143113,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "FBLG",
-      "rs_rank": 17,
+      "rs_rank": 18,
       "rs_score": -0.5253,
       "avg_volume": "2.1M",
       "raw_volume": 2074032,
@@ -143143,7 +143143,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "INTA",
@@ -143807,7 +143807,7 @@
     },
     {
       "symbol": "WIX",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5336,
       "avg_volume": "1.7M",
       "raw_volume": 1654161,
@@ -143833,11 +143833,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "MYSZ",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5338,
       "avg_volume": "176k",
       "raw_volume": 176440,
@@ -143863,11 +143863,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "WIMI",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5339,
       "avg_volume": "103k",
       "raw_volume": 103316,
@@ -143893,11 +143893,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "GWH",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.534,
       "avg_volume": "493k",
       "raw_volume": 493274,
@@ -143923,11 +143923,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "EMAT",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.535,
       "avg_volume": "227k",
       "raw_volume": 227390,
@@ -143953,11 +143953,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 9,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "BURU",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5355,
       "avg_volume": "29.5M",
       "raw_volume": 29485596,
@@ -143983,11 +143983,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "MYPS",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5355,
       "avg_volume": "262k",
       "raw_volume": 262165,
@@ -144013,11 +144013,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "BTQ",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5374,
       "avg_volume": "2.8M",
       "raw_volume": 2754719,
@@ -144043,11 +144043,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "TIL",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5379,
       "avg_volume": "143k",
       "raw_volume": 142760,
@@ -144073,7 +144073,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 8
+      "rank_adjustment": 9
     },
     {
       "symbol": "LFMD",
@@ -144617,7 +144617,7 @@
     },
     {
       "symbol": "SURG",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5506,
       "avg_volume": "266k",
       "raw_volume": 266453,
@@ -144643,11 +144643,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "CLVT",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5519,
       "avg_volume": "6.1M",
       "raw_volume": 6109427,
@@ -144673,11 +144673,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "EVH",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5525,
       "avg_volume": "3.1M",
       "raw_volume": 3089233,
@@ -144703,11 +144703,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "BTM",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5533,
       "avg_volume": "971k",
       "raw_volume": 970786,
@@ -144733,11 +144733,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "PRFX",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5545,
       "avg_volume": "637k",
       "raw_volume": 636577,
@@ -144763,11 +144763,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "SRXH",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5561,
       "avg_volume": "34.7M",
       "raw_volume": 34663080,
@@ -144793,11 +144793,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "USBC",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5563,
       "avg_volume": "1.8M",
       "raw_volume": 1760457,
@@ -144823,11 +144823,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "RECT",
-      "rs_rank": 15,
+      "rs_rank": 16,
       "rs_score": -0.5564,
       "avg_volume": "9k",
       "raw_volume": 9154,
@@ -144853,7 +144853,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 7
+      "rank_adjustment": 8
     },
     {
       "symbol": "CBZ",
@@ -145247,7 +145247,7 @@
     },
     {
       "symbol": "TOVX",
-      "rs_rank": 14,
+      "rs_rank": 15,
       "rs_score": -0.5682,
       "avg_volume": "5.8M",
       "raw_volume": 5761758,
@@ -145273,11 +145273,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "BYND",
-      "rs_rank": 14,
+      "rs_rank": 15,
       "rs_score": -0.569,
       "avg_volume": "50.5M",
       "raw_volume": 50463561,
@@ -145303,11 +145303,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "SLQT",
-      "rs_rank": 14,
+      "rs_rank": 15,
       "rs_score": -0.5709,
       "avg_volume": "1.4M",
       "raw_volume": 1355612,
@@ -145333,11 +145333,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "DOCS",
-      "rs_rank": 14,
+      "rs_rank": 15,
       "rs_score": -0.5713,
       "avg_volume": "3.7M",
       "raw_volume": 3728372,
@@ -145363,11 +145363,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "BTOC",
-      "rs_rank": 14,
+      "rs_rank": 15,
       "rs_score": -0.5715,
       "avg_volume": "45k",
       "raw_volume": 45373,
@@ -145393,11 +145393,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "SONM",
-      "rs_rank": 14,
+      "rs_rank": 15,
       "rs_score": -0.5723,
       "avg_volume": "58k",
       "raw_volume": 58158,
@@ -145423,11 +145423,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "SEAT",
-      "rs_rank": 14,
+      "rs_rank": 15,
       "rs_score": -0.573,
       "avg_volume": "132k",
       "raw_volume": 132328,
@@ -145453,7 +145453,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 8,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "YSXT",
@@ -145877,7 +145877,7 @@
     },
     {
       "symbol": "ZOOZ",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5863,
       "avg_volume": "489k",
       "raw_volume": 488653,
@@ -145903,11 +145903,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "HOLO",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5873,
       "avg_volume": "582k",
       "raw_volume": 582013,
@@ -145933,11 +145933,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "GOCO",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5875,
       "avg_volume": "53k",
       "raw_volume": 52952,
@@ -145963,11 +145963,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "JYD",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5884,
       "avg_volume": "90k",
       "raw_volume": 90081,
@@ -145993,11 +145993,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "NUWE",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5896,
       "avg_volume": "2.6M",
       "raw_volume": 2598847,
@@ -146023,11 +146023,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "AGPU",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5899,
       "avg_volume": "174k",
       "raw_volume": 173868,
@@ -146053,11 +146053,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "NXXT",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5901,
       "avg_volume": "2.1M",
       "raw_volume": 2055726,
@@ -146083,11 +146083,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "SLND",
-      "rs_rank": 13,
+      "rs_rank": 14,
       "rs_score": -0.5908,
       "avg_volume": "86k",
       "raw_volume": 86258,
@@ -146113,7 +146113,7 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 7
     },
     {
       "symbol": "RVYL",
@@ -146867,7 +146867,7 @@
     },
     {
       "symbol": "CUPR",
-      "rs_rank": 13,
+      "rs_rank": 12,
       "rs_score": -0.6046,
       "avg_volume": "91k",
       "raw_volume": 91236,
@@ -146893,7 +146893,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 7,
-      "rank_adjustment": 6
+      "rank_adjustment": 5
     },
     {
       "symbol": "DEFT",
@@ -147527,7 +147527,7 @@
     },
     {
       "symbol": "THRY",
-      "rs_rank": 11,
+      "rs_rank": 12,
       "rs_score": -0.6184,
       "avg_volume": "999k",
       "raw_volume": 998715,
@@ -147553,11 +147553,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 6,
-      "rank_adjustment": 5
+      "rank_adjustment": 6
     },
     {
       "symbol": "BJDX",
-      "rs_rank": 11,
+      "rs_rank": 12,
       "rs_score": -0.6188,
       "avg_volume": "77k",
       "raw_volume": 77256,
@@ -147583,11 +147583,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 6,
-      "rank_adjustment": 5
+      "rank_adjustment": 6
     },
     {
       "symbol": "RVPH",
-      "rs_rank": 11,
+      "rs_rank": 12,
       "rs_score": -0.6198,
       "avg_volume": "5.4M",
       "raw_volume": 5428030,
@@ -147613,11 +147613,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 6,
-      "rank_adjustment": 5
+      "rank_adjustment": 6
     },
     {
       "symbol": "VHUB",
-      "rs_rank": 11,
+      "rs_rank": 12,
       "rs_score": -0.6199,
       "avg_volume": "1.8M",
       "raw_volume": 1755633,
@@ -147643,7 +147643,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 6,
-      "rank_adjustment": 5
+      "rank_adjustment": 6
     },
     {
       "symbol": "EHTH",
@@ -148457,7 +148457,7 @@
     },
     {
       "symbol": "IOBT",
-      "rs_rank": 10,
+      "rs_rank": 11,
       "rs_score": -0.633,
       "avg_volume": "11.8M",
       "raw_volume": 11796742,
@@ -148483,11 +148483,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 6,
-      "rank_adjustment": 4
+      "rank_adjustment": 5
     },
     {
       "symbol": "REED",
-      "rs_rank": 10,
+      "rs_rank": 11,
       "rs_score": -0.6342,
       "avg_volume": "56k",
       "raw_volume": 56337,
@@ -148513,11 +148513,11 @@
       "exchange": "OTC Link",
       "ticker_type": "CS",
       "rs_rank_original": 6,
-      "rank_adjustment": 4
+      "rank_adjustment": 5
     },
     {
       "symbol": "LGCL",
-      "rs_rank": 10,
+      "rs_rank": 11,
       "rs_score": -0.6343,
       "avg_volume": "37k",
       "raw_volume": 36927,
@@ -148543,7 +148543,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 6,
-      "rank_adjustment": 4
+      "rank_adjustment": 5
     },
     {
       "symbol": "ALBT",
@@ -149027,7 +149027,7 @@
     },
     {
       "symbol": "FMFC",
-      "rs_rank": 9,
+      "rs_rank": 10,
       "rs_score": -0.6528,
       "avg_volume": "2.2M",
       "raw_volume": 2171235,
@@ -149053,11 +149053,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 5,
-      "rank_adjustment": 4
+      "rank_adjustment": 5
     },
     {
       "symbol": "EHGO",
-      "rs_rank": 9,
+      "rs_rank": 10,
       "rs_score": -0.6529,
       "avg_volume": "228k",
       "raw_volume": 228161,
@@ -149083,11 +149083,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 5,
-      "rank_adjustment": 4
+      "rank_adjustment": 5
     },
     {
       "symbol": "EJH",
-      "rs_rank": 9,
+      "rs_rank": 10,
       "rs_score": -0.6529,
       "avg_volume": "147k",
       "raw_volume": 147323,
@@ -149113,7 +149113,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 5,
-      "rank_adjustment": 4
+      "rank_adjustment": 5
     },
     {
       "symbol": "AMIX",
@@ -149747,7 +149747,7 @@
     },
     {
       "symbol": "ISPC",
-      "rs_rank": 8,
+      "rs_rank": 9,
       "rs_score": -0.6702,
       "avg_volume": "1.8M",
       "raw_volume": 1827578,
@@ -149773,7 +149773,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 5,
-      "rank_adjustment": 3
+      "rank_adjustment": 4
     },
     {
       "symbol": "CLGN",
@@ -150377,7 +150377,7 @@
     },
     {
       "symbol": "AIFF",
-      "rs_rank": 8,
+      "rs_rank": 7,
       "rs_score": -0.6916,
       "avg_volume": "135k",
       "raw_volume": 134989,
@@ -150403,7 +150403,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 4,
-      "rank_adjustment": 4
+      "rank_adjustment": 3
     },
     {
       "symbol": "ASST",
@@ -151457,7 +151457,7 @@
     },
     {
       "symbol": "TNMG",
-      "rs_rank": 6,
+      "rs_rank": 5,
       "rs_score": -0.7254,
       "avg_volume": "849k",
       "raw_volume": 849258,
@@ -151483,11 +151483,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 4,
-      "rank_adjustment": 2
+      "rank_adjustment": 1
     },
     {
       "symbol": "NCPL",
-      "rs_rank": 6,
+      "rs_rank": 5,
       "rs_score": -0.7272,
       "avg_volume": "7.4M",
       "raw_volume": 7427289,
@@ -151513,7 +151513,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 4,
-      "rank_adjustment": 2
+      "rank_adjustment": 1
     },
     {
       "symbol": "BNBX",
@@ -152057,7 +152057,7 @@
     },
     {
       "symbol": "IVDA",
-      "rs_rank": 5,
+      "rs_rank": 4,
       "rs_score": -0.7452,
       "avg_volume": "4.7M",
       "raw_volume": 4745275,
@@ -152083,11 +152083,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 2
+      "rank_adjustment": 1
     },
     {
       "symbol": "CHR",
-      "rs_rank": 5,
+      "rs_rank": 4,
       "rs_score": -0.7463,
       "avg_volume": "348k",
       "raw_volume": 348496,
@@ -152113,11 +152113,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 2
+      "rank_adjustment": 1
     },
     {
       "symbol": "LASE",
-      "rs_rank": 5,
+      "rs_rank": 4,
       "rs_score": -0.7465,
       "avg_volume": "1.4M",
       "raw_volume": 1435540,
@@ -152143,11 +152143,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 2
+      "rank_adjustment": 1
     },
     {
       "symbol": "MNTS",
-      "rs_rank": 5,
+      "rs_rank": 4,
       "rs_score": -0.7477,
       "avg_volume": "3.7M",
       "raw_volume": 3731648,
@@ -152173,7 +152173,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 2
+      "rank_adjustment": 1
     },
     {
       "symbol": "TIVC",
@@ -152597,7 +152597,7 @@
     },
     {
       "symbol": "ZCMD",
-      "rs_rank": 4,
+      "rs_rank": 3,
       "rs_score": -0.7633,
       "avg_volume": "2.0M",
       "raw_volume": 1968209,
@@ -152623,11 +152623,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 1
+      "rank_adjustment": 0
     },
     {
       "symbol": "AIFU",
-      "rs_rank": 4,
+      "rs_rank": 3,
       "rs_score": -0.7634,
       "avg_volume": "31k",
       "raw_volume": 31385,
@@ -152653,11 +152653,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 1
+      "rank_adjustment": 0
     },
     {
       "symbol": "ENVB",
-      "rs_rank": 4,
+      "rs_rank": 3,
       "rs_score": -0.7645,
       "avg_volume": "861k",
       "raw_volume": 861148,
@@ -152683,11 +152683,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 1
+      "rank_adjustment": 0
     },
     {
       "symbol": "ASBP",
-      "rs_rank": 4,
+      "rs_rank": 3,
       "rs_score": -0.7666,
       "avg_volume": "1.2M",
       "raw_volume": 1232590,
@@ -152713,7 +152713,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": 1
+      "rank_adjustment": 0
     },
     {
       "symbol": "AIIO",
@@ -153197,7 +153197,7 @@
     },
     {
       "symbol": "EDHL",
-      "rs_rank": 2,
+      "rs_rank": 3,
       "rs_score": -0.7865,
       "avg_volume": "46k",
       "raw_volume": 46448,
@@ -153223,11 +153223,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": -1
+      "rank_adjustment": 0
     },
     {
       "symbol": "LIMN",
-      "rs_rank": 2,
+      "rs_rank": 3,
       "rs_score": -0.7866,
       "avg_volume": "8.8M",
       "raw_volume": 8820140,
@@ -153253,11 +153253,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": -1
+      "rank_adjustment": 0
     },
     {
       "symbol": "NCL",
-      "rs_rank": 2,
+      "rs_rank": 3,
       "rs_score": -0.7866,
       "avg_volume": "18.4M",
       "raw_volume": 18371904,
@@ -153283,7 +153283,7 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 3,
-      "rank_adjustment": -1
+      "rank_adjustment": 0
     },
     {
       "symbol": "CDT",
