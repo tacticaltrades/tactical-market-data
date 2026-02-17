@@ -3,7 +3,7 @@ UPDATED: process_stocks.py (FLEXIBLE RS CALCULATION + ADR/ATR + SECTOR/INDUSTRY/
 Now includes stocks with <252 days of data (recent IPOs)
 Calculates RS using whatever historical data is available
 Includes ADR (Average Daily Range) and ATR (Average True Range)
-Includes: American Depositary Receipts (ADRs) - CS,ADRC types
+Includes: American Depositary Receipts (ADRs) - fetched separately to ensure all ADRCs are included
 NEW: Market Cap, Industry/Sector data for filtering and analysis
 
 Formula adapts based on data availability:
@@ -27,47 +27,56 @@ API_KEY = os.environ.get('POLYGON_API_KEY')
 BASE_URL = 'https://api.polygon.io'
 
 def get_all_tickers() -> List[str]:
-    """Fetch all common stock tickers from Polygon, paginated
-    Includes ADRs (American Depositary Receipts)"""
-    print("Fetching all common stock tickers + ADRs from Polygon...")
+    """Fetch all tickers - separate calls for CS and ADRC to ensure all are included"""
+    print("Fetching all tickers from Polygon...")
     all_tickers = []
-    next_url = f"{BASE_URL}/v3/reference/tickers"
-    
-    params = {
-        'market': 'stocks',
-        'type': ['CS', 'ADRC'],  # Common Stock + ADRs
-        'active': 'true',
-        'limit': 1000,
-        'apiKey': API_KEY
-    }
-    
-    page = 1
-    while next_url:
-        try:
-            if page > 1:
-                response = requests.get(next_url)
-            else:
-                response = requests.get(next_url, params=params)
-            
-            response.raise_for_status()
-            data = response.json()
-            
-            if 'results' in data:
-                tickers = [t['ticker'] for t in data['results']]
-                all_tickers.extend(tickers)
-                print(f"  Page {page}: Got {len(tickers)} tickers (Total: {len(all_tickers)})")
-            
-            next_url = data.get('next_url')
-            if next_url:
-                next_url = f"{next_url}&apiKey={API_KEY}"
-            
-            page += 1
-            time.sleep(0.1)
-            
-        except Exception as e:
-            print(f"Error fetching tickers page {page}: {e}")
-            break
-    
+
+    for stock_type in ['CS', 'ADRC']:
+        print(f"  Fetching {stock_type} tickers...")
+        type_tickers = []
+        next_url = f"{BASE_URL}/v3/reference/tickers"
+
+        params = {
+            'market': 'stocks',
+            'type': stock_type,
+            'active': 'true',
+            'limit': 1000,
+            'apiKey': API_KEY
+        }
+
+        page = 1
+        while next_url:
+            try:
+                if page > 1:
+                    response = requests.get(next_url)
+                else:
+                    response = requests.get(next_url, params=params)
+
+                response.raise_for_status()
+                data = response.json()
+
+                if 'results' in data:
+                    tickers = [t['ticker'] for t in data['results']]
+                    type_tickers.extend(tickers)
+                    print(f"    Page {page}: Got {len(tickers)} {stock_type} tickers (Total: {len(type_tickers)})")
+
+                next_url = data.get('next_url')
+                if next_url:
+                    next_url = f"{next_url}&apiKey={API_KEY}"
+
+                page += 1
+                time.sleep(0.1)
+
+            except Exception as e:
+                print(f"Error fetching {stock_type} tickers page {page}: {e}")
+                break
+
+        print(f"  ✅ Total {stock_type} tickers: {len(type_tickers)}")
+        all_tickers.extend(type_tickers)
+
+    # Remove duplicates
+    all_tickers = list(set(all_tickers))
+
     print(f"✅ Total tickers fetched (CS + ADRC): {len(all_tickers)}")
     return all_tickers
 
@@ -76,11 +85,11 @@ def get_ticker_details(ticker: str) -> Dict[str, Any]:
     try:
         url = f"{BASE_URL}/v3/reference/tickers/{ticker}"
         params = {'apiKey': API_KEY}
-        
+
         response = requests.get(url, params=params)
         response.raise_for_status()
         data = response.json()
-        
+
         if 'results' in data:
             results = data['results']
             return {
@@ -89,9 +98,8 @@ def get_ticker_details(ticker: str) -> Dict[str, Any]:
                 'industry': results.get('sic_description'),
                 'ticker_type': results.get('type'),
                 'exchange': results.get('primary_exchange'),
-                'description': results.get('description', '')[:200] if results.get('description') else None
             }
-        
+
         return {}
     except Exception as e:
         return {}
@@ -100,7 +108,7 @@ def get_market_cap_category(market_cap: Optional[float]) -> str:
     """Categorize market cap into standard categories"""
     if market_cap is None:
         return 'Unknown'
-    
+
     if market_cap >= 10_000_000_000:
         return 'Large Cap'
     elif market_cap >= 2_000_000_000:
@@ -114,8 +122,10 @@ def format_market_cap(market_cap: Optional[float]) -> str:
     """Format market cap as readable string"""
     if market_cap is None:
         return 'N/A'
-    
-    if market_cap >= 1_000_000_000:
+
+    if market_cap >= 1_000_000_000_000:
+        return f"${market_cap / 1_000_000_000_000:.2f}T"
+    elif market_cap >= 1_000_000_000:
         return f"${market_cap / 1_000_000_000:.2f}B"
     elif market_cap >= 1_000_000:
         return f"${market_cap / 1_000_000:.2f}M"
@@ -132,14 +142,14 @@ def get_stock_data(ticker: str, start_date: str, end_date: str) -> List[Dict]:
             'limit': 50000,
             'apiKey': API_KEY
         }
-        
+
         response = requests.get(url, params=params)
         response.raise_for_status()
         data = response.json()
-        
+
         if data.get('results'):
             return data['results']
-        
+
         return []
     except Exception as e:
         return []
@@ -148,43 +158,43 @@ def calculate_return(prices: List[Dict], days_back: int) -> Optional[float]:
     """Calculate return over a specific period"""
     if len(prices) < days_back:
         return None
-    
+
     end_price = prices[-1]['c']
     start_price = prices[-days_back]['c']
-    
+
     return (end_price - start_price) / start_price
 
 def calculate_total_return(prices: List[Dict]) -> float:
     """Calculate total return from first to last price"""
     if len(prices) < 2:
         return 0.0
-    
+
     start_price = prices[0]['c']
     end_price = prices[-1]['c']
-    
+
     return (end_price - start_price) / start_price
 
 def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     """Calculate moving averages and Stage 2 status"""
     if len(stock_prices) < 220:
         return None
-    
+
     closes = [bar['c'] for bar in stock_prices]
     current_price = closes[-1]
-    
+
     ma_50 = np.mean(closes[-50:])
     ma_150 = np.mean(closes[-150:])
     ma_200 = np.mean(closes[-200:])
-    
+
     ma_200_1month_ago = np.mean(closes[-220:-20])
-    
+
     is_stage_2 = bool(
-        (ma_50 > ma_150) and 
-        (ma_150 > ma_200) and 
+        (ma_50 > ma_150) and
+        (ma_150 > ma_200) and
         (current_price > ma_150) and
         (ma_200 > ma_200_1month_ago)
     )
-    
+
     return {
         'ma_50': round(ma_50, 2),
         'ma_150': round(ma_150, 2),
@@ -196,56 +206,56 @@ def calculate_adr(stock_prices: List[Dict], period: int = 20) -> Optional[float]
     """Calculate Average Daily Range (ADR) over specified period"""
     if len(stock_prices) < period:
         return None
-    
+
     recent_prices = stock_prices[-period:]
     daily_ranges = []
-    
+
     for bar in recent_prices:
         if 'h' in bar and 'l' in bar:
             daily_range = bar['h'] - bar['l']
             daily_ranges.append(daily_range)
-    
+
     if not daily_ranges:
         return None
-    
+
     return np.mean(daily_ranges)
 
 def calculate_atr(stock_prices: List[Dict], period: int = 14) -> Optional[float]:
     """Calculate Average True Range (ATR) over specified period"""
     if len(stock_prices) < period + 1:
         return None
-    
+
     true_ranges = []
-    
+
     for i in range(1, len(stock_prices)):
         current = stock_prices[i]
         previous = stock_prices[i - 1]
-        
+
         if 'h' in current and 'l' in current and 'c' in previous:
             high = current['h']
             low = current['l']
             prev_close = previous['c']
-            
+
             tr = max(
                 high - low,
                 abs(high - prev_close),
                 abs(low - prev_close)
             )
-            
+
             true_ranges.append(tr)
-    
+
     if len(true_ranges) < period:
         return None
-    
+
     return np.mean(true_ranges[-period:])
 
 def calculate_stock_returns_flexible(stock_prices: List[Dict]) -> Tuple[Optional[Dict], float, int, bool]:
     """Calculate returns with whatever data is available (FLEXIBLE)"""
     days_available = len(stock_prices)
-    
+
     if days_available < 10:
         return None, 0, days_available, False
-    
+
     periods = {
         '2m': min(42, days_available),
         '3m': min(63, days_available),
@@ -253,31 +263,31 @@ def calculate_stock_returns_flexible(stock_prices: List[Dict]) -> Tuple[Optional
         '9m': min(189, days_available),
         '12m': min(252, days_available)
     }
-    
+
     stock_returns = {}
-    
+
     for period_name, days in periods.items():
         if days <= days_available and days >= 10:
             ret = calculate_return(stock_prices, days)
             stock_returns[period_name] = ret if ret is not None else 0
         else:
             stock_returns[period_name] = 0
-    
+
     stock_returns['total'] = calculate_total_return(stock_prices)
-    
+
     recent_prices = stock_prices[-50:] if len(stock_prices) >= 50 else stock_prices
     volumes = [p['v'] for p in recent_prices if 'v' in p]
     avg_volume = np.mean(volumes) if volumes else 0
-    
+
     is_partial = days_available < 252
-    
+
     return stock_returns, avg_volume, days_available, is_partial
 
 def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) -> float:
     """Calculate RS score using FLEXIBLE formula based on data availability"""
     if not stock_returns:
         return 0
-    
+
     if days_available >= 252:
         rs_score = (
             0.4 * stock_returns.get('3m', 0) +
@@ -300,7 +310,7 @@ def calculate_ibd_rs_score_flexible(stock_returns: Dict, days_available: int) ->
         rs_score = stock_returns.get('3m', 0)
     else:
         rs_score = stock_returns.get('total', 0)
-    
+
     return rs_score
 
 def format_volume(volume: float) -> str:
@@ -322,50 +332,51 @@ def main():
     print("="*80)
     print()
     print("NOW INCLUDES:")
-    print("  - Common Stocks (CS) + ADRs (ADRC)")
+    print("  - Common Stocks (CS) fetched separately")
+    print("  - ADRs (ADRC) fetched separately to ensure all are included")
     print("  - Market Cap categories (Large/Mid/Small/Micro)")
     print("  - Industry/Sector information")
     print("  - Exchange data")
     print()
     print("Formula adapts to available data:")
-    print("  252+ days: 0.4×3m + 0.2×6m + 0.2×9m + 0.2×12m")
-    print("  189-251 days: 0.5×3m + 0.25×6m + 0.25×9m")
-    print("  126-188 days: 0.6×3m + 0.4×6m")
+    print("  252+ days: 0.4x3m + 0.2x6m + 0.2x9m + 0.2x12m")
+    print("  189-251 days: 0.5x3m + 0.25x6m + 0.25x9m")
+    print("  126-188 days: 0.6x3m + 0.4x6m")
     print("  63-125 days: 3m return only")
     print("  10-62 days: Total return since listing")
     print()
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
-    
+
     if not API_KEY:
         print("ERROR: POLYGON_API_KEY not found!")
         return
-    
+
     end_date = datetime.now()
     start_date = end_date - timedelta(days=450)
-    
+
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')
-    
+
     print(f"Date range: {start_date_str} to {end_date_str}")
     print()
-    
+
+    # Get all tickers (CS and ADRC fetched separately)
     tickers = get_all_tickers()
     if not tickers:
         print("ERROR: Failed to get tickers!")
         return
 
-    # TEST: Force ANL to process first
+    # Check if ANL is included
     if 'ANL' in tickers:
-        tickers.remove('ANL')
-        tickers.insert(0, 'ANL')
-        print("🔍 ANL moved to position 1 - will process first")
+        print("✅ ANL found in ticker list!")
     else:
-        print("⚠️  ANL not in ticker list!")
-    
-    print(f"\nProcessing {len(tickers)} stocks (CS + ADRs, including recent IPOs)...")
+        print("⚠️  ANL not found - adding manually")
+        tickers.append('ANL')
+
+    print(f"\nProcessing {len(tickers)} stocks...")
     print()
-    
+
     all_stock_data = []
     historical_stocks = []
     processed = 0
@@ -373,58 +384,68 @@ def main():
     partial_calculations = 0
     full_calculations = 0
     stage_2_count = 0
-    
+
     # Market cap tracking
     large_cap_count = 0
     mid_cap_count = 0
     small_cap_count = 0
     micro_cap_count = 0
-    
+
     for i, ticker in enumerate(tickers):
         try:
             if i % 100 == 0 and i > 0:
                 print(f"Progress: {i}/{len(tickers)} ({i/len(tickers)*100:.1f}%)")
                 print(f"  Processed: {processed}, Failed: {failed}, Stage 2: {stage_2_count}")
                 print(f"  Large: {large_cap_count}, Mid: {mid_cap_count}, Small: {small_cap_count}, Micro: {micro_cap_count}")
-            
+
+            # Debug ANL specifically
+            if ticker == 'ANL':
+                print("\n" + "="*80)
+                print(f"🔍 PROCESSING ANL (Position {i})")
+                print("="*80)
+
             # Get ticker details (market cap, industry, etc.)
             ticker_details = get_ticker_details(ticker)
-            time.sleep(0.15)  # Rate limiting
-            
+            time.sleep(0.15)
+
             # Get historical data
             stock_prices = get_stock_data(ticker, start_date_str, end_date_str)
-            
+
             if not stock_prices:
+                if ticker == 'ANL':
+                    print("❌ ANL FAILED: No price data returned!")
                 failed += 1
                 continue
-            
+
             result = calculate_stock_returns_flexible(stock_prices)
-            
+
             if result[0] is None:
+                if ticker == 'ANL':
+                    print(f"❌ ANL FAILED: Not enough price data ({len(stock_prices)} days)")
                 failed += 1
                 continue
-            
+
             stock_returns, avg_volume, days_available, is_partial = result
             rs_score = calculate_ibd_rs_score_flexible(stock_returns, days_available)
-            
+
             if is_partial:
                 partial_calculations += 1
             else:
                 full_calculations += 1
-            
+
             ma_data = calculate_moving_averages(stock_prices)
             adr_20 = calculate_adr(stock_prices, period=20)
             atr_14 = calculate_atr(stock_prices, period=14)
-            
+
             current_price = round(stock_prices[-1]['c'], 2) if stock_prices else None
-            
+
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
-            
+
             # Market cap categorization
             market_cap = ticker_details.get('market_cap')
             market_cap_category = get_market_cap_category(market_cap)
-            
+
             if market_cap_category == 'Large Cap':
                 large_cap_count += 1
             elif market_cap_category == 'Mid Cap':
@@ -433,7 +454,7 @@ def main():
                 small_cap_count += 1
             elif market_cap_category == 'Micro Cap':
                 micro_cap_count += 1
-            
+
             all_stock_data.append({
                 'symbol': ticker,
                 'rs_score': rs_score,
@@ -459,22 +480,22 @@ def main():
                 'exchange': ticker_details.get('exchange'),
                 'ticker_type': ticker_details.get('ticker_type')
             })
-            
-            # Store historical data (simplified)
+
+            # Store historical data
             minimal_history = []
-            
+
             if len(stock_prices) > 30:
                 older_data = stock_prices[:-30:5]
             else:
                 older_data = stock_prices[:-10:5] if len(stock_prices) > 10 else []
-            
+
             for price in older_data:
                 minimal_history.append({'t': price['t'], 'c': price['c']})
-            
+
             recent_data = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices
             for price in recent_data:
                 minimal_history.append({'t': price['t'], 'c': price['c'], 'v': price['v']})
-            
+
             historical_stocks.append({
                 's': ticker,
                 'h': minimal_history,
@@ -482,15 +503,29 @@ def main():
                 'i': ticker_details.get('ipo_date'),
                 'd': days_available
             })
-            
+
+            # Debug ANL success
+            if ticker == 'ANL':
+                print(f"✅ ANL PROCESSED SUCCESSFULLY!")
+                print(f"   Days of data: {days_available}")
+                print(f"   RS Score: {round(rs_score, 4)}")
+                print(f"   Current Price: ${current_price}")
+                print(f"   Market Cap: {format_market_cap(market_cap)}")
+                print(f"   Industry: {ticker_details.get('industry')}")
+                print("="*80 + "\n")
+
             processed += 1
             time.sleep(0.5)
-            
+
         except Exception as e:
+            if ticker == 'ANL':
+                print(f"❌ ANL EXCEPTION: {e}")
+                import traceback
+                traceback.print_exc()
             print(f"Error processing {ticker}: {e}")
             failed += 1
             continue
-    
+
     print()
     print("="*80)
     print("PROCESSING COMPLETE")
@@ -507,21 +542,20 @@ def main():
     print(f"  Small Cap ($300M-$2B): {small_cap_count} ({small_cap_count/processed*100:.1f}%)")
     print(f"  Micro Cap (<$300M): {micro_cap_count} ({micro_cap_count/processed*100:.1f}%)")
     print()
-    
-    # Calculate percentile rankings
+
     if all_stock_data:
         print("Calculating RS percentile rankings (1-99)...")
-        
+
         all_stock_data.sort(key=lambda x: x['rs_score'], reverse=True)
-        
+
         total_stocks = len(all_stock_data)
         print(f"Total stocks in ranking: {total_stocks}")
         print()
-        
+
         for i, stock in enumerate(all_stock_data):
             percentile = int(((total_stocks - i) / total_stocks) * 99) + 1
             stock['rs_rank'] = min(percentile, 99)
-        
+
         # Format output
         output_data = []
         for stock in all_stock_data:
@@ -553,11 +587,11 @@ def main():
                 'exchange': stock.get('exchange'),
                 'ticker_type': stock.get('ticker_type')
             })
-        
+
         # Save rankings
         rankings_output = {
             'last_updated': datetime.now().isoformat(),
-            'formula_used': 'Flexible: Adapts to available data (see documentation)',
+            'formula_used': 'Flexible: Adapts to available data',
             'stage_2_criteria': '50dma > 150dma > 200dma',
             'volatility_metrics': 'ADR (20-day), ATR (14-day)',
             'includes_adrs': True,
@@ -573,58 +607,49 @@ def main():
                 'micro_cap': micro_cap_count
             },
             'update_type': 'full_rebuild',
-            'note': 'Includes stocks with <252 days, ADRs, and market cap/industry data.',
+            'note': 'CS and ADRC fetched separately. Includes market cap/industry data.',
             'data': output_data
         }
-        
+
         with open('rankings.json', 'w') as f:
             json.dump(rankings_output, f, indent=2)
-        
+
         print(f"✅ Saved {len(output_data)} stocks to 'rankings.json'")
-        
+
+        # Check if ANL made it in
+        anl_in_rankings = next((s for s in output_data if s['symbol'] == 'ANL'), None)
+        if anl_in_rankings:
+            print(f"✅ ANL is in rankings.json with RS Rank: {anl_in_rankings['rs_rank']}")
+        else:
+            print("⚠️  ANL is NOT in rankings.json")
+
         # Save historical data
         historical_output = {
             'u': datetime.now().isoformat(),
             'n': len(historical_stocks),
             'd': historical_stocks
         }
-        
+
         with open('historical_data.json', 'w') as f:
             json.dump(historical_output, f, indent=2)
-        
+
         print(f"✅ Historical data saved ({len(historical_stocks)} stocks)")
         print()
-        
+
         # Show top 20
         print("="*130)
-        print("🏆 TOP 20 RS RANKINGS (with Market Cap & Industry)")
+        print("🏆 TOP 20 RS RANKINGS")
         print("="*130)
         print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Cap':<12} {'Industry':<30} {'Price':<8} {'3M Ret':<8}")
         print("-" * 130)
-        
+
         for i, stock in enumerate(output_data[:20]):
             industry = (stock.get('industry') or 'N/A')[:28]
             price = f"${stock['current_price']}" if stock['current_price'] else "N/A"
             print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['market_cap_category']:<12} {industry:<30} {price:<8} {stock['stock_return_3m']:<8}")
-        
+
         print()
-        
-        # Show top stocks by market cap category
-        for cap_category in ['Large Cap', 'Mid Cap', 'Small Cap']:
-            cap_stocks = [s for s in output_data if s['market_cap_category'] == cap_category and s['rs_rank'] >= 90]
-            if cap_stocks:
-                print("="*100)
-                print(f"🎯 TOP {cap_category.upper()} STOCKS (RS >= 90)")
-                print("="*100)
-                print(f"{'Rank':<5} {'Symbol':<8} {'RS':<4} {'Market Cap':<15} {'Industry':<30} {'3M Ret':<8}")
-                print("-" * 100)
-                
-                for i, stock in enumerate(cap_stocks[:10]):
-                    industry = (stock.get('industry') or 'N/A')[:28]
-                    print(f"{i+1:<5} {stock['symbol']:<8} {stock['rs_rank']:<4} {stock['market_cap_formatted']:<15} {industry:<30} {stock['stock_return_3m']:<8}")
-                
-                print()
-        
+
         # Statistics
         print("="*80)
         print("📊 STATISTICS")
@@ -640,10 +665,10 @@ def main():
         print(f"  Small Cap: {small_cap_count} ({small_cap_count/len(output_data)*100:.1f}%)")
         print(f"  Micro Cap: {micro_cap_count} ({micro_cap_count/len(output_data)*100:.1f}%)")
         print()
-        
+
     else:
         print("❌ No stock data processed!")
-    
+
     print("="*80)
     print(f"✅ COMPLETED at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*80)
