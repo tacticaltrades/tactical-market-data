@@ -354,6 +354,14 @@ def main():
     if not tickers:
         print("ERROR: Failed to get tickers!")
         return
+
+    # TEST: Force ANL to process first
+    if 'ANL' in tickers:
+        tickers.remove('ANL')
+        tickers.insert(0, 'ANL')
+        print("🔍 ANL moved to position 1 - will process first")
+    else:
+        print("⚠️  ANL not in ticker list!")
     
     print(f"\nProcessing {len(tickers)} stocks (CS + ADRs, including recent IPOs)...")
     print()
