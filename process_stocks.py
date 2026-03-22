@@ -22,59 +22,92 @@ from typing import Dict, List, Any, Optional, Tuple
 
 # Configuration
 API_KEY = os.environ.get('FMP_API_KEY')
-BASE_URL = 'https://financialmodelingprep.com/api'
+BASE_URL = 'https://financialmodelingprep.com'
 RATE_DELAY = 0.25  # seconds between API calls (240/min, under 300/min limit)
 
 
 # ---------------------------------------------------------------------------
-# API functions
+# API functions — uses /stable/ endpoints (v3/v4 deprecated Aug 2025)
 # ---------------------------------------------------------------------------
 
 def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
     """Fetch all active US stocks from FMP.
-    Tries multiple endpoints in order of preference.
+    Tries /stable/ endpoints first, falls back to per-exchange screener.
     Returns (symbol_list, profiles_dict)."""
-    print("Fetching all tickers from FMP...")
+    print("Fetching all tickers from FMP (/stable/ API)...")
 
     all_stocks = []
     profiles = {}
 
-    # Strategy: try available-traded/list, then quotes/{exchange}
+    # Strategy 1: stock-list (returns all symbols)
     endpoints_to_try = [
-        ('available-traded/list', f"{BASE_URL}/v3/available-traded/list", {'apikey': API_KEY}),
-        ('symbol/available-stocks', f"{BASE_URL}/v3/symbol/available-stock-list", {'apikey': API_KEY}),
+        ('stock-list', f"{BASE_URL}/stable/stock-list", {'apikey': API_KEY}),
+        ('actively-trading-list', f"{BASE_URL}/stable/actively-trading-list", {'apikey': API_KEY}),
     ]
 
     stock_data = None
     for name, url, params in endpoints_to_try:
-        print(f"  Trying {name}...")
+        print(f"  Trying /stable/{name}...")
         try:
-            response = requests.get(url, params=params)
+            response = requests.get(url, params=params, timeout=60)
             print(f"    Status: {response.status_code}")
             if response.ok:
                 stock_data = response.json()
-                print(f"    Got {len(stock_data)} entries")
-                break
+                if isinstance(stock_data, list) and len(stock_data) > 0:
+                    print(f"    Got {len(stock_data)} entries")
+                    break
+                else:
+                    print(f"    Empty or unexpected response")
+                    stock_data = None
         except Exception as e:
             print(f"    Error: {e}")
 
     if not stock_data:
-        # Fallback: get stocks from quotes endpoint (per exchange)
-        print("  Trying quotes per exchange...")
+        # Strategy 2: company-screener per exchange
+        print("  Trying /stable/company-screener per exchange...")
         stock_data = []
         for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
             print(f"    Fetching {exchange}...")
             try:
-                url = f"{BASE_URL}/v3/quotes/{exchange}"
-                resp = requests.get(url, params={'apikey': API_KEY})
+                url = f"{BASE_URL}/stable/company-screener"
+                params = {
+                    'exchange': exchange,
+                    'isActivelyTrading': 'true',
+                    'isEtf': 'false',
+                    'isFund': 'false',
+                    'apikey': API_KEY,
+                }
+                resp = requests.get(url, params=params, timeout=60)
                 print(f"      Status: {resp.status_code}")
                 if resp.ok:
                     data = resp.json()
-                    # quotes endpoint returns: symbol, name, price, marketCap, etc.
-                    for s in data:
-                        s['exchangeShortName'] = exchange
-                    stock_data.extend(data)
-                    print(f"      Got {len(data)} stocks")
+                    if isinstance(data, list):
+                        for s in data:
+                            s['exchangeShortName'] = exchange
+                        stock_data.extend(data)
+                        print(f"      Got {len(data)} stocks")
+            except Exception as e:
+                print(f"      Error: {e}")
+            time.sleep(RATE_DELAY)
+
+    if not stock_data:
+        # Strategy 3: batch-exchange-quote per exchange
+        print("  Trying /stable/batch-exchange-quote per exchange...")
+        stock_data = []
+        for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
+            print(f"    Fetching {exchange}...")
+            try:
+                url = f"{BASE_URL}/stable/batch-exchange-quote"
+                params = {'exchange': exchange, 'apikey': API_KEY}
+                resp = requests.get(url, params=params, timeout=60)
+                print(f"      Status: {resp.status_code}")
+                if resp.ok:
+                    data = resp.json()
+                    if isinstance(data, list):
+                        for s in data:
+                            s['exchangeShortName'] = exchange
+                        stock_data.extend(data)
+                        print(f"      Got {len(data)} stocks")
             except Exception as e:
                 print(f"      Error: {e}")
             time.sleep(RATE_DELAY)
@@ -84,7 +117,8 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
         return [], {}
 
     # Filter to US exchanges and clean symbols
-    us_exchanges = {'NYSE', 'NASDAQ', 'AMEX', 'New York Stock Exchange', 'NasdaqGS', 'NasdaqGM', 'NasdaqCM'}
+    us_exchanges = {'NYSE', 'NASDAQ', 'AMEX', 'New York Stock Exchange',
+                    'NasdaqGS', 'NasdaqGM', 'NasdaqCM', 'NYSEArca'}
     for s in stock_data:
         sym = s.get('symbol', '')
         if not sym or '.' in sym or '-' in sym or len(sym) > 5:
@@ -107,7 +141,7 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
 
     print(f"  Total unique US stocks: {len(all_stocks)}")
 
-    # Fill in missing profile data (IPO dates, industry, etc.) via batch profile calls
+    # Fill in missing profile data (IPO dates, industry, etc.) via profile endpoint
     missing_profile = [sym for sym in all_stocks if not profiles[sym].get('industry')]
     if missing_profile:
         print(f"  Fetching profiles for {len(missing_profile)} stocks missing details...")
@@ -115,20 +149,22 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
             batch = missing_profile[i:i + 50]
             symbols_str = ','.join(batch)
             try:
-                url = f"{BASE_URL}/v3/profile/{symbols_str}"
-                resp = requests.get(url, params={'apikey': API_KEY})
+                url = f"{BASE_URL}/stable/profile"
+                resp = requests.get(url, params={'symbol': symbols_str, 'apikey': API_KEY}, timeout=30)
                 if resp.ok:
-                    for p in resp.json():
-                        sym = p.get('symbol')
-                        if sym and sym in profiles:
-                            if p.get('ipoDate'):
-                                profiles[sym]['ipo_date'] = p['ipoDate']
-                            if p.get('industry'):
-                                profiles[sym]['industry'] = p['industry']
-                            if p.get('sector'):
-                                profiles[sym]['sector'] = p['sector']
-                            if p.get('mktCap'):
-                                profiles[sym]['market_cap'] = p['mktCap']
+                    result = resp.json()
+                    if isinstance(result, list):
+                        for p in result:
+                            sym = p.get('symbol')
+                            if sym and sym in profiles:
+                                if p.get('ipoDate'):
+                                    profiles[sym]['ipo_date'] = p['ipoDate']
+                                if p.get('industry'):
+                                    profiles[sym]['industry'] = p['industry']
+                                if p.get('sector'):
+                                    profiles[sym]['sector'] = p['sector']
+                                if p.get('mktCap'):
+                                    profiles[sym]['market_cap'] = p['mktCap']
             except Exception:
                 pass
 
@@ -141,24 +177,32 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
 
 
 def get_stock_data(ticker: str, start_date: str, end_date: str) -> List[Dict]:
-    """Fetch historical daily OHLCV bars from FMP"""
+    """Fetch historical daily OHLCV bars from FMP (/stable/ endpoint)"""
     try:
-        url = f"{BASE_URL}/v3/historical-price-full/{ticker}"
+        url = f"{BASE_URL}/stable/historical-price-full"
         params = {
+            'symbol': ticker,
             'from': start_date,
             'to': end_date,
             'apikey': API_KEY,
         }
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
 
-        if not data.get('historical'):
+        # /stable/ may return list directly or {historical: [...]}
+        historical = None
+        if isinstance(data, list):
+            historical = data
+        elif isinstance(data, dict):
+            historical = data.get('historical', [])
+
+        if not historical:
             return []
 
         # FMP returns newest-first; reverse for oldest-first
-        bars = data['historical'][::-1]
+        bars = historical[::-1]
         return [
             {
                 't': int(datetime.strptime(bar['date'], '%Y-%m-%d').timestamp() * 1000),
