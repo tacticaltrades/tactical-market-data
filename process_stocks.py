@@ -78,10 +78,10 @@ def test_api_connection() -> bool:
 
     print()
 
-    # Test 2: /stable/historical-price-full (the one that keeps failing)
-    print("  Test 2: /stable/historical-price-full?symbol=AAPL")
+    # Test 2: /stable/historical-price-eod/full (correct stable endpoint)
+    print("  Test 2: /stable/historical-price-eod/full?symbol=AAPL")
     try:
-        resp = requests.get(f"{BASE_URL}/stable/historical-price-full",
+        resp = requests.get(f"{BASE_URL}/stable/historical-price-eod/full",
                             params={'symbol': 'AAPL', 'from': '2025-01-01',
                                     'to': '2025-03-01', 'apikey': API_KEY}, timeout=15)
         print(f"    Status: {resp.status_code}")
@@ -91,61 +91,9 @@ def test_api_connection() -> bool:
                 print(f"    Result: list with {len(data)} items")
                 if data:
                     print(f"    First item keys: {list(data[0].keys())[:8]}")
+                    print(f"    First item: {data[0]}")
             elif isinstance(data, dict):
                 print(f"    Result: dict with keys {list(data.keys())[:8]}")
-                hist = data.get('historical', [])
-                print(f"    historical entries: {len(hist)}")
-            else:
-                print(f"    Result type: {type(data)}")
-        else:
-            print(f"    Response: {resp.text[:300]}")
-    except Exception as e:
-        print(f"    Error: {e}")
-
-    print()
-
-    # Test 3: /api/v3/historical-price-full/AAPL (legacy, path-based)
-    print("  Test 3: /api/v3/historical-price-full/AAPL (legacy)")
-    try:
-        resp = requests.get(f"{BASE_URL}/api/v3/historical-price-full/AAPL",
-                            params={'from': '2025-01-01', 'to': '2025-03-01',
-                                    'apikey': API_KEY}, timeout=15)
-        print(f"    Status: {resp.status_code}")
-        if resp.ok:
-            data = resp.json()
-            if isinstance(data, dict):
-                hist = data.get('historical', [])
-                print(f"    historical entries: {len(hist)}")
-                if hist:
-                    print(f"    First entry: {hist[0]}")
-            else:
-                print(f"    Result type: {type(data)}")
-        else:
-            print(f"    Response: {resp.text[:300]}")
-    except Exception as e:
-        print(f"    Error: {e}")
-
-    print()
-
-    # Test 4: /stable/historical-price-full/{symbol} (path-based stable)
-    print("  Test 4: /stable/historical-price-full/AAPL (path-based)")
-    try:
-        resp = requests.get(f"{BASE_URL}/stable/historical-price-full/AAPL",
-                            params={'from': '2025-01-01', 'to': '2025-03-01',
-                                    'apikey': API_KEY}, timeout=15)
-        print(f"    Status: {resp.status_code}")
-        if resp.ok:
-            data = resp.json()
-            if isinstance(data, list):
-                print(f"    Result: list with {len(data)} items")
-                if data:
-                    print(f"    First item keys: {list(data[0].keys())[:8]}")
-            elif isinstance(data, dict):
-                print(f"    Result: dict with keys {list(data.keys())[:8]}")
-                hist = data.get('historical', [])
-                print(f"    historical entries: {len(hist)}")
-                if hist:
-                    print(f"    First entry: {hist[0]}")
             else:
                 print(f"    Result type: {type(data)}")
         else:
@@ -301,12 +249,8 @@ def get_stock_history(ticker: str, start_date: str, end_date: str,
     Tries multiple endpoint formats to find one that works."""
 
     endpoints = [
-        # /stable/ with query param
-        ('/stable/historical-price-full', {'symbol': ticker, 'from': start_date, 'to': end_date}),
-        # /stable/ with path param
-        (f'/stable/historical-price-full/{ticker}', {'from': start_date, 'to': end_date}),
-        # /api/v3/ legacy with path param
-        (f'/api/v3/historical-price-full/{ticker}', {'from': start_date, 'to': end_date}),
+        # /stable/ correct endpoint (historical-price-eod/full)
+        ('/stable/historical-price-eod/full', {'symbol': ticker, 'from': start_date, 'to': end_date}),
     ]
 
     for path, params in endpoints:
@@ -325,14 +269,12 @@ def get_stock_history(ticker: str, start_date: str, end_date: str,
 
             data = resp.json()
 
-            # Normalize: could be list or {historical: [...]}
+            # /stable/historical-price-eod/full returns a flat list of bars
             historical = []
             if isinstance(data, list) and data:
-                # Check if it's a list of price bars
-                if 'date' in data[0]:
-                    historical = data
+                historical = data
             elif isinstance(data, dict):
-                historical = data.get('historical', [])
+                historical = data.get('historical', data.get('data', []))
 
             if verbose:
                 print(f"      Got {len(historical)} bars")
