@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-03-21T22:12:22.423169",
+  "last_updated": "2026-03-22T00:57:19.116398",
   "formula_used": "Flexible: Adapts to available data",
   "stage_2_criteria": "50dma > 150dma > 200dma",
   "total_stocks": 159,
@@ -10,7 +10,7 @@
   "adjustment_info": {
     "phantom_stocks_added": 7841,
     "target_universe_size": 8000,
-    "average_rank_change": 33.4,
+    "average_rank_change": 0.12,
     "adjustment_method": "Added ~2,800 phantom stocks in bottom 35% to match IBD universe"
   },
   "note": "RS ranks adjusted with phantom stocks to match IBD's ~8,000 stock universe",
@@ -102,8 +102,8 @@
       "industry": "OPERATORS OF APARTMENT BUILDINGS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 98,
-      "rank_adjustment": 1
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "RKLB",
@@ -132,8 +132,8 @@
       "industry": "GUIDED MISSILES & SPACE VEHICLES & PARTS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 98,
-      "rank_adjustment": 1
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SJ",
@@ -162,8 +162,8 @@
       "industry": "SERVICES-COMPUTER PROCESSING & DATA PREPARATION",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 97,
-      "rank_adjustment": 2
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ATI",
@@ -192,8 +192,8 @@
       "industry": "STEEL PIPE & TUBES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 96,
-      "rank_adjustment": 3
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "BKD",
@@ -222,8 +222,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 96,
-      "rank_adjustment": 3
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CCO",
@@ -252,8 +252,8 @@
       "industry": "SERVICES-ADVERTISING",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 95,
-      "rank_adjustment": 4
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "TECX",
@@ -282,8 +282,8 @@
       "industry": "BIOLOGICAL PRODUCTS, (NO DIAGNOSTIC SUBSTANCES)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 95,
-      "rank_adjustment": 4
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "KLIC",
@@ -312,8 +312,8 @@
       "industry": "SEMICONDUCTORS & RELATED DEVICES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 94,
-      "rank_adjustment": 5
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "OCC",
@@ -342,8 +342,8 @@
       "industry": "DRAWING & INSULATING OF NONFERROUS WIRE",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 93,
-      "rank_adjustment": 6
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "VLO",
@@ -372,8 +372,8 @@
       "industry": "PETROLEUM REFINING",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 93,
-      "rank_adjustment": 6
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "INSW",
@@ -402,8 +402,8 @@
       "industry": "WATER TRANSPORTATION",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 92,
-      "rank_adjustment": 7
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CDE",
@@ -432,8 +432,8 @@
       "industry": "GOLD AND SILVER ORES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 91,
-      "rank_adjustment": 8
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "GTN.A",
@@ -462,8 +462,8 @@
       "industry": "TELEVISION BROADCASTING STATIONS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 91,
-      "rank_adjustment": 8
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "PBT",
@@ -492,8 +492,8 @@
       "industry": "OIL ROYALTY TRADERS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 90,
-      "rank_adjustment": 9
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "IMRX",
@@ -522,8 +522,8 @@
       "industry": "PHARMACEUTICAL PREPARATIONS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 90,
-      "rank_adjustment": 9
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ESEA",
@@ -552,8 +552,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 89,
-      "rank_adjustment": 10
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ESP",
@@ -582,8 +582,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 88,
-      "rank_adjustment": 11
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "KGC",
@@ -612,8 +612,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 88,
-      "rank_adjustment": 11
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "Q",
@@ -642,8 +642,8 @@
       "industry": "SEMICONDUCTORS & RELATED DEVICES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 87,
-      "rank_adjustment": 12
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "DGII",
@@ -672,8 +672,8 @@
       "industry": "COMPUTER COMMUNICATIONS EQUIPMENT",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 86,
-      "rank_adjustment": 13
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "STRS",
@@ -702,8 +702,8 @@
       "industry": "LAND SUBDIVIDERS & DEVELOPERS (NO CEMETERIES)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 86,
-      "rank_adjustment": 13
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CEPU",
@@ -732,8 +732,8 @@
       "industry": null,
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 85,
-      "rank_adjustment": 14
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CLST",
@@ -762,8 +762,8 @@
       "industry": "SAVINGS INSTITUTION, FEDERALLY CHARTERED",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 85,
-      "rank_adjustment": 14
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MRBK",
@@ -792,8 +792,8 @@
       "industry": "NATIONAL COMMERCIAL BANKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 84,
-      "rank_adjustment": 15
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "PRME",
@@ -822,8 +822,8 @@
       "industry": "BIOLOGICAL PRODUCTS, (NO DIAGNOSTIC SUBSTANCES)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 83,
-      "rank_adjustment": 16
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CMDB",
@@ -852,8 +852,8 @@
       "industry": null,
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 83,
-      "rank_adjustment": 16
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "NRP",
@@ -882,8 +882,8 @@
       "industry": "BITUMINOUS COAL & LIGNITE SURFACE MINING",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 82,
-      "rank_adjustment": 17
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "RRC",
@@ -912,8 +912,8 @@
       "industry": "CRUDE PETROLEUM & NATURAL GAS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 81,
-      "rank_adjustment": 18
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ELUT",
@@ -942,8 +942,8 @@
       "industry": "BIOLOGICAL PRODUCTS, (NO DIAGNOSTIC SUBSTANCES)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 81,
-      "rank_adjustment": 18
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SOC",
@@ -972,8 +972,8 @@
       "industry": "CRUDE PETROLEUM & NATURAL GAS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 80,
-      "rank_adjustment": 19
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "NTCT",
@@ -1002,8 +1002,8 @@
       "industry": "SERVICES-COMPUTER INTEGRATED SYSTEMS DESIGN",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 80,
-      "rank_adjustment": 19
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "POET",
@@ -1032,8 +1032,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 79,
-      "rank_adjustment": 20
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "C",
@@ -1062,8 +1062,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 78,
-      "rank_adjustment": 21
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FVCB",
@@ -1092,8 +1092,8 @@
       "industry": "STATE COMMERCIAL BANKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 78,
-      "rank_adjustment": 21
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CBNA",
@@ -1122,8 +1122,8 @@
       "industry": "NATIONAL COMMERCIAL BANKS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 77,
-      "rank_adjustment": 22
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SMSI",
@@ -1152,8 +1152,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 76,
-      "rank_adjustment": 23
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ARLP",
@@ -1182,8 +1182,8 @@
       "industry": "BITUMINOUS COAL & LIGNITE SURFACE MINING",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 76,
-      "rank_adjustment": 23
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "JRVR",
@@ -1212,8 +1212,8 @@
       "industry": "FIRE, MARINE & CASUALTY INSURANCE",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 75,
-      "rank_adjustment": 24
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "IRM",
@@ -1242,8 +1242,8 @@
       "industry": "REAL ESTATE INVESTMENT TRUSTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 75,
-      "rank_adjustment": 24
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "KRP",
@@ -1272,8 +1272,8 @@
       "industry": "CRUDE PETROLEUM & NATURAL GAS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 74,
-      "rank_adjustment": 25
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "HTO",
@@ -1302,8 +1302,8 @@
       "industry": "WATER SUPPLY",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 73,
-      "rank_adjustment": 26
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FXNC",
@@ -1332,8 +1332,8 @@
       "industry": "STATE COMMERCIAL BANKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 73,
-      "rank_adjustment": 26
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FBNC",
@@ -1362,8 +1362,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 72,
-      "rank_adjustment": 27
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "STT",
@@ -1392,8 +1392,8 @@
       "industry": "STATE COMMERCIAL BANKS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 71,
-      "rank_adjustment": 28
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "OLN",
@@ -1422,8 +1422,8 @@
       "industry": "CHEMICALS & ALLIED PRODUCTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 71,
-      "rank_adjustment": 28
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "TORO",
@@ -1452,8 +1452,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 70,
-      "rank_adjustment": 29
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MWA",
@@ -1482,8 +1482,8 @@
       "industry": "MISCELLANEOUS FABRICATED METAL PRODUCTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 70,
-      "rank_adjustment": 29
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CTS",
@@ -1512,8 +1512,8 @@
       "industry": "PRINTED CIRCUIT BOARDS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 69,
-      "rank_adjustment": 30
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CLDT",
@@ -1542,8 +1542,8 @@
       "industry": "REAL ESTATE INVESTMENT TRUSTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 68,
-      "rank_adjustment": 31
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "THFF",
@@ -1572,8 +1572,8 @@
       "industry": "STATE COMMERCIAL BANKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 68,
-      "rank_adjustment": 31
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SMG",
@@ -1602,8 +1602,8 @@
       "industry": "AGRICULTURAL CHEMICALS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 67,
-      "rank_adjustment": 32
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "TGNA",
@@ -1632,8 +1632,8 @@
       "industry": "TELEVISION BROADCASTING STATIONS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 67,
-      "rank_adjustment": 32
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ANSC",
@@ -1662,8 +1662,8 @@
       "industry": "BLANK CHECKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 66,
-      "rank_adjustment": 33
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MFC",
@@ -1692,8 +1692,8 @@
       "industry": null,
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 65,
-      "rank_adjustment": 34
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MLAC",
@@ -1722,8 +1722,8 @@
       "industry": "BLANK CHECKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 65,
-      "rank_adjustment": 34
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FACT",
@@ -1752,8 +1752,8 @@
       "industry": "AIRCRAFT PARTS & AUXILIARY EQUIPMENT, NEC",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 64,
-      "rank_adjustment": 35
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SSEA",
@@ -1782,8 +1782,8 @@
       "industry": "BLANK CHECKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 63,
-      "rank_adjustment": 36
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "PGAC",
@@ -1812,8 +1812,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 63,
-      "rank_adjustment": 36
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "STRW",
@@ -1842,8 +1842,8 @@
       "industry": "REAL ESTATE INVESTMENT TRUSTS",
       "exchange": "XASE",
       "ticker_type": "CS",
-      "rs_rank_original": 62,
-      "rank_adjustment": 37
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CCEP",
@@ -1872,8 +1872,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 62,
-      "rank_adjustment": 37
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ALDF",
@@ -1902,8 +1902,8 @@
       "industry": "BLANK CHECKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 61,
-      "rank_adjustment": 38
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CINF",
@@ -1932,8 +1932,8 @@
       "industry": "FIRE, MARINE & CASUALTY INSURANCE",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 60,
-      "rank_adjustment": 39
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "GAING",
@@ -1962,8 +1962,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 60,
-      "rank_adjustment": 39
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "GAINZ",
@@ -1992,8 +1992,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 59,
-      "rank_adjustment": 40
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "PKG",
@@ -2022,8 +2022,8 @@
       "industry": "PAPERBOARD CONTAINERS & BOXES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 58,
-      "rank_adjustment": 41
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "AVAV",
@@ -2052,8 +2052,8 @@
       "industry": "AIRCRAFT",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 58,
-      "rank_adjustment": 41
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MCHB",
@@ -2082,8 +2082,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 57,
-      "rank_adjustment": 42
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "LAFA",
@@ -2112,8 +2112,8 @@
       "industry": "BLANK CHECKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 57,
-      "rank_adjustment": 42
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ORIQ",
@@ -2142,8 +2142,8 @@
       "industry": "BLANK CHECKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 56,
-      "rank_adjustment": 43
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MKLY",
@@ -2172,8 +2172,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 55,
-      "rank_adjustment": 44
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "TRNO",
@@ -2202,8 +2202,8 @@
       "industry": "REAL ESTATE",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 55,
-      "rank_adjustment": 44
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "LQDT",
@@ -2232,8 +2232,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 54,
-      "rank_adjustment": 45
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "EVLV",
@@ -2262,8 +2262,8 @@
       "industry": "COMPUTER PERIPHERAL EQUIPMENT, NEC",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 53,
-      "rank_adjustment": 46
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MGYR",
@@ -2292,8 +2292,8 @@
       "industry": "SAVINGS INSTITUTION, FEDERALLY CHARTERED",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 53,
-      "rank_adjustment": 46
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CGTL",
@@ -2322,8 +2322,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 52,
-      "rank_adjustment": 47
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "H",
@@ -2352,8 +2352,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 52,
-      "rank_adjustment": 47
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "DOLE",
@@ -2382,8 +2382,8 @@
       "industry": null,
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 51,
-      "rank_adjustment": 48
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "LEG",
@@ -2412,8 +2412,8 @@
       "industry": "HOUSEHOLD FURNITURE",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 50,
-      "rank_adjustment": 49
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CEPO",
@@ -2442,8 +2442,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 50,
-      "rank_adjustment": 49
+      "rs_rank_original": 99,
+      "rank_adjustment": 0
     },
     {
       "symbol": "PEG",
@@ -2472,8 +2472,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 49,
-      "rank_adjustment": 49
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FMAO",
@@ -2502,8 +2502,8 @@
       "industry": "SAVINGS INSTITUTION, FEDERALLY CHARTERED",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 48,
-      "rank_adjustment": 50
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ADAMI",
@@ -2532,8 +2532,8 @@
       "industry": "REAL ESTATE INVESTMENT TRUSTS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 48,
-      "rank_adjustment": 50
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MRX",
@@ -2562,8 +2562,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 47,
-      "rank_adjustment": 51
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FLYW",
@@ -2592,8 +2592,8 @@
       "industry": "SERVICES-BUSINESS SERVICES, NEC",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 47,
-      "rank_adjustment": 51
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MHO",
@@ -2622,8 +2622,8 @@
       "industry": "OPERATIVE BUILDERS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 46,
-      "rank_adjustment": 52
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "RVP",
@@ -2652,8 +2652,8 @@
       "industry": "SURGICAL & MEDICAL INSTRUMENTS & APPARATUS",
       "exchange": "XASE",
       "ticker_type": "CS",
-      "rs_rank_original": 45,
-      "rank_adjustment": 53
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FDBC",
@@ -2682,8 +2682,8 @@
       "industry": "NATIONAL COMMERCIAL BANKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 45,
-      "rank_adjustment": 53
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "DFSC",
@@ -2712,8 +2712,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 44,
-      "rank_adjustment": 54
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "PG",
@@ -2742,8 +2742,8 @@
       "industry": "SOAP, DETERGENTS, CLEANG PREPARATIONS, PERFUMES, COSMETICS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 43,
-      "rank_adjustment": 55
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SFWL",
@@ -2772,8 +2772,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 43,
-      "rank_adjustment": 55
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ACI",
@@ -2802,8 +2802,8 @@
       "industry": "RETAIL-GROCERY STORES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 42,
-      "rank_adjustment": 56
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "DHR",
@@ -2832,8 +2832,8 @@
       "industry": "INDUSTRIAL INSTRUMENTS FOR MEASUREMENT, DISPLAY, AND CONTROL",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 42,
-      "rank_adjustment": 56
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "VOYG",
@@ -2862,8 +2862,8 @@
       "industry": "GUIDED MISSILES & SPACE VEHICLES & PARTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 41,
-      "rank_adjustment": 57
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "AUBN",
@@ -2892,8 +2892,8 @@
       "industry": "STATE COMMERCIAL BANKS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 40,
-      "rank_adjustment": 58
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "AMP",
@@ -2922,8 +2922,8 @@
       "industry": "INVESTMENT ADVICE",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 40,
-      "rank_adjustment": 58
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MPT",
@@ -2952,8 +2952,8 @@
       "industry": "REAL ESTATE INVESTMENT TRUSTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 39,
-      "rank_adjustment": 59
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ESLA",
@@ -2982,8 +2982,8 @@
       "industry": "BIOLOGICAL PRODUCTS, (NO DIAGNOSTIC SUBSTANCES)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 38,
-      "rank_adjustment": 60
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "VICI",
@@ -3012,8 +3012,8 @@
       "industry": "REAL ESTATE INVESTMENT TRUSTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 38,
-      "rank_adjustment": 60
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SAH",
@@ -3042,8 +3042,8 @@
       "industry": "RETAIL-AUTO DEALERS & GASOLINE STATIONS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 37,
-      "rank_adjustment": 61
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "BSET",
@@ -3072,8 +3072,8 @@
       "industry": "WOOD HOUSEHOLD FURNITURE, (NO UPHOLSTERED)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 37,
-      "rank_adjustment": 61
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "HAE",
@@ -3102,8 +3102,8 @@
       "industry": "SURGICAL & MEDICAL INSTRUMENTS & APPARATUS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 36,
-      "rank_adjustment": 62
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MGEE",
@@ -3132,8 +3132,8 @@
       "industry": "ELECTRIC, GAS & SANITARY SERVICES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 35,
-      "rank_adjustment": 63
+      "rs_rank_original": 98,
+      "rank_adjustment": 0
     },
     {
       "symbol": "BOC",
@@ -3162,12 +3162,12 @@
       "industry": "REAL ESTATE OPERATORS (NO DEVELOPERS) & LESSORS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 35,
-      "rank_adjustment": 62
+      "rs_rank_original": 97,
+      "rank_adjustment": 0
     },
     {
       "symbol": "TBLA",
-      "rs_rank": 97,
+      "rs_rank": 96,
       "rs_score": -0.131,
       "avg_volume": "1.8M",
       "raw_volume": 1782563,
@@ -3192,12 +3192,12 @@
       "industry": "SERVICES-COMPUTER PROGRAMMING, DATA PROCESSING, ETC.",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 34,
-      "rank_adjustment": 63
+      "rs_rank_original": 97,
+      "rank_adjustment": -1
     },
     {
       "symbol": "HUDI",
-      "rs_rank": 97,
+      "rs_rank": 96,
       "rs_score": -0.131,
       "avg_volume": "71k",
       "raw_volume": 70795,
@@ -3222,8 +3222,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 34,
-      "rank_adjustment": 63
+      "rs_rank_original": 97,
+      "rank_adjustment": -1
     },
     {
       "symbol": "OWLS",
@@ -3252,8 +3252,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 33,
-      "rank_adjustment": 63
+      "rs_rank_original": 96,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CALY",
@@ -3282,12 +3282,12 @@
       "industry": "SPORTING & ATHLETIC GOODS, NEC",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 32,
-      "rank_adjustment": 64
+      "rs_rank_original": 96,
+      "rank_adjustment": 0
     },
     {
       "symbol": "PFX",
-      "rs_rank": 90,
+      "rs_rank": 91,
       "rs_score": -0.1409,
       "avg_volume": "4k",
       "raw_volume": 3826,
@@ -3312,8 +3312,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 32,
-      "rank_adjustment": 58
+      "rs_rank_original": 90,
+      "rank_adjustment": 1
     },
     {
       "symbol": "VFS",
@@ -3342,8 +3342,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 31,
-      "rank_adjustment": 59
+      "rs_rank_original": 90,
+      "rank_adjustment": 0
     },
     {
       "symbol": "HBIO",
@@ -3372,8 +3372,8 @@
       "industry": "LABORATORY ANALYTICAL INSTRUMENTS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 30,
-      "rank_adjustment": 60
+      "rs_rank_original": 90,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ITRI",
@@ -3402,8 +3402,8 @@
       "industry": "INSTRUMENTS FOR MEAS & TESTING OF ELECTRICITY & ELEC SIGNALS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 30,
-      "rank_adjustment": 56
+      "rs_rank_original": 86,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SEED",
@@ -3432,8 +3432,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 29,
-      "rank_adjustment": 57
+      "rs_rank_original": 86,
+      "rank_adjustment": 0
     },
     {
       "symbol": "RXO",
@@ -3462,12 +3462,12 @@
       "industry": "TRANSPORTATION SERVICES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 29,
-      "rank_adjustment": 56
+      "rs_rank_original": 85,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FF",
-      "rs_rank": 83,
+      "rs_rank": 84,
       "rs_score": -0.1532,
       "avg_volume": "388k",
       "raw_volume": 387620,
@@ -3492,8 +3492,8 @@
       "industry": "INDUSTRIAL ORGANIC CHEMICALS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 28,
-      "rank_adjustment": 55
+      "rs_rank_original": 83,
+      "rank_adjustment": 1
     },
     {
       "symbol": "COOT",
@@ -3522,8 +3522,8 @@
       "industry": "FATS & OILS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 27,
-      "rank_adjustment": 56
+      "rs_rank_original": 83,
+      "rank_adjustment": 0
     },
     {
       "symbol": "RPM",
@@ -3552,8 +3552,8 @@
       "industry": "PAINTS, VARNISHES, LACQUERS, ENAMELS & ALLIED PRODS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 27,
-      "rank_adjustment": 52
+      "rs_rank_original": 79,
+      "rank_adjustment": 0
     },
     {
       "symbol": "AGBK",
@@ -3582,8 +3582,8 @@
       "industry": null,
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 26,
-      "rank_adjustment": 50
+      "rs_rank_original": 76,
+      "rank_adjustment": 0
     },
     {
       "symbol": "INVH",
@@ -3612,8 +3612,8 @@
       "industry": "REAL ESTATE OPERATORS (NO DEVELOPERS) & LESSORS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 25,
-      "rank_adjustment": 42
+      "rs_rank_original": 67,
+      "rank_adjustment": 0
     },
     {
       "symbol": "TCX",
@@ -3642,12 +3642,12 @@
       "industry": "SERVICES-COMPUTER PROCESSING & DATA PREPARATION",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 25,
-      "rank_adjustment": 40
+      "rs_rank_original": 65,
+      "rank_adjustment": 0
     },
     {
       "symbol": "OSCR",
-      "rs_rank": 64,
+      "rs_rank": 65,
       "rs_score": -0.2109,
       "avg_volume": "8.2M",
       "raw_volume": 8223998,
@@ -3672,8 +3672,8 @@
       "industry": "HOSPITAL & MEDICAL SERVICE PLANS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 24,
-      "rank_adjustment": 40
+      "rs_rank_original": 64,
+      "rank_adjustment": 1
     },
     {
       "symbol": "FIG",
@@ -3702,8 +3702,8 @@
       "industry": "SERVICES-PREPACKAGED SOFTWARE",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 24,
-      "rank_adjustment": 40
+      "rs_rank_original": 64,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SLNH",
@@ -3732,8 +3732,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 23,
-      "rank_adjustment": 37
+      "rs_rank_original": 60,
+      "rank_adjustment": 0
     },
     {
       "symbol": "AMSF",
@@ -3762,8 +3762,8 @@
       "industry": "FIRE, MARINE & CASUALTY INSURANCE",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 22,
-      "rank_adjustment": 37
+      "rs_rank_original": 59,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FAMI",
@@ -3792,12 +3792,12 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 22,
-      "rank_adjustment": 37
+      "rs_rank_original": 59,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MTEK",
-      "rs_rank": 59,
+      "rs_rank": 58,
       "rs_score": -0.256,
       "avg_volume": "980k",
       "raw_volume": 979545,
@@ -3822,8 +3822,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 21,
-      "rank_adjustment": 38
+      "rs_rank_original": 59,
+      "rank_adjustment": -1
     },
     {
       "symbol": "GIFT",
@@ -3852,8 +3852,8 @@
       "industry": "RETAIL-CATALOG & MAIL-ORDER HOUSES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 20,
-      "rank_adjustment": 38
+      "rs_rank_original": 58,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ACN",
@@ -3882,8 +3882,8 @@
       "industry": "SERVICES-BUSINESS SERVICES, NEC",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 20,
-      "rank_adjustment": 38
+      "rs_rank_original": 58,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ENR",
@@ -3912,8 +3912,8 @@
       "industry": "MISCELLANEOUS ELECTRICAL MACHINERY, EQUIPMENT & SUPPLIES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 19,
-      "rank_adjustment": 37
+      "rs_rank_original": 56,
+      "rank_adjustment": 0
     },
     {
       "symbol": "KAPA",
@@ -3942,8 +3942,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 19,
-      "rank_adjustment": 37
+      "rs_rank_original": 56,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FBIN",
@@ -3972,12 +3972,12 @@
       "industry": "MILLWOOD, VENEER, PLYWOOD, & STRUCTURAL WOOD MEMBERS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 18,
-      "rank_adjustment": 37
+      "rs_rank_original": 55,
+      "rank_adjustment": 0
     },
     {
       "symbol": "MLTX",
-      "rs_rank": 53,
+      "rs_rank": 54,
       "rs_score": -0.2939,
       "avg_volume": "2.1M",
       "raw_volume": 2081412,
@@ -4002,12 +4002,12 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 17,
-      "rank_adjustment": 36
+      "rs_rank_original": 53,
+      "rank_adjustment": 1
     },
     {
       "symbol": "DOUG",
-      "rs_rank": 53,
+      "rs_rank": 54,
       "rs_score": -0.294,
       "avg_volume": "820k",
       "raw_volume": 820407,
@@ -4032,8 +4032,8 @@
       "industry": "REAL ESTATE AGENTS & MANAGERS (FOR OTHERS)",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 17,
-      "rank_adjustment": 36
+      "rs_rank_original": 53,
+      "rank_adjustment": 1
     },
     {
       "symbol": "UWMC",
@@ -4062,12 +4062,12 @@
       "industry": "MORTGAGE BANKERS & LOAN CORRESPONDENTS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 16,
-      "rank_adjustment": 37
+      "rs_rank_original": 53,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ATYR",
-      "rs_rank": 52,
+      "rs_rank": 53,
       "rs_score": -0.3032,
       "avg_volume": "1.8M",
       "raw_volume": 1835076,
@@ -4092,12 +4092,12 @@
       "industry": "BIOLOGICAL PRODUCTS, (NO DIAGNOSTIC SUBSTANCES)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 15,
-      "rank_adjustment": 37
+      "rs_rank_original": 52,
+      "rank_adjustment": 1
     },
     {
       "symbol": "SLM",
-      "rs_rank": 51,
+      "rs_rank": 52,
       "rs_score": -0.3116,
       "avg_volume": "4.1M",
       "raw_volume": 4121442,
@@ -4122,12 +4122,12 @@
       "industry": "PERSONAL CREDIT INSTITUTIONS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 15,
-      "rank_adjustment": 36
+      "rs_rank_original": 51,
+      "rank_adjustment": 1
     },
     {
       "symbol": "INLX",
-      "rs_rank": 50,
+      "rs_rank": 51,
       "rs_score": -0.3146,
       "avg_volume": "3k",
       "raw_volume": 2629,
@@ -4152,12 +4152,12 @@
       "industry": "SERVICES-PREPACKAGED SOFTWARE",
       "exchange": "XASE",
       "ticker_type": "CS",
-      "rs_rank_original": 14,
-      "rank_adjustment": 36
+      "rs_rank_original": 50,
+      "rank_adjustment": 1
     },
     {
       "symbol": "FWDI",
-      "rs_rank": 49,
+      "rs_rank": 51,
       "rs_score": -0.3208,
       "avg_volume": "915k",
       "raw_volume": 915408,
@@ -4182,12 +4182,12 @@
       "industry": "FINANCE SERVICES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 14,
-      "rank_adjustment": 35
+      "rs_rank_original": 49,
+      "rank_adjustment": 2
     },
     {
       "symbol": "SILO",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.3474,
       "avg_volume": "1.1M",
       "raw_volume": 1120944,
@@ -4212,12 +4212,12 @@
       "industry": "PHARMACEUTICAL PREPARATIONS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 13,
-      "rank_adjustment": 33
+      "rs_rank_original": 46,
+      "rank_adjustment": 1
     },
     {
       "symbol": "AFRM",
-      "rs_rank": 46,
+      "rs_rank": 47,
       "rs_score": -0.3516,
       "avg_volume": "7.0M",
       "raw_volume": 6993502,
@@ -4242,8 +4242,8 @@
       "industry": "PERSONAL CREDIT INSTITUTIONS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 12,
-      "rank_adjustment": 34
+      "rs_rank_original": 46,
+      "rank_adjustment": 1
     },
     {
       "symbol": "IPDN",
@@ -4272,12 +4272,12 @@
       "industry": "SERVICES-COMPUTER PROGRAMMING, DATA PROCESSING, ETC.",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 12,
-      "rank_adjustment": 34
+      "rs_rank_original": 46,
+      "rank_adjustment": 0
     },
     {
       "symbol": "CAI",
-      "rs_rank": 45,
+      "rs_rank": 46,
       "rs_score": -0.3594,
       "avg_volume": "2.6M",
       "raw_volume": 2590162,
@@ -4302,12 +4302,12 @@
       "industry": "SERVICES-MEDICAL LABORATORIES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 11,
-      "rank_adjustment": 34
+      "rs_rank_original": 45,
+      "rank_adjustment": 1
     },
     {
       "symbol": "LPA",
-      "rs_rank": 42,
+      "rs_rank": 43,
       "rs_score": -0.3781,
       "avg_volume": "19k",
       "raw_volume": 18867,
@@ -4332,12 +4332,12 @@
       "industry": null,
       "exchange": "XASE",
       "ticker_type": "CS",
-      "rs_rank_original": 10,
-      "rank_adjustment": 32
+      "rs_rank_original": 42,
+      "rank_adjustment": 1
     },
     {
       "symbol": "DOCU",
-      "rs_rank": 42,
+      "rs_rank": 43,
       "rs_score": -0.3794,
       "avg_volume": "5.1M",
       "raw_volume": 5142964,
@@ -4362,12 +4362,12 @@
       "industry": "SERVICES-PREPACKAGED SOFTWARE",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 10,
-      "rank_adjustment": 32
+      "rs_rank_original": 42,
+      "rank_adjustment": 1
     },
     {
       "symbol": "AWRE",
-      "rs_rank": 38,
+      "rs_rank": 39,
       "rs_score": -0.4093,
       "avg_volume": "37k",
       "raw_volume": 37052,
@@ -4392,8 +4392,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 9,
-      "rank_adjustment": 29
+      "rs_rank_original": 38,
+      "rank_adjustment": 1
     },
     {
       "symbol": "GRPN",
@@ -4422,12 +4422,12 @@
       "industry": "SERVICES-ADVERTISING AGENCIES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 9,
-      "rank_adjustment": 28
+      "rs_rank_original": 37,
+      "rank_adjustment": 0
     },
     {
       "symbol": "INFQ",
-      "rs_rank": 35,
+      "rs_rank": 36,
       "rs_score": -0.4349,
       "avg_volume": "3.3M",
       "raw_volume": 3345307,
@@ -4452,12 +4452,12 @@
       "industry": "BLANK CHECKS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 8,
-      "rank_adjustment": 27
+      "rs_rank_original": 35,
+      "rank_adjustment": 1
     },
     {
       "symbol": "TIL",
-      "rs_rank": 32,
+      "rs_rank": 33,
       "rs_score": -0.4575,
       "avg_volume": "69k",
       "raw_volume": 68557,
@@ -4482,12 +4482,12 @@
       "industry": "BIOLOGICAL PRODUCTS, (NO DIAGNOSTIC SUBSTANCES)",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 7,
-      "rank_adjustment": 25
+      "rs_rank_original": 32,
+      "rank_adjustment": 1
     },
     {
       "symbol": "JACK",
-      "rs_rank": 31,
+      "rs_rank": 32,
       "rs_score": -0.461,
       "avg_volume": "669k",
       "raw_volume": 668897,
@@ -4512,12 +4512,12 @@
       "industry": "RETAIL-EATING PLACES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 7,
-      "rank_adjustment": 24
+      "rs_rank_original": 31,
+      "rank_adjustment": 1
     },
     {
       "symbol": "OCCI",
-      "rs_rank": 30,
+      "rs_rank": 31,
       "rs_score": -0.4723,
       "avg_volume": "454k",
       "raw_volume": 453720,
@@ -4542,12 +4542,12 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 6,
-      "rank_adjustment": 24
+      "rs_rank_original": 30,
+      "rank_adjustment": 1
     },
     {
       "symbol": "DWTX",
-      "rs_rank": 30,
+      "rs_rank": 31,
       "rs_score": -0.4732,
       "avg_volume": "56k",
       "raw_volume": 55872,
@@ -4572,12 +4572,12 @@
       "industry": "PHARMACEUTICAL PREPARATIONS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 5,
-      "rank_adjustment": 25
+      "rs_rank_original": 30,
+      "rank_adjustment": 1
     },
     {
       "symbol": "TGEN",
-      "rs_rank": 25,
+      "rs_rank": 26,
       "rs_score": -0.5084,
       "avg_volume": "400k",
       "raw_volume": 400047,
@@ -4602,12 +4602,12 @@
       "industry": "AIR-COND & WARM AIR HEATG EQUIP & COMM & INDL REFRIG EQUIP",
       "exchange": "XASE",
       "ticker_type": "CS",
-      "rs_rank_original": 5,
-      "rank_adjustment": 20
+      "rs_rank_original": 25,
+      "rank_adjustment": 1
     },
     {
       "symbol": "VITL",
-      "rs_rank": 16,
+      "rs_rank": 17,
       "rs_score": -0.5763,
       "avg_volume": "2.2M",
       "raw_volume": 2173258,
@@ -4632,8 +4632,8 @@
       "industry": "FOOD AND KINDRED PRODUCTS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 4,
-      "rank_adjustment": 12
+      "rs_rank_original": 16,
+      "rank_adjustment": 1
     },
     {
       "symbol": "FCHL",
@@ -4662,12 +4662,12 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 4,
-      "rank_adjustment": 6
+      "rs_rank_original": 10,
+      "rank_adjustment": 0
     },
     {
       "symbol": "BTQ",
-      "rs_rank": 10,
+      "rs_rank": 9,
       "rs_score": -0.6331,
       "avg_volume": "2.3M",
       "raw_volume": 2270899,
@@ -4692,8 +4692,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 3,
-      "rank_adjustment": 7
+      "rs_rank_original": 10,
+      "rank_adjustment": -1
     },
     {
       "symbol": "INBS",
@@ -4722,8 +4722,8 @@
       "industry": "SURGICAL & MEDICAL INSTRUMENTS & APPARATUS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 2,
-      "rank_adjustment": 1
+      "rs_rank_original": 3,
+      "rank_adjustment": 0
     },
     {
       "symbol": "NUWE",
@@ -4752,8 +4752,8 @@
       "industry": "ELECTROMEDICAL & ELECTROTHERAPEUTIC APPARATUS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 2,
-      "rank_adjustment": -1
+      "rs_rank_original": 1,
+      "rank_adjustment": 0
     },
     {
       "symbol": "VHUB",
