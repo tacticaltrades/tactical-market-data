@@ -1,56 +1,63 @@
-# Updated Weekly Refresh Workflow with Phantom Stock Adjustment
-# Runs every Friday at 4:05 PM EST
-# Now includes automatic RS adjustment to match IBD's 8,000 stock universe
+# Daily Full Rebuild - FMP Edition
+# Runs every day at 4:20 PM EST (after market close)
+# Fetches all US stocks from Financial Modeling Prep, calculates RS rankings
 
-name: Main Phantom Adjustment
+name: Daily Full Rebuild
 
 on:
   schedule:
-    - cron: '20 21 * * *'  # 4:20 PM EST = 21:20 UTC (daily)
+    - cron: '20 21 * * 1-5'  # 4:20 PM EST = 21:20 UTC (Mon-Fri)
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  refresh-and-adjust:
+  full-rebuild:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 120
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
-    - name: Run weekly refresh (get all stocks)
+
+    - name: Run full stock data rebuild
       env:
-        POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+        FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
       run: |
         python process_stocks.py
-    
-    - name: Adjust RS rankings with phantom stocks
+
+    - name: Adjust RS rankings with phantom stocks (optional)
       run: |
-        echo "Adding phantom stocks to match IBD's 8,000 stock universe..."
-        python adjust_phantom.py
-        
-        # Replace rankings.json with adjusted version
-        cp rankings_adjusted.json rankings.json
-        
-        echo "✅ RS rankings adjusted successfully!"
-    
+        echo "Checking if phantom adjustment is needed..."
+        STOCK_COUNT=$(python -c "import json; d=json.load(open('rankings.json')); print(d['total_stocks'])")
+        echo "Total stocks from FMP: $STOCK_COUNT"
+
+        if [ "$STOCK_COUNT" -lt 7000 ]; then
+          echo "Stock count below 7,000 — applying phantom adjustment..."
+          python adjust_phantom.py
+          cp rankings_adjusted.json rankings.json
+          echo "Phantom adjustment applied."
+        else
+          echo "Stock count >= 7,000 — skipping phantom adjustment."
+        fi
+
     - name: Configure Git
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-    
+
     - name: Commit and push changes
       run: |
-        git add rankings.json rankings_adjusted.json historical_data.json recent_ipos.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Weekly data refresh with phantom-adjusted RS rankings - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
+        git add rankings.json historical_data.json recent_ipos.json
+        [ -f rankings_adjusted.json ] && git add rankings_adjusted.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Daily rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
