@@ -39,56 +39,48 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
     all_stocks = []
     profiles = {}
 
-    # Strategy 1: stock-list (returns all symbols)
-    endpoints_to_try = [
-        ('stock-list', f"{BASE_URL}/stable/stock-list", {'apikey': API_KEY}),
-        ('actively-trading-list', f"{BASE_URL}/stable/actively-trading-list", {'apikey': API_KEY}),
-    ]
-
-    stock_data = None
-    for name, url, params in endpoints_to_try:
-        print(f"  Trying /stable/{name}...")
+    # Strategy 1: company-screener per exchange (best — server-side filtering)
+    print("  Trying /stable/company-screener per exchange...")
+    stock_data = []
+    for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
+        print(f"    Fetching {exchange}...")
         try:
-            response = requests.get(url, params=params, timeout=60)
+            url = f"{BASE_URL}/stable/company-screener"
+            params = {
+                'exchange': exchange,
+                'isActivelyTrading': 'true',
+                'isEtf': 'false',
+                'isFund': 'false',
+                'apikey': API_KEY,
+            }
+            resp = requests.get(url, params=params, timeout=60)
+            print(f"      Status: {resp.status_code}")
+            if resp.ok:
+                data = resp.json()
+                if isinstance(data, list):
+                    for s in data:
+                        s['exchangeShortName'] = exchange
+                    stock_data.extend(data)
+                    print(f"      Got {len(data)} stocks")
+        except Exception as e:
+            print(f"      Error: {e}")
+        time.sleep(RATE_DELAY)
+
+    if not stock_data:
+        # Strategy 2: stock-list (returns all global — needs client-side filtering)
+        print("  Screener failed. Trying /stable/stock-list...")
+        try:
+            response = requests.get(f"{BASE_URL}/stable/stock-list",
+                                     params={'apikey': API_KEY}, timeout=60)
             print(f"    Status: {response.status_code}")
             if response.ok:
                 stock_data = response.json()
-                if isinstance(stock_data, list) and len(stock_data) > 0:
-                    print(f"    Got {len(stock_data)} entries")
-                    break
+                if isinstance(stock_data, list):
+                    print(f"    Got {len(stock_data)} entries (all global, will filter)")
                 else:
-                    print(f"    Empty or unexpected response")
-                    stock_data = None
+                    stock_data = []
         except Exception as e:
             print(f"    Error: {e}")
-
-    if not stock_data:
-        # Strategy 2: company-screener per exchange
-        print("  Trying /stable/company-screener per exchange...")
-        stock_data = []
-        for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
-            print(f"    Fetching {exchange}...")
-            try:
-                url = f"{BASE_URL}/stable/company-screener"
-                params = {
-                    'exchange': exchange,
-                    'isActivelyTrading': 'true',
-                    'isEtf': 'false',
-                    'isFund': 'false',
-                    'apikey': API_KEY,
-                }
-                resp = requests.get(url, params=params, timeout=60)
-                print(f"      Status: {resp.status_code}")
-                if resp.ok:
-                    data = resp.json()
-                    if isinstance(data, list):
-                        for s in data:
-                            s['exchangeShortName'] = exchange
-                        stock_data.extend(data)
-                        print(f"      Got {len(data)} stocks")
-            except Exception as e:
-                print(f"      Error: {e}")
-            time.sleep(RATE_DELAY)
 
     if not stock_data:
         # Strategy 3: batch-exchange-quote per exchange
@@ -116,16 +108,34 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
         print("  ERROR: All endpoints failed!")
         return [], {}
 
-    # Filter to US exchanges and clean symbols
+    # Filter to US exchanges, common stocks only
     us_exchanges = {'NYSE', 'NASDAQ', 'AMEX', 'New York Stock Exchange',
                     'NasdaqGS', 'NasdaqGM', 'NasdaqCM', 'NYSEArca'}
+    # Exclude ETFs, funds, warrants, rights, preferred shares, units
+    excluded_types = {'etf', 'fund', 'trust'}
     for s in stock_data:
         sym = s.get('symbol', '')
-        if not sym or '.' in sym or '-' in sym or len(sym) > 5:
+        if not sym or '.' in sym or len(sym) > 5:
+            continue
+
+        # Skip warrants (W suffix), units (U suffix), rights (R suffix)
+        if sym.endswith('W') and len(sym) > 2:
+            continue
+        if sym.endswith('R') and len(sym) > 3:
+            continue
+
+        # Skip preferred shares, units, warrants with hyphens
+        if '-' in sym:
             continue
 
         exchange = s.get('exchangeShortName', s.get('exchange', ''))
-        if exchange and exchange not in us_exchanges:
+        # REQUIRE a US exchange (don't pass through stocks with no exchange)
+        if not exchange or exchange not in us_exchanges:
+            continue
+
+        # Skip if type indicates ETF/fund
+        stock_type = (s.get('type') or '').lower()
+        if stock_type and any(t in stock_type for t in excluded_types):
             continue
 
         if sym not in profiles:  # deduplicate
