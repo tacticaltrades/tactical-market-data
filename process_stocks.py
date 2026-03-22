@@ -30,71 +30,77 @@ RATE_DELAY = 0.25  # seconds between API calls (240/min, under 300/min limit)
 # API functions
 # ---------------------------------------------------------------------------
 
-def get_all_tickers() -> List[Dict]:
-    """Fetch all active US stocks from FMP stock list"""
-    print("Fetching all tickers from FMP...")
+def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
+    """Fetch all active US stocks using FMP stock-screener.
+    Returns (symbol_list, profiles_dict) — screener gives us profile data for free."""
+    print("Fetching all tickers from FMP stock-screener...")
 
-    url = f"{BASE_URL}/v3/stock/list"
-    params = {'apikey': API_KEY}
-
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    data = response.json()
-
-    # Filter to US exchanges and stock type
-    us_exchanges = {'NYSE', 'NASDAQ', 'AMEX'}
-    us_stocks = [
-        s for s in data
-        if s.get('exchangeShortName') in us_exchanges
-        and s.get('type') == 'stock'
-        and s.get('symbol')
-        and '.' not in s['symbol']  # skip preferred shares like BRK.B
-        and '-' not in s['symbol']  # skip warrants like ACHR-WT
-        and len(s['symbol']) <= 5   # skip unusual symbols
-    ]
-
-    print(f"  Total from FMP: {len(data)}")
-    print(f"  US stocks filtered: {len(us_stocks)}")
-
-    return us_stocks
-
-
-def get_batch_profiles(symbols: List[str], batch_size: int = 50) -> Dict[str, Dict]:
-    """Fetch company profiles in batches (FMP supports comma-separated symbols)"""
-    print(f"Fetching profiles for {len(symbols)} stocks in batches of {batch_size}...")
+    all_stocks = []
     profiles = {}
 
-    for i in range(0, len(symbols), batch_size):
-        batch = symbols[i:i + batch_size]
-        symbols_str = ','.join(batch)
+    for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
+        print(f"  Fetching {exchange}...")
+        url = f"{BASE_URL}/v3/stock-screener"
+        params = {
+            'apikey': API_KEY,
+            'exchange': exchange,
+            'isActivelyTrading': 'true',
+            'limit': 10000,
+        }
 
         try:
-            url = f"{BASE_URL}/v3/profile/{symbols_str}"
-            params = {'apikey': API_KEY}
             response = requests.get(url, params=params)
             response.raise_for_status()
             data = response.json()
 
-            for profile in data:
-                sym = profile.get('symbol')
-                if sym:
-                    profiles[sym] = {
-                        'market_cap': profile.get('mktCap'),
-                        'industry': profile.get('industry'),
-                        'sector': profile.get('sector'),
-                        'ipo_date': profile.get('ipoDate'),
-                        'exchange': profile.get('exchangeShortName'),
-                        'ticker_type': 'stock',
-                    }
-        except Exception as e:
-            print(f"  Error fetching profile batch {i}: {e}")
+            for s in data:
+                sym = s.get('symbol', '')
+                if not sym or '.' in sym or '-' in sym or len(sym) > 5:
+                    continue
 
-        if i % 500 == 0 and i > 0:
-            print(f"  Profiles: {i}/{len(symbols)}")
+                all_stocks.append(sym)
+                profiles[sym] = {
+                    'market_cap': s.get('marketCap'),
+                    'industry': s.get('industry'),
+                    'sector': s.get('sector'),
+                    'exchange': exchange,
+                    'ticker_type': 'stock',
+                    'ipo_date': None,  # screener doesn't include IPO date
+                }
+
+            print(f"    Got {len(data)} stocks from {exchange}")
+        except Exception as e:
+            print(f"    Error fetching {exchange}: {e}")
+
         time.sleep(RATE_DELAY)
 
-    print(f"  Got profiles for {len(profiles)} stocks")
-    return profiles
+    # Deduplicate
+    all_stocks = list(dict.fromkeys(all_stocks))
+    print(f"  Total unique US stocks: {len(all_stocks)}")
+
+    # Batch-fetch IPO dates via profile endpoint (50 at a time)
+    print(f"  Fetching IPO dates for {len(all_stocks)} stocks...")
+    for i in range(0, len(all_stocks), 50):
+        batch = all_stocks[i:i + 50]
+        symbols_str = ','.join(batch)
+        try:
+            url = f"{BASE_URL}/v3/profile/{symbols_str}"
+            params = {'apikey': API_KEY}
+            resp = requests.get(url, params=params)
+            if resp.ok:
+                for p in resp.json():
+                    sym = p.get('symbol')
+                    if sym and sym in profiles:
+                        profiles[sym]['ipo_date'] = p.get('ipoDate')
+        except Exception:
+            pass
+
+        if i % 500 == 0 and i > 0:
+            print(f"    IPO dates: {i}/{len(all_stocks)}")
+        time.sleep(RATE_DELAY)
+
+    print(f"  Done fetching profiles")
+    return all_stocks, profiles
 
 
 def get_stock_data(ticker: str, start_date: str, end_date: str) -> List[Dict]:
@@ -335,19 +341,15 @@ def main():
     end_str = end_date.strftime('%Y-%m-%d')
     print(f"Date range: {start_str} to {end_str}\n")
 
-    # 1. Get all US stock tickers
-    stock_list = get_all_tickers()
-    if not stock_list:
+    # 1. Get all US stock tickers + profiles (screener gives both)
+    symbols, profiles = get_all_tickers()
+    if not symbols:
         print("ERROR: Failed to get tickers!")
         return
 
-    symbols = [s['symbol'] for s in stock_list]
     print(f"Processing {len(symbols)} stocks...\n")
 
-    # 2. Batch-fetch company profiles (market cap, industry, sector, IPO date)
-    profiles = get_batch_profiles(symbols)
-
-    # 3. Process each stock
+    # 2. Process each stock
     all_stock_data = []
     historical_stocks = []
     processed = 0
