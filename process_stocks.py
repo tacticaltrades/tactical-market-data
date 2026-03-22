@@ -345,11 +345,11 @@ def get_earnings_data(ticker: str) -> Optional[Dict]:
     """Fetch last 4 quarters of earnings (EPS + revenue actual vs estimated)
     and income statement margins. Returns summary dict for screener display."""
 
-    # 1. Earnings: EPS and revenue actual vs estimated
-    earnings_raw = fmp_get('/stable/earnings', {'symbol': ticker, 'limit': 4})
+    # 1. Earnings: EPS and revenue actual vs estimated (fetch 8 to ensure 4 reported)
+    earnings_raw = fmp_get('/stable/earnings', {'symbol': ticker, 'limit': 8})
     # 2. Income statement: margins
     income_raw = fmp_get('/stable/income-statement',
-                         {'symbol': ticker, 'period': 'quarter', 'limit': 4})
+                         {'symbol': ticker, 'period': 'quarter', 'limit': 8})
 
     quarters = []
 
@@ -392,6 +392,10 @@ def get_earnings_data(ticker: str) -> Optional[Dict]:
 
     if not quarters and not margins:
         return None
+
+    # Filter to only reported quarters (have actual EPS or revenue) and take most recent 4
+    quarters = [q for q in quarters if q.get('eps_actual') is not None or q.get('revenue_actual') is not None]
+    quarters = quarters[:4]  # already sorted newest-first from FMP
 
     # Match margins to quarters by date
     margin_by_date = {m['date']: m for m in margins}
