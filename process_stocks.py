@@ -1,8 +1,11 @@
 """
 FULL REBUILD: process_stocks.py (FMP Edition)
-Fetches all active US stocks from Financial Modeling Prep API.
+Fetches all active US common stocks from Financial Modeling Prep API.
 Calculates RS scores, moving averages, ADR, ATR, Stage 2 status.
 Includes market cap, industry/sector, IPO date.
+
+Uses /stable/ endpoints (v3/v4 deprecated Aug 2025).
+Fetches last 5 years of historical data.
 
 Formula adapts based on data availability:
 - 252+ days: Full formula (0.4x3m + 0.2x6m + 0.2x9m + 0.2x12m)
@@ -16,129 +19,264 @@ import os
 import json
 import requests
 import time
+import sys
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Configuration
 API_KEY = os.environ.get('FMP_API_KEY')
 BASE_URL = 'https://financialmodelingprep.com'
-RATE_DELAY = 0.25  # seconds between API calls (240/min, under 300/min limit)
+RATE_DELAY = 0.25  # seconds between API calls
 
 
 # ---------------------------------------------------------------------------
-# API functions — uses /stable/ endpoints (v3/v4 deprecated Aug 2025)
+# API helpers
 # ---------------------------------------------------------------------------
+
+def fmp_get(path: str, params: Optional[Dict] = None, timeout: int = 30) -> Optional[any]:
+    """Make a GET request to FMP. Returns parsed JSON or None."""
+    if params is None:
+        params = {}
+    params['apikey'] = API_KEY
+
+    url = f"{BASE_URL}{path}"
+    try:
+        resp = requests.get(url, params=params, timeout=timeout)
+        if not resp.ok:
+            return None
+        return resp.json()
+    except Exception:
+        return None
+
+
+def test_api_connection() -> bool:
+    """Test the API key works by fetching AAPL data. Prints verbose output."""
+    print("=" * 60)
+    print("API CONNECTION TEST")
+    print("=" * 60)
+    print(f"  API key present: {bool(API_KEY)}")
+    print(f"  API key length: {len(API_KEY) if API_KEY else 0}")
+    print()
+
+    # Test 1: /stable/profile
+    print("  Test 1: /stable/profile?symbol=AAPL")
+    try:
+        resp = requests.get(f"{BASE_URL}/stable/profile",
+                            params={'symbol': 'AAPL', 'apikey': API_KEY}, timeout=15)
+        print(f"    Status: {resp.status_code}")
+        if resp.ok:
+            data = resp.json()
+            if isinstance(data, list) and data:
+                print(f"    Result: {data[0].get('companyName', 'N/A')} (OK)")
+            else:
+                print(f"    Result type: {type(data)}, len: {len(data) if hasattr(data, '__len__') else 'N/A'}")
+        else:
+            print(f"    Response: {resp.text[:300]}")
+    except Exception as e:
+        print(f"    Error: {e}")
+
+    print()
+
+    # Test 2: /stable/historical-price-full (the one that keeps failing)
+    print("  Test 2: /stable/historical-price-full?symbol=AAPL")
+    try:
+        resp = requests.get(f"{BASE_URL}/stable/historical-price-full",
+                            params={'symbol': 'AAPL', 'from': '2025-01-01',
+                                    'to': '2025-03-01', 'apikey': API_KEY}, timeout=15)
+        print(f"    Status: {resp.status_code}")
+        if resp.ok:
+            data = resp.json()
+            if isinstance(data, list):
+                print(f"    Result: list with {len(data)} items")
+                if data:
+                    print(f"    First item keys: {list(data[0].keys())[:8]}")
+            elif isinstance(data, dict):
+                print(f"    Result: dict with keys {list(data.keys())[:8]}")
+                hist = data.get('historical', [])
+                print(f"    historical entries: {len(hist)}")
+            else:
+                print(f"    Result type: {type(data)}")
+        else:
+            print(f"    Response: {resp.text[:300]}")
+    except Exception as e:
+        print(f"    Error: {e}")
+
+    print()
+
+    # Test 3: /api/v3/historical-price-full/AAPL (legacy, path-based)
+    print("  Test 3: /api/v3/historical-price-full/AAPL (legacy)")
+    try:
+        resp = requests.get(f"{BASE_URL}/api/v3/historical-price-full/AAPL",
+                            params={'from': '2025-01-01', 'to': '2025-03-01',
+                                    'apikey': API_KEY}, timeout=15)
+        print(f"    Status: {resp.status_code}")
+        if resp.ok:
+            data = resp.json()
+            if isinstance(data, dict):
+                hist = data.get('historical', [])
+                print(f"    historical entries: {len(hist)}")
+                if hist:
+                    print(f"    First entry: {hist[0]}")
+            else:
+                print(f"    Result type: {type(data)}")
+        else:
+            print(f"    Response: {resp.text[:300]}")
+    except Exception as e:
+        print(f"    Error: {e}")
+
+    print()
+
+    # Test 4: /stable/historical-price-full/{symbol} (path-based stable)
+    print("  Test 4: /stable/historical-price-full/AAPL (path-based)")
+    try:
+        resp = requests.get(f"{BASE_URL}/stable/historical-price-full/AAPL",
+                            params={'from': '2025-01-01', 'to': '2025-03-01',
+                                    'apikey': API_KEY}, timeout=15)
+        print(f"    Status: {resp.status_code}")
+        if resp.ok:
+            data = resp.json()
+            if isinstance(data, list):
+                print(f"    Result: list with {len(data)} items")
+                if data:
+                    print(f"    First item keys: {list(data[0].keys())[:8]}")
+            elif isinstance(data, dict):
+                print(f"    Result: dict with keys {list(data.keys())[:8]}")
+                hist = data.get('historical', [])
+                print(f"    historical entries: {len(hist)}")
+                if hist:
+                    print(f"    First entry: {hist[0]}")
+            else:
+                print(f"    Result type: {type(data)}")
+        else:
+            print(f"    Response: {resp.text[:300]}")
+    except Exception as e:
+        print(f"    Error: {e}")
+
+    print()
+
+    # Test 5: company screener
+    print("  Test 5: /stable/company-screener (NYSE, limit=5)")
+    try:
+        resp = requests.get(f"{BASE_URL}/stable/company-screener",
+                            params={'exchange': 'NYSE', 'isActivelyTrading': 'true',
+                                    'isEtf': 'false', 'isFund': 'false',
+                                    'limit': 5, 'apikey': API_KEY}, timeout=15)
+        print(f"    Status: {resp.status_code}")
+        if resp.ok:
+            data = resp.json()
+            if isinstance(data, list):
+                print(f"    Got {len(data)} results")
+                for item in data[:3]:
+                    print(f"    {item.get('symbol', '?')} - {item.get('companyName', '?')} - exchange: {item.get('exchangeShortName', '?')}")
+        else:
+            print(f"    Response: {resp.text[:300]}")
+    except Exception as e:
+        print(f"    Error: {e}")
+
+    print()
+    print("=" * 60)
+    print()
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Stock list
+# ---------------------------------------------------------------------------
+
+def is_common_stock(s: Dict) -> bool:
+    """Filter to common stocks only. Exclude ETFs, funds, warrants, preferred, etc."""
+    sym = s.get('symbol', '')
+    if not sym or len(sym) > 5:
+        return False
+
+    # Dots indicate foreign shares (BRK.B exception handled by exchange filter)
+    if '.' in sym:
+        return False
+
+    # Hyphens indicate preferred shares, warrants, units (e.g. AAPL-W, XYZ-PA)
+    if '-' in sym:
+        return False
+
+    # Warrants typically end with W and are 3+ chars
+    if len(sym) >= 3 and sym.endswith('W'):
+        return False
+
+    # Rights typically end with R and are 4+ chars
+    if len(sym) >= 4 and sym.endswith('R'):
+        return False
+
+    # Units end with U
+    if len(sym) >= 3 and sym.endswith('U'):
+        return False
+
+    # Check type field if available
+    stock_type = (s.get('type') or '').lower()
+    for excluded in ('etf', 'fund', 'trust', 'warrant', 'right', 'preferred', 'unit'):
+        if excluded in stock_type:
+            return False
+
+    return True
+
 
 def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
-    """Fetch all active US stocks from FMP.
-    Tries /stable/ endpoints first, falls back to per-exchange screener.
+    """Fetch all active US common stocks from FMP.
     Returns (symbol_list, profiles_dict)."""
-    print("Fetching all tickers from FMP (/stable/ API)...")
+    print("Fetching US common stocks from FMP...")
 
     all_stocks = []
     profiles = {}
-
-    # Strategy 1: company-screener per exchange (best — server-side filtering)
-    print("  Trying /stable/company-screener per exchange...")
     stock_data = []
-    for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
-        print(f"    Fetching {exchange}...")
-        try:
-            url = f"{BASE_URL}/stable/company-screener"
-            params = {
-                'exchange': exchange,
-                'isActivelyTrading': 'true',
-                'isEtf': 'false',
-                'isFund': 'false',
-                'apikey': API_KEY,
-            }
-            resp = requests.get(url, params=params, timeout=60)
-            print(f"      Status: {resp.status_code}")
-            if resp.ok:
-                data = resp.json()
-                if isinstance(data, list):
-                    for s in data:
-                        s['exchangeShortName'] = exchange
-                    stock_data.extend(data)
-                    print(f"      Got {len(data)} stocks")
-        except Exception as e:
-            print(f"      Error: {e}")
-        time.sleep(RATE_DELAY)
 
-    if not stock_data:
-        # Strategy 2: stock-list (returns all global — needs client-side filtering)
-        print("  Screener failed. Trying /stable/stock-list...")
-        try:
-            response = requests.get(f"{BASE_URL}/stable/stock-list",
-                                     params={'apikey': API_KEY}, timeout=60)
-            print(f"    Status: {response.status_code}")
-            if response.ok:
-                stock_data = response.json()
-                if isinstance(stock_data, list):
-                    print(f"    Got {len(stock_data)} entries (all global, will filter)")
-                else:
-                    stock_data = []
-        except Exception as e:
-            print(f"    Error: {e}")
-
-    if not stock_data:
-        # Strategy 3: batch-exchange-quote per exchange
-        print("  Trying /stable/batch-exchange-quote per exchange...")
-        stock_data = []
-        for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
-            print(f"    Fetching {exchange}...")
-            try:
-                url = f"{BASE_URL}/stable/batch-exchange-quote"
-                params = {'exchange': exchange, 'apikey': API_KEY}
-                resp = requests.get(url, params=params, timeout=60)
-                print(f"      Status: {resp.status_code}")
-                if resp.ok:
-                    data = resp.json()
-                    if isinstance(data, list):
-                        for s in data:
-                            s['exchangeShortName'] = exchange
-                        stock_data.extend(data)
-                        print(f"      Got {len(data)} stocks")
-            except Exception as e:
-                print(f"      Error: {e}")
-            time.sleep(RATE_DELAY)
-
-    if not stock_data:
-        print("  ERROR: All endpoints failed!")
-        return [], {}
-
-    # Filter to US exchanges, common stocks only
     us_exchanges = {'NYSE', 'NASDAQ', 'AMEX', 'New York Stock Exchange',
                     'NasdaqGS', 'NasdaqGM', 'NasdaqCM', 'NYSEArca'}
-    # Exclude ETFs, funds, warrants, rights, preferred shares, units
-    excluded_types = {'etf', 'fund', 'trust'}
+
+    # Strategy 1: company-screener per exchange with high limit
+    print("  Using /stable/company-screener...")
+    for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
+        print(f"    {exchange}...", end=' ', flush=True)
+        data = fmp_get('/stable/company-screener', {
+            'exchange': exchange,
+            'isActivelyTrading': 'true',
+            'isEtf': 'false',
+            'isFund': 'false',
+            'limit': 10000,
+        }, timeout=60)
+
+        if isinstance(data, list) and data:
+            for s in data:
+                s['exchangeShortName'] = exchange
+            stock_data.extend(data)
+            print(f"{len(data)} stocks")
+        else:
+            print(f"failed (got {type(data)})")
+        time.sleep(RATE_DELAY)
+
+    # Strategy 2 fallback: stock-list
+    if not stock_data:
+        print("  Screener failed. Trying /stable/stock-list...")
+        data = fmp_get('/stable/stock-list', timeout=60)
+        if isinstance(data, list) and data:
+            print(f"    Got {len(data)} entries (global, will filter to US)")
+            stock_data = data
+
+    if not stock_data:
+        print("  ERROR: No stock data from any endpoint!")
+        return [], {}
+
+    # Filter to US common stocks
     for s in stock_data:
+        if not is_common_stock(s):
+            continue
+
         sym = s.get('symbol', '')
-        if not sym or '.' in sym or len(sym) > 5:
-            continue
-
-        # Skip warrants (W suffix), units (U suffix), rights (R suffix)
-        if sym.endswith('W') and len(sym) > 2:
-            continue
-        if sym.endswith('R') and len(sym) > 3:
-            continue
-
-        # Skip preferred shares, units, warrants with hyphens
-        if '-' in sym:
-            continue
-
         exchange = s.get('exchangeShortName', s.get('exchange', ''))
-        # REQUIRE a US exchange (don't pass through stocks with no exchange)
+
+        # Require a known US exchange
         if not exchange or exchange not in us_exchanges:
             continue
 
-        # Skip if type indicates ETF/fund
-        stock_type = (s.get('type') or '').lower()
-        if stock_type and any(t in stock_type for t in excluded_types):
-            continue
-
-        if sym not in profiles:  # deduplicate
+        if sym not in profiles:
             all_stocks.append(sym)
             profiles[sym] = {
                 'market_cap': s.get('marketCap', s.get('mktCap')),
@@ -149,106 +287,85 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
                 'ipo_date': s.get('ipoDate'),
             }
 
-    print(f"  Total unique US stocks: {len(all_stocks)}")
-
-    # Fill in missing profile data (IPO dates, industry, etc.) via profile endpoint
-    missing_profile = [sym for sym in all_stocks if not profiles[sym].get('industry')]
-    if missing_profile:
-        print(f"  Fetching profiles for {len(missing_profile)} stocks missing details...")
-        for i in range(0, len(missing_profile), 50):
-            batch = missing_profile[i:i + 50]
-            symbols_str = ','.join(batch)
-            try:
-                # Try /stable/ first, fall back to /api/v3/
-                result = None
-                for profile_url in [
-                    f"{BASE_URL}/stable/profile?symbol={symbols_str}&apikey={API_KEY}",
-                    f"{BASE_URL}/api/v3/profile/{symbols_str}?apikey={API_KEY}",
-                ]:
-                    resp = requests.get(profile_url, timeout=30)
-                    if resp.ok:
-                        result = resp.json()
-                        if isinstance(result, list) and len(result) > 0:
-                            break
-                        result = None
-
-                if isinstance(result, list):
-                    for p in result:
-                        sym = p.get('symbol')
-                        if sym and sym in profiles:
-                            if p.get('ipoDate'):
-                                profiles[sym]['ipo_date'] = p['ipoDate']
-                            if p.get('industry'):
-                                profiles[sym]['industry'] = p['industry']
-                            if p.get('sector'):
-                                profiles[sym]['sector'] = p['sector']
-                            if p.get('mktCap'):
-                                profiles[sym]['market_cap'] = p['mktCap']
-            except Exception:
-                pass
-
-            if i % 500 == 0 and i > 0:
-                print(f"    Profiles: {i}/{len(missing_profile)}")
-            time.sleep(RATE_DELAY)
-
-    print(f"  Done. {len(all_stocks)} stocks ready to process.")
+    print(f"  Total US common stocks: {len(all_stocks)}")
     return all_stocks, profiles
 
 
-def get_stock_data(ticker: str, start_date: str, end_date: str) -> List[Dict]:
-    """Fetch historical daily OHLCV bars from FMP.
-    Tries /stable/ first, falls back to /api/v3/ (which is confirmed working)."""
-    try:
-        data = None
+# ---------------------------------------------------------------------------
+# Historical data
+# ---------------------------------------------------------------------------
 
-        # Try /stable/ first
+def get_stock_history(ticker: str, start_date: str, end_date: str,
+                      verbose: bool = False) -> List[Dict]:
+    """Fetch historical daily OHLCV bars for a single stock.
+    Tries multiple endpoint formats to find one that works."""
+
+    endpoints = [
+        # /stable/ with query param
+        ('/stable/historical-price-full', {'symbol': ticker, 'from': start_date, 'to': end_date}),
+        # /stable/ with path param
+        (f'/stable/historical-price-full/{ticker}', {'from': start_date, 'to': end_date}),
+        # /api/v3/ legacy with path param
+        (f'/api/v3/historical-price-full/{ticker}', {'from': start_date, 'to': end_date}),
+    ]
+
+    for path, params in endpoints:
         try:
-            url = f"{BASE_URL}/stable/historical-price-full"
-            params = {'symbol': ticker, 'from': start_date, 'to': end_date, 'apikey': API_KEY}
+            params['apikey'] = API_KEY
+            url = f"{BASE_URL}{path}"
             resp = requests.get(url, params=params, timeout=30)
-            if resp.ok:
-                data = resp.json()
-        except Exception:
-            pass
 
-        # Fall back to /api/v3/ (confirmed working for individual symbols)
-        if not data or (isinstance(data, dict) and not data.get('historical')) or (isinstance(data, list) and len(data) == 0):
-            url = f"{BASE_URL}/api/v3/historical-price-full/{ticker}"
-            params = {'from': start_date, 'to': end_date, 'apikey': API_KEY}
-            resp = requests.get(url, params=params, timeout=30)
-            resp.raise_for_status()
+            if verbose:
+                print(f"    {path}: status={resp.status_code}")
+
+            if not resp.ok:
+                if verbose:
+                    print(f"      Response: {resp.text[:200]}")
+                continue
+
             data = resp.json()
 
-        # Normalize response format
-        historical = None
-        if isinstance(data, list):
-            historical = data
-        elif isinstance(data, dict):
-            historical = data.get('historical', [])
+            # Normalize: could be list or {historical: [...]}
+            historical = []
+            if isinstance(data, list) and data:
+                # Check if it's a list of price bars
+                if 'date' in data[0]:
+                    historical = data
+            elif isinstance(data, dict):
+                historical = data.get('historical', [])
 
-        if not historical:
-            return []
+            if verbose:
+                print(f"      Got {len(historical)} bars")
 
-        # FMP returns newest-first; reverse for oldest-first
-        bars = historical[::-1]
-        return [
-            {
-                't': int(datetime.strptime(bar['date'], '%Y-%m-%d').timestamp() * 1000),
-                'o': bar['open'],
-                'h': bar['high'],
-                'l': bar['low'],
-                'c': bar['close'],
-                'v': bar.get('volume', 0),
-            }
-            for bar in bars
-            if bar.get('open') and bar.get('close')
-        ]
-    except Exception:
-        return []
+            if not historical:
+                continue
+
+            # FMP returns newest-first; reverse for oldest-first
+            bars = historical[::-1]
+            result = []
+            for bar in bars:
+                if bar.get('open') and bar.get('close'):
+                    result.append({
+                        't': int(datetime.strptime(bar['date'], '%Y-%m-%d').timestamp() * 1000),
+                        'o': bar['open'],
+                        'h': bar['high'],
+                        'l': bar['low'],
+                        'c': bar['close'],
+                        'v': bar.get('volume', 0),
+                    })
+
+            if result:
+                return result
+
+        except Exception as e:
+            if verbose:
+                print(f"      Error: {e}")
+
+    return []
 
 
 # ---------------------------------------------------------------------------
-# Calculation functions (unchanged logic)
+# Calculation functions
 # ---------------------------------------------------------------------------
 
 def calculate_return(prices: List[Dict], days_back: int) -> Optional[float]:
@@ -444,21 +561,53 @@ def main():
         print("ERROR: FMP_API_KEY not found!")
         return
 
+    # ---- Phase 0: Test API connection ----
+    test_api_connection()
+
+    # ---- Phase 1: Test with a single stock (AAPL) ----
+    print("PHASE 1: Testing with AAPL...")
+    test_bars = get_stock_history('AAPL', '2025-01-01', '2025-03-01', verbose=True)
+    if not test_bars:
+        print("FATAL: Cannot fetch historical data for AAPL!")
+        print("The API key may not have access to historical data.")
+        print("Aborting.")
+        return
+    print(f"  AAPL test passed: {len(test_bars)} bars")
+    print()
+
+    # ---- Phase 2: Get stock list ----
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=450)
+    start_date = end_date - timedelta(days=365 * 5)  # 5 years
     start_str = start_date.strftime('%Y-%m-%d')
     end_str = end_date.strftime('%Y-%m-%d')
     print(f"Date range: {start_str} to {end_str}\n")
 
-    # 1. Get all US stock tickers + profiles (screener gives both)
     symbols, profiles = get_all_tickers()
     if not symbols:
         print("ERROR: Failed to get tickers!")
         return
 
+    # ---- Phase 3: Small batch test (first 10 stocks) ----
+    print(f"\nPHASE 3: Testing first 10 stocks...")
+    test_success = 0
+    for ticker in symbols[:10]:
+        bars = get_stock_history(ticker, start_str, end_str)
+        status = f"{len(bars)} bars" if bars else "NO DATA"
+        print(f"  {ticker}: {status}")
+        if bars:
+            test_success += 1
+        time.sleep(RATE_DELAY)
+
+    print(f"\n  Test result: {test_success}/10 succeeded")
+    if test_success == 0:
+        print("FATAL: No stocks returned data in test batch!")
+        print("Aborting.")
+        return
+    print()
+
+    # ---- Phase 4: Full processing ----
     print(f"Processing {len(symbols)} stocks...\n")
 
-    # 2. Process each stock
     all_stock_data = []
     historical_stocks = []
     processed = 0
@@ -476,15 +625,10 @@ def main():
                     f"| OK: {processed} | Fail: {failed} | Stage2: {stage_2_count}"
                 )
 
-            stock_prices = get_stock_data(ticker, start_str, end_str)
+            stock_prices = get_stock_history(ticker, start_str, end_str)
             if not stock_prices:
-                if i < 5:
-                    print(f"  DEBUG: {ticker} returned no data")
                 failed += 1
                 continue
-
-            if i < 3:
-                print(f"  DEBUG: {ticker} got {len(stock_prices)} bars")
 
             result = calculate_stock_returns_flexible(stock_prices)
             if result[0] is None:
@@ -538,29 +682,13 @@ def main():
                 'ticker_type': profile.get('ticker_type'),
             })
 
-            # Compressed historical data (same format as before)
-            minimal_history = []
-            if len(stock_prices) > 30:
-                for price in stock_prices[:-30:5]:
-                    minimal_history.append({'t': price['t'], 'c': price['c']})
-            else:
-                for price in stock_prices[:-10:5] if len(stock_prices) > 10 else []:
-                    minimal_history.append({'t': price['t'], 'c': price['c']})
-
-            recent = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices
-            for price in recent:
-                minimal_history.append({
-                    't': price['t'],
-                    'c': price['c'],
-                    'v': price['v'],
-                    'o': price['o'],
-                    'h': price['h'],
-                    'l': price['l'],
-                })
-
+            # Store full OHLCV history (last 365 bars for daily use)
+            history_bars = stock_prices[-365:]
             historical_stocks.append({
                 's': ticker,
-                'h': minimal_history,
+                'h': [{'t': p['t'], 'o': p['o'], 'h': p['h'],
+                        'l': p['l'], 'c': p['c'], 'v': p['v']}
+                       for p in history_bars],
                 'u': datetime.now().isoformat(),
                 'i': profile.get('ipo_date'),
                 'd': days_available,
