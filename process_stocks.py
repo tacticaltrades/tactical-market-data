@@ -624,13 +624,18 @@ def main():
                 'ticker_type': profile.get('ticker_type'),
             })
 
-            # Store full OHLCV history (last 365 bars for daily use)
-            history_bars = stock_prices[-365:]
+            # Compressed historical data: close-only for older, full OHLCV for recent 30
+            minimal_history = []
+            older = stock_prices[:-30] if len(stock_prices) > 30 else []
+            recent = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices
+            for p in older[::5]:  # every 5th bar for older data
+                minimal_history.append({'t': p['t'], 'c': p['c']})
+            for p in recent:
+                minimal_history.append({'t': p['t'], 'o': p['o'], 'h': p['h'],
+                                        'l': p['l'], 'c': p['c'], 'v': p['v']})
             historical_stocks.append({
                 's': ticker,
-                'h': [{'t': p['t'], 'o': p['o'], 'h': p['h'],
-                        'l': p['l'], 'c': p['c'], 'v': p['v']}
-                       for p in history_bars],
+                'h': minimal_history,
                 'u': datetime.now().isoformat(),
                 'i': profile.get('ipo_date'),
                 'd': days_available,

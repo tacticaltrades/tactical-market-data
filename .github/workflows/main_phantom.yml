@@ -58,6 +58,6 @@ jobs:
 
     - name: Commit and push changes
       run: |
-        git add rankings.json historical_data.json recent_ipos.json
+        git add rankings.json recent_ipos.json
         [ -f rankings_adjusted.json ] && git add rankings_adjusted.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "Daily rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
