@@ -159,22 +159,31 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
             batch = missing_profile[i:i + 50]
             symbols_str = ','.join(batch)
             try:
-                url = f"{BASE_URL}/stable/profile"
-                resp = requests.get(url, params={'symbol': symbols_str, 'apikey': API_KEY}, timeout=30)
-                if resp.ok:
-                    result = resp.json()
-                    if isinstance(result, list):
-                        for p in result:
-                            sym = p.get('symbol')
-                            if sym and sym in profiles:
-                                if p.get('ipoDate'):
-                                    profiles[sym]['ipo_date'] = p['ipoDate']
-                                if p.get('industry'):
-                                    profiles[sym]['industry'] = p['industry']
-                                if p.get('sector'):
-                                    profiles[sym]['sector'] = p['sector']
-                                if p.get('mktCap'):
-                                    profiles[sym]['market_cap'] = p['mktCap']
+                # Try /stable/ first, fall back to /api/v3/
+                result = None
+                for profile_url in [
+                    f"{BASE_URL}/stable/profile?symbol={symbols_str}&apikey={API_KEY}",
+                    f"{BASE_URL}/api/v3/profile/{symbols_str}?apikey={API_KEY}",
+                ]:
+                    resp = requests.get(profile_url, timeout=30)
+                    if resp.ok:
+                        result = resp.json()
+                        if isinstance(result, list) and len(result) > 0:
+                            break
+                        result = None
+
+                if isinstance(result, list):
+                    for p in result:
+                        sym = p.get('symbol')
+                        if sym and sym in profiles:
+                            if p.get('ipoDate'):
+                                profiles[sym]['ipo_date'] = p['ipoDate']
+                            if p.get('industry'):
+                                profiles[sym]['industry'] = p['industry']
+                            if p.get('sector'):
+                                profiles[sym]['sector'] = p['sector']
+                            if p.get('mktCap'):
+                                profiles[sym]['market_cap'] = p['mktCap']
             except Exception:
                 pass
 
@@ -187,21 +196,30 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
 
 
 def get_stock_data(ticker: str, start_date: str, end_date: str) -> List[Dict]:
-    """Fetch historical daily OHLCV bars from FMP (/stable/ endpoint)"""
+    """Fetch historical daily OHLCV bars from FMP.
+    Tries /stable/ first, falls back to /api/v3/ (which is confirmed working)."""
     try:
-        url = f"{BASE_URL}/stable/historical-price-full"
-        params = {
-            'symbol': ticker,
-            'from': start_date,
-            'to': end_date,
-            'apikey': API_KEY,
-        }
+        data = None
 
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
-        data = response.json()
+        # Try /stable/ first
+        try:
+            url = f"{BASE_URL}/stable/historical-price-full"
+            params = {'symbol': ticker, 'from': start_date, 'to': end_date, 'apikey': API_KEY}
+            resp = requests.get(url, params=params, timeout=30)
+            if resp.ok:
+                data = resp.json()
+        except Exception:
+            pass
 
-        # /stable/ may return list directly or {historical: [...]}
+        # Fall back to /api/v3/ (confirmed working for individual symbols)
+        if not data or (isinstance(data, dict) and not data.get('historical')) or (isinstance(data, list) and len(data) == 0):
+            url = f"{BASE_URL}/api/v3/historical-price-full/{ticker}"
+            params = {'from': start_date, 'to': end_date, 'apikey': API_KEY}
+            resp = requests.get(url, params=params, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+
+        # Normalize response format
         historical = None
         if isinstance(data, list):
             historical = data
@@ -460,8 +478,13 @@ def main():
 
             stock_prices = get_stock_data(ticker, start_str, end_str)
             if not stock_prices:
+                if i < 5:
+                    print(f"  DEBUG: {ticker} returned no data")
                 failed += 1
                 continue
+
+            if i < 3:
+                print(f"  DEBUG: {ticker} got {len(stock_prices)} bars")
 
             result = calculate_stock_returns_flexible(stock_prices)
             if result[0] is None:
