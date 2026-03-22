@@ -338,6 +338,92 @@ def get_stock_history(ticker: str, start_date: str, end_date: str,
 
 
 # ---------------------------------------------------------------------------
+# Earnings & fundamentals
+# ---------------------------------------------------------------------------
+
+def get_earnings_data(ticker: str) -> Optional[Dict]:
+    """Fetch last 4 quarters of earnings (EPS + revenue actual vs estimated)
+    and income statement margins. Returns summary dict for screener display."""
+
+    # 1. Earnings: EPS and revenue actual vs estimated
+    earnings_raw = fmp_get('/stable/earnings', {'symbol': ticker, 'limit': 4})
+    # 2. Income statement: margins
+    income_raw = fmp_get('/stable/income-statement',
+                         {'symbol': ticker, 'period': 'quarter', 'limit': 4})
+
+    quarters = []
+
+    if isinstance(earnings_raw, list) and earnings_raw:
+        for q in earnings_raw:
+            eps_actual = q.get('epsActual')
+            eps_est = q.get('epsEstimated')
+            rev_actual = q.get('revenueActual')
+            rev_est = q.get('revenueEstimated')
+
+            eps_surprise = None
+            if eps_actual is not None and eps_est is not None and eps_est != 0:
+                eps_surprise = round(((eps_actual - eps_est) / abs(eps_est)) * 100, 1)
+
+            rev_surprise = None
+            if rev_actual is not None and rev_est is not None and rev_est != 0:
+                rev_surprise = round(((rev_actual - rev_est) / abs(rev_est)) * 100, 1)
+
+            quarters.append({
+                'date': q.get('date') or q.get('fiscalDateEnding'),
+                'eps_actual': eps_actual,
+                'eps_estimated': eps_est,
+                'eps_surprise_pct': eps_surprise,
+                'revenue_actual': rev_actual,
+                'revenue_estimated': rev_est,
+                'revenue_surprise_pct': rev_surprise,
+            })
+
+    # Add margins from income statement
+    margins = []
+    if isinstance(income_raw, list) and income_raw:
+        for stmt in income_raw:
+            margins.append({
+                'date': stmt.get('date'),
+                'gross_margin': round(stmt['grossProfitRatio'] * 100, 1) if stmt.get('grossProfitRatio') else None,
+                'operating_margin': round(stmt['operatingIncomeRatio'] * 100, 1) if stmt.get('operatingIncomeRatio') else None,
+                'net_margin': round(stmt['netIncomeRatio'] * 100, 1) if stmt.get('netIncomeRatio') else None,
+                'revenue': stmt.get('revenue'),
+            })
+
+    if not quarters and not margins:
+        return None
+
+    # Match margins to quarters by date
+    margin_by_date = {m['date']: m for m in margins}
+    for q in quarters:
+        m = margin_by_date.get(q['date'], {})
+        q['gross_margin'] = m.get('gross_margin')
+        q['operating_margin'] = m.get('operating_margin')
+        q['net_margin'] = m.get('net_margin')
+
+    # Calculate overall summary numbers
+    eps_surprises = [q['eps_surprise_pct'] for q in quarters if q.get('eps_surprise_pct') is not None]
+    rev_surprises = [q['revenue_surprise_pct'] for q in quarters if q.get('revenue_surprise_pct') is not None]
+    eps_actuals = [q['eps_actual'] for q in quarters if q.get('eps_actual') is not None]
+    rev_actuals = [q['revenue_actual'] for q in quarters if q.get('revenue_actual') is not None]
+
+    # Count beats
+    eps_beats = len([s for s in eps_surprises if s > 0])
+    rev_beats = len([s for s in rev_surprises if s > 0])
+
+    return {
+        'quarters': quarters,
+        'avg_eps_surprise': round(np.mean(eps_surprises), 1) if eps_surprises else None,
+        'avg_revenue_surprise': round(np.mean(rev_surprises), 1) if rev_surprises else None,
+        'eps_beats': f"{eps_beats}/{len(eps_surprises)}" if eps_surprises else None,
+        'revenue_beats': f"{rev_beats}/{len(rev_surprises)}" if rev_surprises else None,
+        'latest_gross_margin': margins[0].get('gross_margin') if margins else None,
+        'latest_operating_margin': margins[0].get('operating_margin') if margins else None,
+        'latest_net_margin': margins[0].get('net_margin') if margins else None,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Calculation functions
 # ---------------------------------------------------------------------------
 
@@ -624,12 +710,16 @@ def main():
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
 
+            # Fetch earnings data (EPS/revenue actual vs estimated + margins)
+            earnings = get_earnings_data(ticker)
+            time.sleep(RATE_DELAY)  # extra calls for earnings + income stmt
+
             profile = profiles.get(ticker, {})
             market_cap = profile.get('market_cap')
             market_cap_category = get_market_cap_category(market_cap)
             cap_counts[market_cap_category] = cap_counts.get(market_cap_category, 0) + 1
 
-            all_stock_data.append({
+            stock_entry = {
                 'symbol': ticker,
                 'rs_score': rs_score,
                 'avg_volume': int(avg_volume),
@@ -653,7 +743,13 @@ def main():
                 'industry': profile.get('industry'),
                 'exchange': profile.get('exchange'),
                 'ticker_type': profile.get('ticker_type'),
-            })
+            }
+
+            # Add earnings data if available
+            if earnings:
+                stock_entry['earnings'] = earnings
+
+            all_stock_data.append(stock_entry)
 
             # Compressed historical data: close-only for older, full OHLCV for recent 30
             minimal_history = []
@@ -736,6 +832,11 @@ def main():
             'exchange': stock.get('exchange'),
             'ticker_type': stock.get('ticker_type'),
         }
+
+        # Add earnings data if present
+        if stock.get('earnings'):
+            entry['earnings'] = stock['earnings']
+
         output_data.append(entry)
 
         # Collect recent IPOs
