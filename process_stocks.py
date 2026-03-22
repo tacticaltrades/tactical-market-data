@@ -31,75 +31,112 @@ RATE_DELAY = 0.25  # seconds between API calls (240/min, under 300/min limit)
 # ---------------------------------------------------------------------------
 
 def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
-    """Fetch all active US stocks using FMP stock-screener.
-    Returns (symbol_list, profiles_dict) — screener gives us profile data for free."""
-    print("Fetching all tickers from FMP stock-screener...")
+    """Fetch all active US stocks from FMP.
+    Tries multiple endpoints in order of preference.
+    Returns (symbol_list, profiles_dict)."""
+    print("Fetching all tickers from FMP...")
 
     all_stocks = []
     profiles = {}
 
-    for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
-        print(f"  Fetching {exchange}...")
-        url = f"{BASE_URL}/v3/stock-screener"
-        params = {
-            'apikey': API_KEY,
-            'exchange': exchange,
-            'isActivelyTrading': 'true',
-            'limit': 10000,
-        }
+    # Strategy: try available-traded/list, then quotes/{exchange}
+    endpoints_to_try = [
+        ('available-traded/list', f"{BASE_URL}/v3/available-traded/list", {'apikey': API_KEY}),
+        ('symbol/available-stocks', f"{BASE_URL}/v3/symbol/available-stock-list", {'apikey': API_KEY}),
+    ]
 
+    stock_data = None
+    for name, url, params in endpoints_to_try:
+        print(f"  Trying {name}...")
         try:
             response = requests.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
-
-            for s in data:
-                sym = s.get('symbol', '')
-                if not sym or '.' in sym or '-' in sym or len(sym) > 5:
-                    continue
-
-                all_stocks.append(sym)
-                profiles[sym] = {
-                    'market_cap': s.get('marketCap'),
-                    'industry': s.get('industry'),
-                    'sector': s.get('sector'),
-                    'exchange': exchange,
-                    'ticker_type': 'stock',
-                    'ipo_date': None,  # screener doesn't include IPO date
-                }
-
-            print(f"    Got {len(data)} stocks from {exchange}")
+            print(f"    Status: {response.status_code}")
+            if response.ok:
+                stock_data = response.json()
+                print(f"    Got {len(stock_data)} entries")
+                break
         except Exception as e:
-            print(f"    Error fetching {exchange}: {e}")
+            print(f"    Error: {e}")
 
-        time.sleep(RATE_DELAY)
+    if not stock_data:
+        # Fallback: get stocks from quotes endpoint (per exchange)
+        print("  Trying quotes per exchange...")
+        stock_data = []
+        for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
+            print(f"    Fetching {exchange}...")
+            try:
+                url = f"{BASE_URL}/v3/quotes/{exchange}"
+                resp = requests.get(url, params={'apikey': API_KEY})
+                print(f"      Status: {resp.status_code}")
+                if resp.ok:
+                    data = resp.json()
+                    # quotes endpoint returns: symbol, name, price, marketCap, etc.
+                    for s in data:
+                        s['exchangeShortName'] = exchange
+                    stock_data.extend(data)
+                    print(f"      Got {len(data)} stocks")
+            except Exception as e:
+                print(f"      Error: {e}")
+            time.sleep(RATE_DELAY)
 
-    # Deduplicate
-    all_stocks = list(dict.fromkeys(all_stocks))
+    if not stock_data:
+        print("  ERROR: All endpoints failed!")
+        return [], {}
+
+    # Filter to US exchanges and clean symbols
+    us_exchanges = {'NYSE', 'NASDAQ', 'AMEX', 'New York Stock Exchange', 'NasdaqGS', 'NasdaqGM', 'NasdaqCM'}
+    for s in stock_data:
+        sym = s.get('symbol', '')
+        if not sym or '.' in sym or '-' in sym or len(sym) > 5:
+            continue
+
+        exchange = s.get('exchangeShortName', s.get('exchange', ''))
+        if exchange and exchange not in us_exchanges:
+            continue
+
+        if sym not in profiles:  # deduplicate
+            all_stocks.append(sym)
+            profiles[sym] = {
+                'market_cap': s.get('marketCap', s.get('mktCap')),
+                'industry': s.get('industry'),
+                'sector': s.get('sector'),
+                'exchange': exchange,
+                'ticker_type': 'stock',
+                'ipo_date': s.get('ipoDate'),
+            }
+
     print(f"  Total unique US stocks: {len(all_stocks)}")
 
-    # Batch-fetch IPO dates via profile endpoint (50 at a time)
-    print(f"  Fetching IPO dates for {len(all_stocks)} stocks...")
-    for i in range(0, len(all_stocks), 50):
-        batch = all_stocks[i:i + 50]
-        symbols_str = ','.join(batch)
-        try:
-            url = f"{BASE_URL}/v3/profile/{symbols_str}"
-            params = {'apikey': API_KEY}
-            resp = requests.get(url, params=params)
-            if resp.ok:
-                for p in resp.json():
-                    sym = p.get('symbol')
-                    if sym and sym in profiles:
-                        profiles[sym]['ipo_date'] = p.get('ipoDate')
-        except Exception:
-            pass
+    # Fill in missing profile data (IPO dates, industry, etc.) via batch profile calls
+    missing_profile = [sym for sym in all_stocks if not profiles[sym].get('industry')]
+    if missing_profile:
+        print(f"  Fetching profiles for {len(missing_profile)} stocks missing details...")
+        for i in range(0, len(missing_profile), 50):
+            batch = missing_profile[i:i + 50]
+            symbols_str = ','.join(batch)
+            try:
+                url = f"{BASE_URL}/v3/profile/{symbols_str}"
+                resp = requests.get(url, params={'apikey': API_KEY})
+                if resp.ok:
+                    for p in resp.json():
+                        sym = p.get('symbol')
+                        if sym and sym in profiles:
+                            if p.get('ipoDate'):
+                                profiles[sym]['ipo_date'] = p['ipoDate']
+                            if p.get('industry'):
+                                profiles[sym]['industry'] = p['industry']
+                            if p.get('sector'):
+                                profiles[sym]['sector'] = p['sector']
+                            if p.get('mktCap'):
+                                profiles[sym]['market_cap'] = p['mktCap']
+            except Exception:
+                pass
 
-        if i % 500 == 0 and i > 0:
-            print(f"    IPO dates: {i}/{len(all_stocks)}")
-        time.sleep(RATE_DELAY)
+            if i % 500 == 0 and i > 0:
+                print(f"    Profiles: {i}/{len(missing_profile)}")
+            time.sleep(RATE_DELAY)
 
-    print(f"  Done fetching profiles")
+    print(f"  Done. {len(all_stocks)} stocks ready to process.")
     return all_stocks, profiles
 
 
