@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-03-22T01:08:55.712526",
+  "last_updated": "2026-03-22T03:21:22.430422",
   "formula_used": "Flexible: Adapts to available data",
   "stage_2_criteria": "50dma > 150dma > 200dma",
   "total_stocks": 159,
@@ -10,7 +10,7 @@
   "adjustment_info": {
     "phantom_stocks_added": 7841,
     "target_universe_size": 8000,
-    "average_rank_change": 0.07,
+    "average_rank_change": -0.06,
     "adjustment_method": "Added ~2,800 phantom stocks in bottom 35% to match IBD universe"
   },
   "note": "RS ranks adjusted with phantom stocks to match IBD's ~8,000 stock universe",
@@ -3192,8 +3192,8 @@
       "industry": "SERVICES-COMPUTER PROGRAMMING, DATA PROCESSING, ETC.",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 96,
-      "rank_adjustment": 1
+      "rs_rank_original": 97,
+      "rank_adjustment": 0
     },
     {
       "symbol": "HUDI",
@@ -3222,8 +3222,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 96,
-      "rank_adjustment": 1
+      "rs_rank_original": 97,
+      "rank_adjustment": 0
     },
     {
       "symbol": "OWLS",
@@ -3342,8 +3342,8 @@
       "industry": null,
       "exchange": null,
       "ticker_type": null,
-      "rs_rank_original": 90,
-      "rank_adjustment": 1
+      "rs_rank_original": 91,
+      "rank_adjustment": 0
     },
     {
       "symbol": "HBIO",
@@ -3372,8 +3372,8 @@
       "industry": "LABORATORY ANALYTICAL INSTRUMENTS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 90,
-      "rank_adjustment": 1
+      "rs_rank_original": 91,
+      "rank_adjustment": 0
     },
     {
       "symbol": "ITRI",
@@ -3402,8 +3402,8 @@
       "industry": "INSTRUMENTS FOR MEAS & TESTING OF ELECTRICITY & ELEC SIGNALS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 86,
-      "rank_adjustment": 1
+      "rs_rank_original": 87,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SEED",
@@ -3462,8 +3462,8 @@
       "industry": "TRANSPORTATION SERVICES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 85,
-      "rank_adjustment": 1
+      "rs_rank_original": 86,
+      "rank_adjustment": 0
     },
     {
       "symbol": "FF",
@@ -3522,8 +3522,8 @@
       "industry": "FATS & OILS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 83,
-      "rank_adjustment": 1
+      "rs_rank_original": 84,
+      "rank_adjustment": 0
     },
     {
       "symbol": "RPM",
@@ -3582,8 +3582,8 @@
       "industry": null,
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 76,
-      "rank_adjustment": 1
+      "rs_rank_original": 77,
+      "rank_adjustment": 0
     },
     {
       "symbol": "INVH",
@@ -3647,7 +3647,7 @@
     },
     {
       "symbol": "OSCR",
-      "rs_rank": 64,
+      "rs_rank": 65,
       "rs_score": -0.2109,
       "avg_volume": "8.2M",
       "raw_volume": 8223998,
@@ -3672,8 +3672,8 @@
       "industry": "HOSPITAL & MEDICAL SERVICE PLANS",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 65,
-      "rank_adjustment": -1
+      "rs_rank_original": 64,
+      "rank_adjustment": 1
     },
     {
       "symbol": "FIG",
@@ -3737,7 +3737,7 @@
     },
     {
       "symbol": "AMSF",
-      "rs_rank": 60,
+      "rs_rank": 59,
       "rs_score": -0.2523,
       "avg_volume": "194k",
       "raw_volume": 194029,
@@ -3762,8 +3762,8 @@
       "industry": "FIRE, MARINE & CASUALTY INSURANCE",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 59,
-      "rank_adjustment": 1
+      "rs_rank_original": 60,
+      "rank_adjustment": -1
     },
     {
       "symbol": "FAMI",
@@ -3822,8 +3822,8 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 58,
-      "rank_adjustment": 1
+      "rs_rank_original": 59,
+      "rank_adjustment": 0
     },
     {
       "symbol": "GIFT",
@@ -3887,7 +3887,7 @@
     },
     {
       "symbol": "ENR",
-      "rs_rank": 57,
+      "rs_rank": 56,
       "rs_score": -0.2733,
       "avg_volume": "1.4M",
       "raw_volume": 1377828,
@@ -3912,8 +3912,8 @@
       "industry": "MISCELLANEOUS ELECTRICAL MACHINERY, EQUIPMENT & SUPPLIES",
       "exchange": "XNYS",
       "ticker_type": "CS",
-      "rs_rank_original": 56,
-      "rank_adjustment": 1
+      "rs_rank_original": 57,
+      "rank_adjustment": -1
     },
     {
       "symbol": "KAPA",
@@ -4097,7 +4097,7 @@
     },
     {
       "symbol": "SLM",
-      "rs_rank": 52,
+      "rs_rank": 51,
       "rs_score": -0.3116,
       "avg_volume": "4.1M",
       "raw_volume": 4121442,
@@ -4123,7 +4123,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 52,
-      "rank_adjustment": 0
+      "rank_adjustment": -1
     },
     {
       "symbol": "INLX",
@@ -4182,8 +4182,8 @@
       "industry": "FINANCE SERVICES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 51,
-      "rank_adjustment": -1
+      "rs_rank_original": 50,
+      "rank_adjustment": 0
     },
     {
       "symbol": "SILO",
@@ -4242,8 +4242,8 @@
       "industry": "PERSONAL CREDIT INSTITUTIONS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 47,
-      "rank_adjustment": -1
+      "rs_rank_original": 46,
+      "rank_adjustment": 0
     },
     {
       "symbol": "IPDN",
@@ -4302,12 +4302,12 @@
       "industry": "SERVICES-MEDICAL LABORATORIES",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 46,
-      "rank_adjustment": -1
+      "rs_rank_original": 45,
+      "rank_adjustment": 0
     },
     {
       "symbol": "LPA",
-      "rs_rank": 43,
+      "rs_rank": 42,
       "rs_score": -0.3781,
       "avg_volume": "19k",
       "raw_volume": 18867,
@@ -4333,11 +4333,11 @@
       "exchange": "XASE",
       "ticker_type": "CS",
       "rs_rank_original": 43,
-      "rank_adjustment": 0
+      "rank_adjustment": -1
     },
     {
       "symbol": "DOCU",
-      "rs_rank": 43,
+      "rs_rank": 42,
       "rs_score": -0.3794,
       "avg_volume": "5.1M",
       "raw_volume": 5142964,
@@ -4363,7 +4363,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 43,
-      "rank_adjustment": 0
+      "rank_adjustment": -1
     },
     {
       "symbol": "AWRE",
@@ -4427,7 +4427,7 @@
     },
     {
       "symbol": "INFQ",
-      "rs_rank": 36,
+      "rs_rank": 35,
       "rs_score": -0.4349,
       "avg_volume": "3.3M",
       "raw_volume": 3345307,
@@ -4453,11 +4453,11 @@
       "exchange": "XNYS",
       "ticker_type": "CS",
       "rs_rank_original": 36,
-      "rank_adjustment": 0
+      "rank_adjustment": -1
     },
     {
       "symbol": "TIL",
-      "rs_rank": 33,
+      "rs_rank": 32,
       "rs_score": -0.4575,
       "avg_volume": "69k",
       "raw_volume": 68557,
@@ -4483,7 +4483,7 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 33,
-      "rank_adjustment": 0
+      "rank_adjustment": -1
     },
     {
       "symbol": "JACK",
@@ -4547,7 +4547,7 @@
     },
     {
       "symbol": "DWTX",
-      "rs_rank": 31,
+      "rs_rank": 30,
       "rs_score": -0.4732,
       "avg_volume": "56k",
       "raw_volume": 55872,
@@ -4573,11 +4573,11 @@
       "exchange": "XNAS",
       "ticker_type": "CS",
       "rs_rank_original": 31,
-      "rank_adjustment": 0
+      "rank_adjustment": -1
     },
     {
       "symbol": "TGEN",
-      "rs_rank": 27,
+      "rs_rank": 26,
       "rs_score": -0.5084,
       "avg_volume": "400k",
       "raw_volume": 400047,
@@ -4602,12 +4602,12 @@
       "industry": "AIR-COND & WARM AIR HEATG EQUIP & COMM & INDL REFRIG EQUIP",
       "exchange": "XASE",
       "ticker_type": "CS",
-      "rs_rank_original": 26,
-      "rank_adjustment": 1
+      "rs_rank_original": 27,
+      "rank_adjustment": -1
     },
     {
       "symbol": "VITL",
-      "rs_rank": 18,
+      "rs_rank": 17,
       "rs_score": -0.5763,
       "avg_volume": "2.2M",
       "raw_volume": 2173258,
@@ -4632,8 +4632,8 @@
       "industry": "FOOD AND KINDRED PRODUCTS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 17,
-      "rank_adjustment": 1
+      "rs_rank_original": 18,
+      "rank_adjustment": -1
     },
     {
       "symbol": "FCHL",
@@ -4692,12 +4692,12 @@
       "industry": null,
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 9,
-      "rank_adjustment": 1
+      "rs_rank_original": 10,
+      "rank_adjustment": 0
     },
     {
       "symbol": "INBS",
-      "rs_rank": 4,
+      "rs_rank": 3,
       "rs_score": -0.6804,
       "avg_volume": "292k",
       "raw_volume": 291944,
@@ -4722,8 +4722,8 @@
       "industry": "SURGICAL & MEDICAL INSTRUMENTS & APPARATUS",
       "exchange": "XNAS",
       "ticker_type": "CS",
-      "rs_rank_original": 3,
-      "rank_adjustment": 1
+      "rs_rank_original": 4,
+      "rank_adjustment": -1
     },
     {
       "symbol": "NUWE",
