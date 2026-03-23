@@ -20,6 +20,7 @@ import json
 import requests
 import time
 import sys
+import argparse
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -146,17 +147,10 @@ def is_common_stock(s: Dict) -> bool:
     if '-' in sym:
         return False
 
-    # Warrants typically end with W and are 3+ chars
-    if len(sym) >= 3 and sym.endswith('W'):
-        return False
-
-    # Rights typically end with R and are 4+ chars
-    if len(sym) >= 4 and sym.endswith('R'):
-        return False
-
-    # Units end with U
-    if len(sym) >= 3 and sym.endswith('U'):
-        return False
+    # NOTE: We do NOT filter by single-letter suffix (W/R/U) because it
+    # incorrectly excludes real stocks like PLTR, SNOW, NKTR, FOUR, MANU, GURU.
+    # The hyphen check above already catches actual warrants/rights/units on
+    # major US exchanges (formatted as AAPL-W, XYZ-R, ABC-U).
 
     # Check type field if available
     stock_type = (s.get('type') or '').lower()
@@ -912,5 +906,273 @@ def main():
     print("=" * 80)
 
 
+def daily_update():
+    """Incremental daily update: reload previous rankings, re-fetch prices only,
+    recompute MAs/RS/ATR/ADR. Keeps existing profiles, earnings, industry data."""
+    print("=" * 80)
+    print("DAILY INCREMENTAL UPDATE")
+    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 80)
+    print()
+
+    if not API_KEY:
+        print("ERROR: FMP_API_KEY not found!")
+        return
+
+    # Load previous rankings as baseline
+    if not os.path.exists('rankings.json'):
+        print("ERROR: rankings.json not found. Run a full rebuild first.")
+        return
+
+    with open('rankings.json', 'r') as f:
+        prev = json.load(f)
+
+    prev_data = prev.get('data', [])
+    if not prev_data:
+        print("ERROR: Previous rankings.json has no data. Run a full rebuild.")
+        return
+
+    print(f"Loaded {len(prev_data)} stocks from previous rankings.json")
+
+    # Also check for new tickers not in previous run
+    symbols_prev = {s['symbol'] for s in prev_data}
+    prev_profiles = {s['symbol']: s for s in prev_data}
+
+    # Fetch current ticker list to detect new additions
+    new_symbols, new_profiles = get_all_tickers()
+    new_set = set(new_symbols)
+    added = new_set - symbols_prev
+    removed = symbols_prev - new_set
+    if added:
+        print(f"  New tickers since last run: {len(added)} (will do full fetch for these)")
+    if removed:
+        print(f"  Removed tickers: {len(removed)}")
+
+    # All symbols to process = previous + new
+    all_symbols = list(symbols_prev | new_set)
+    print(f"  Total symbols to update: {len(all_symbols)}")
+
+    # Date range for price history
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365 * 5)
+    start_str = start_date.strftime('%Y-%m-%d')
+    end_str = end_date.strftime('%Y-%m-%d')
+
+    all_stock_data = []
+    historical_stocks = []
+    processed = 0
+    failed = 0
+    stage_2_count = 0
+    cap_counts = {'Large Cap': 0, 'Mid Cap': 0, 'Small Cap': 0, 'Micro Cap': 0, 'Unknown': 0}
+
+    for i, ticker in enumerate(all_symbols):
+        try:
+            if i % 200 == 0 and i > 0:
+                print(f"Progress: {i}/{len(all_symbols)} ({i / len(all_symbols) * 100:.1f}%) | OK: {processed} | Fail: {failed}")
+
+            # Fetch fresh price history
+            stock_prices = get_stock_history(ticker, start_str, end_str)
+            if not stock_prices:
+                failed += 1
+                continue
+
+            result = calculate_stock_returns_flexible(stock_prices)
+            if result[0] is None:
+                failed += 1
+                continue
+
+            stock_returns, avg_volume, days_available, is_partial = result
+            rs_score = calculate_ibd_rs_score_flexible(stock_returns, days_available)
+            ma_data = calculate_moving_averages(stock_prices)
+            adr_20 = calculate_adr(stock_prices, period=20)
+            atr_14 = calculate_atr(stock_prices, period=14)
+            current_price = round(stock_prices[-1]['c'], 2)
+
+            if ma_data and ma_data['is_stage_2']:
+                stage_2_count += 1
+
+            # For existing stocks, reuse profile/earnings from previous run
+            # For new stocks, use fresh profile data
+            if ticker in prev_profiles:
+                prev = prev_profiles[ticker]
+                profile = {
+                    'market_cap': prev.get('market_cap'),
+                    'industry': prev.get('industry'),
+                    'exchange': prev.get('exchange'),
+                    'ticker_type': prev.get('ticker_type'),
+                    'ipo_date': prev.get('ipo_date'),
+                }
+                earnings = prev.get('earnings')
+            else:
+                profile = new_profiles.get(ticker, {})
+                earnings = get_earnings_data(ticker)
+                time.sleep(RATE_DELAY)
+
+            market_cap = profile.get('market_cap')
+            market_cap_category = get_market_cap_category(market_cap)
+            cap_counts[market_cap_category] = cap_counts.get(market_cap_category, 0) + 1
+
+            stock_entry = {
+                'symbol': ticker,
+                'rs_score': rs_score,
+                'avg_volume': int(avg_volume),
+                'stock_return_2m': stock_returns.get('2m', 0),
+                'stock_return_3m': stock_returns.get('3m', 0),
+                'stock_return_6m': stock_returns.get('6m', 0),
+                'stock_return_9m': stock_returns.get('9m', 0),
+                'stock_return_12m': stock_returns.get('12m', 0),
+                'days_of_data': days_available,
+                'is_partial': is_partial,
+                'ipo_date': profile.get('ipo_date'),
+                'current_price': current_price,
+                'ma_50': ma_data['ma_50'] if ma_data else None,
+                'ma_150': ma_data['ma_150'] if ma_data else None,
+                'ma_200': ma_data['ma_200'] if ma_data else None,
+                'is_stage_2': ma_data['is_stage_2'] if ma_data else False,
+                'adr_20': round(adr_20, 2) if adr_20 is not None else None,
+                'atr_14': round(atr_14, 2) if atr_14 is not None else None,
+                'market_cap': market_cap,
+                'market_cap_category': market_cap_category,
+                'industry': profile.get('industry'),
+                'exchange': profile.get('exchange'),
+                'ticker_type': profile.get('ticker_type'),
+            }
+
+            if earnings:
+                stock_entry['earnings'] = earnings
+
+            all_stock_data.append(stock_entry)
+
+            # Compressed historical data
+            minimal_history = []
+            older = stock_prices[:-30] if len(stock_prices) > 30 else []
+            recent = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices
+            for p in older[::5]:
+                minimal_history.append({'t': p['t'], 'c': p['c']})
+            for p in recent:
+                minimal_history.append({'t': p['t'], 'o': p['o'], 'h': p['h'],
+                                        'l': p['l'], 'c': p['c'], 'v': p['v']})
+            historical_stocks.append({
+                's': ticker, 'h': minimal_history,
+                'u': datetime.now().isoformat(),
+                'i': profile.get('ipo_date'), 'd': days_available,
+            })
+
+            processed += 1
+            time.sleep(RATE_DELAY)
+
+        except Exception as e:
+            print(f"Error processing {ticker}: {e}")
+            failed += 1
+
+    print()
+    print("=" * 80)
+    print("DAILY UPDATE COMPLETE")
+    print(f"Processed: {processed} | Failed: {failed} | Stage 2: {stage_2_count}")
+    print("=" * 80)
+
+    if not all_stock_data:
+        print("ERROR: No stock data processed!")
+        return
+
+    # Percentile rankings (1-99)
+    all_stock_data.sort(key=lambda x: x['rs_score'], reverse=True)
+    total_stocks = len(all_stock_data)
+    for i, stock in enumerate(all_stock_data):
+        stock['rs_rank'] = min(int(((total_stocks - i) / total_stocks) * 99) + 1, 99)
+
+    # Format and save (same format as full rebuild)
+    output_data = []
+    ipo_data = []
+    two_years_ago = datetime.now() - timedelta(days=730)
+
+    for stock in all_stock_data:
+        entry = {
+            'symbol': stock['symbol'],
+            'rs_rank': stock['rs_rank'],
+            'rs_score': round(stock['rs_score'], 4),
+            'avg_volume': format_volume(stock['avg_volume']),
+            'raw_volume': stock['avg_volume'],
+            'stock_return_2m': format_return(stock['stock_return_2m']),
+            'stock_return_3m': format_return(stock['stock_return_3m']),
+            'stock_return_6m': format_return(stock['stock_return_6m']),
+            'stock_return_9m': format_return(stock['stock_return_9m']),
+            'stock_return_12m': format_return(stock['stock_return_12m']),
+            'days_of_data': stock['days_of_data'],
+            'is_partial': stock['is_partial'],
+            'ipo_date': stock.get('ipo_date'),
+            'current_price': stock.get('current_price'),
+            'ma_50': stock.get('ma_50'),
+            'ma_150': stock.get('ma_150'),
+            'ma_200': stock.get('ma_200'),
+            'is_stage_2': stock.get('is_stage_2', False),
+            'adr_20': stock.get('adr_20'),
+            'atr_14': stock.get('atr_14'),
+            'market_cap': stock.get('market_cap'),
+            'market_cap_formatted': format_market_cap(stock.get('market_cap')),
+            'market_cap_category': stock.get('market_cap_category'),
+            'industry': stock.get('industry'),
+            'exchange': stock.get('exchange'),
+            'ticker_type': stock.get('ticker_type'),
+        }
+        if stock.get('earnings'):
+            entry['earnings'] = stock['earnings']
+        output_data.append(entry)
+
+        ipo_str = stock.get('ipo_date')
+        if ipo_str:
+            try:
+                ipo_dt = datetime.strptime(ipo_str, '%Y-%m-%d')
+                if ipo_dt >= two_years_ago:
+                    ipo_data.append(entry)
+            except ValueError:
+                pass
+
+    rankings_output = {
+        'last_updated': datetime.now().isoformat(),
+        'formula_used': 'Flexible: Adapts to available data',
+        'stage_2_criteria': '50dma > 150dma > 200dma',
+        'volatility_metrics': 'ADR (20-day), ATR (14-day)',
+        'includes_market_data': True,
+        'total_stocks': len(output_data),
+        'stage_2_stocks': stage_2_count,
+        'market_cap_distribution': {k: v for k, v in cap_counts.items() if v > 0},
+        'update_type': 'daily_incremental',
+        'data_source': 'Financial Modeling Prep',
+        'data': output_data,
+    }
+
+    with open('rankings.json', 'w') as f:
+        json.dump(rankings_output, f, indent=2)
+    print(f"Saved {len(output_data)} stocks to rankings.json")
+
+    with open('recent_ipos.json', 'w') as f:
+        json.dump({
+            'last_updated': datetime.now().isoformat(),
+            'total_stocks': len(ipo_data),
+            'update_type': 'daily_incremental',
+            'data': sorted(ipo_data, key=lambda x: x.get('ipo_date', ''), reverse=True),
+        }, f, indent=2)
+    print(f"Saved {len(ipo_data)} recent IPOs to recent_ipos.json")
+
+    with open('historical_data.json', 'w') as f:
+        json.dump({
+            'u': datetime.now().isoformat(),
+            'n': len(historical_stocks),
+            'd': historical_stocks,
+        }, f, indent=2)
+    print(f"Saved historical data for {len(historical_stocks)} stocks")
+
+    print(f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='IBD-Style RS Calculator')
+    parser.add_argument('--mode', choices=['full', 'daily'], default='full',
+                        help='full = rebuild everything, daily = incremental price update')
+    args = parser.parse_args()
+
+    if args.mode == 'daily':
+        daily_update()
+    else:
+        main()
