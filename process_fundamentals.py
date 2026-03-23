@@ -1572,7 +1572,8 @@ def main():
 
     print(f"Index: {len(index_stocks)} stocks written to fundamentals/index.json")
     if index_stocks:
-        print(f"Top 5: {', '.join(f'{s[\"symbol\"]}({s[\"score\"]})' for s in index_stocks[:5])}")
+        top5 = ', '.join(s['symbol'] + '(' + str(s['score']) + ')' for s in index_stocks[:5])
+        print(f"Top 5: {top5}")
 
     print()
     print("=" * 80)
