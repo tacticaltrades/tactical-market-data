@@ -128,6 +128,20 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
 
         data[key] = result if result else None
 
+    # Compute margin ratios if missing (FMP /stable/ endpoints omit these)
+    for stmt_key in ['income_statement', 'income_statement_annual']:
+        stmts = data.get(stmt_key)
+        if isinstance(stmts, list):
+            for q in stmts:
+                rev = safe_float(q.get('revenue'))
+                if rev and rev != 0:
+                    if q.get('grossProfitRatio') is None and q.get('grossProfit') is not None:
+                        q['grossProfitRatio'] = safe_float(q['grossProfit']) / rev
+                    if q.get('operatingIncomeRatio') is None and q.get('operatingIncome') is not None:
+                        q['operatingIncomeRatio'] = safe_float(q['operatingIncome']) / rev
+                    if q.get('netIncomeRatio') is None and q.get('netIncome') is not None:
+                        q['netIncomeRatio'] = safe_float(q['netIncome']) / rev
+
     return data
 
 
