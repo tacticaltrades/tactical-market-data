@@ -246,6 +246,8 @@ def compute_c_score(income: List[Dict]) -> Dict:
 
     # --- Check 3: Deceleration SELL signal (-5 penalty) ---
     # Two consecutive quarters where growth rate drops by ≥2/3
+    # Only checks the MOST RECENT 3 quarters — past deceleration that has since
+    # reversed (re-accelerated) should NOT trigger a current sell signal.
     decel_detected = False
     eps_yoy_series = []
     for i in range(4, len(income)):
@@ -253,17 +255,15 @@ def compute_c_score(income: List[Dict]) -> Dict:
         eps_yoy_series.append(g)
 
     if len(eps_yoy_series) >= 3:
-        for i in range(2, len(eps_yoy_series)):
-            g_curr = eps_yoy_series[i]
-            g_prev = eps_yoy_series[i - 1]
-            g_prev2 = eps_yoy_series[i - 2]
-            if g_curr is not None and g_prev is not None and g_prev2 is not None:
-                if g_prev2 > 0:
-                    ratio1 = g_prev / g_prev2 if g_prev2 != 0 else 1
-                    ratio2 = g_curr / g_prev if g_prev != 0 else 1
-                    if ratio1 <= 0.33 and ratio2 <= 0.33:
-                        decel_detected = True
-                        break
+        # Only look at the last 3 data points (current + 2 prior quarters)
+        recent = eps_yoy_series[-3:]
+        g_prev2, g_prev, g_curr = recent[0], recent[1], recent[2]
+        if g_curr is not None and g_prev is not None and g_prev2 is not None:
+            if g_prev2 > 0:
+                ratio1 = g_prev / g_prev2 if g_prev2 != 0 else 1
+                ratio2 = g_curr / g_prev if g_prev != 0 else 1
+                if ratio1 <= 0.33 and ratio2 <= 0.33:
+                    decel_detected = True
 
     if decel_detected:
         score -= 5
