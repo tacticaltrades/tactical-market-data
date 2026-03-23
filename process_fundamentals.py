@@ -110,6 +110,11 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
 
         # NEW: Company info (for IPO date)
         ('company_info', '/stable/company-core-information', {'symbol': symbol}),
+
+        # NEW: Institutional sponsorship (I in CAN SLIM)
+        ('institutional_holders', '/stable/institutional-holder', {'symbol': symbol}),
+        ('mutual_fund_holders', '/stable/mutual-fund-holder', {'symbol': symbol}),
+        ('shares_float', '/stable/shares-float', {'symbol': symbol}),
     ]
 
     for key, path, params in endpoints:
@@ -124,6 +129,8 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
         elif key == 'quote' and isinstance(result, list) and len(result) == 1:
             result = result[0]
         elif key == 'company_info' and isinstance(result, list) and len(result) == 1:
+            result = result[0]
+        elif key == 'shares_float' and isinstance(result, list) and len(result) == 1:
             result = result[0]
 
         data[key] = result if result else None
@@ -187,7 +194,7 @@ def compute_c_score(income: List[Dict]) -> Dict:
     if len(income) < 5:
         checks.append(make_check('c_data', 'Sufficient Data', None, '5+ quarters', 'fail',
                                  f'Only {len(income)} quarters available', ''))
-        return {'score': 0, 'max': 25, 'checks': checks}
+        return {'score': 0, 'max': 20, 'checks': checks}
 
     latest = income[-1]
     prev = income[-2]
@@ -195,24 +202,24 @@ def compute_c_score(income: List[Dict]) -> Dict:
     yoy_q = income[-5] if len(income) >= 5 else None
     prev_yoy_q = income[-6] if len(income) >= 6 else None
 
-    # --- Check 1: Latest Q EPS YoY growth (8 pts) ---
+    # --- Check 1: Latest Q EPS YoY growth (6 pts) ---
     eps_yoy = yoy_growth(latest.get('epsDiluted'), yoy_q.get('epsDiluted') if yoy_q else None)
     if eps_yoy is not None:
         if eps_yoy >= 25:
-            pts = 8
+            pts = 6
             status = 'pass'
         elif eps_yoy >= 18:
-            pts = 5
+            pts = 4
             status = 'pass'
         elif eps_yoy >= 10:
-            pts = 3
+            pts = 2
             status = 'warn'
         else:
             pts = 0
             status = 'fail'
         score += pts
         checks.append(make_check('c_eps_growth', 'Current Q EPS YoY Growth', round(eps_yoy, 1),
-                                 '≥25% (8pts), ≥18% (5pts)', status,
+                                 '≥25% (6pts), ≥18% (4pts)', status,
                                  f'{eps_yoy:+.1f}%', "O'Neil Ch.2"))
     else:
         checks.append(make_check('c_eps_growth', 'Current Q EPS YoY Growth', None,
@@ -267,11 +274,11 @@ def compute_c_score(income: List[Dict]) -> Dict:
         checks.append(make_check('c_decel_sell', 'Deceleration SELL Signal', False,
                                  'No signal', 'pass', 'No deceleration sell signal detected', "O'Neil Ch.2"))
 
-    # --- Check 4: Latest Q sales growth YoY (5 pts) ---
+    # --- Check 4: Latest Q sales growth YoY (4 pts) ---
     rev_yoy = yoy_growth(latest.get('revenue'), yoy_q.get('revenue') if yoy_q else None)
     if rev_yoy is not None:
         if rev_yoy >= 25:
-            pts = 5
+            pts = 4
             status = 'pass'
         elif rev_yoy >= 15:
             pts = 3
@@ -284,7 +291,7 @@ def compute_c_score(income: List[Dict]) -> Dict:
             status = 'fail'
         score += pts
         checks.append(make_check('c_rev_growth', 'Current Q Revenue YoY Growth', round(rev_yoy, 1),
-                                 '≥25% (5pts), ≥15% (3pts)', status,
+                                 '≥25% (4pts), ≥15% (3pts)', status,
                                  f'{rev_yoy:+.1f}%', "O'Neil Ch.2"))
 
     # --- Check 5: Sales acceleration over 3 quarters (4 pts) ---
@@ -327,11 +334,11 @@ def compute_c_score(income: List[Dict]) -> Dict:
             pct_of_high = 0
 
         if latest_margin >= max_margin:
-            pts = 4
+            pts = 3
             status = 'pass'
             detail = f'At 8Q high ({latest_margin * 100:.1f}%)'
         elif pct_of_high >= 0.90:
-            pts = 2
+            pts = 1
             status = 'pass'
             detail = f'Within 10% of 8Q high ({latest_margin * 100:.1f}% vs {max_margin * 100:.1f}%)'
         else:
@@ -342,11 +349,11 @@ def compute_c_score(income: List[Dict]) -> Dict:
         checks.append(make_check('c_margin_high', 'Net Margin at/near 8Q High', round(latest_margin * 100, 1),
                                  'At or within 10% of highest', status, detail, "O'Neil Ch.2"))
 
-    return {'score': max(score, 0), 'max': 25, 'checks': checks}
+    return {'score': max(score, 0), 'max': 20, 'checks': checks}
 
 
 # ---------------------------------------------------------------------------
-# A Score: Annual Earnings Growth (25 pts)
+# A Score: Annual Earnings Growth (20 pts)
 # ---------------------------------------------------------------------------
 
 def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
@@ -357,7 +364,7 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
 
     annual = list(reversed(income_annual)) if income_annual else []  # oldest first
 
-    # --- Check 1: 3 consecutive years EPS growth (7 pts) ---
+    # --- Check 1: 3 consecutive years EPS growth (5 pts) ---
     if len(annual) >= 4:
         eps_list = [safe_float(y.get('epsDiluted')) for y in annual]
         # Check last 3 year-over-year changes
@@ -370,10 +377,10 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
         total_years = len(growth_years)
 
         if total_years >= 3 and up_years == total_years:
-            pts = 7
+            pts = 5
             status = 'pass'
         elif total_years >= 3 and up_years >= 2:
-            pts = 3
+            pts = 2
             status = 'warn'
         else:
             pts = 0
@@ -386,14 +393,14 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
         checks.append(make_check('a_3yr_growth', '3 Consecutive Years EPS Growth', None,
                                  'Need 4+ years data', 'info', f'Only {len(annual)} years available', "O'Neil Ch.3"))
 
-    # --- Check 2: Annual EPS growth rate (5 pts) ---
+    # --- Check 2: Annual EPS growth rate (4 pts) ---
     if len(annual) >= 2:
         latest_eps = safe_float(annual[-1].get('epsDiluted'))
         prev_eps = safe_float(annual[-2].get('epsDiluted'))
         ann_growth = yoy_growth(latest_eps, prev_eps)
         if ann_growth is not None:
             if ann_growth >= 25:
-                pts = 5
+                pts = 4
                 status = 'pass'
             elif ann_growth >= 15:
                 pts = 3
@@ -406,7 +413,7 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
                 status = 'fail'
             score += pts
             checks.append(make_check('a_ann_growth', 'Annual EPS Growth Rate', round(ann_growth, 1),
-                                     '≥25% (5pts), ≥15% (3pts)', status,
+                                     '≥25% (4pts), ≥15% (3pts)', status,
                                      f'{ann_growth:+.1f}%', "O'Neil Ch.3"))
 
     # --- Check 3: ROE (4 pts) ---
@@ -434,7 +441,7 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
                                  '≥25% (4pts), ≥17% (3pts)', status,
                                  f'{roe_pct:.1f}%', "O'Neil Ch.3"))
 
-    # --- Check 4: Cash flow/share ≥ EPS × 1.2 (5 pts) ---
+    # --- Check 4: Cash flow/share ≥ EPS × 1.2 (4 pts) ---
     if cash_flow_ttm and income_q:
         cf_ttm = cash_flow_ttm[0] if isinstance(cash_flow_ttm, list) else cash_flow_ttm
         ocf = safe_float(cf_ttm.get('operatingCashFlow'))
@@ -446,10 +453,10 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
             cf_per_share = ocf / shares
             ratio = cf_per_share / ttm_eps
             if ratio >= 1.2:
-                pts = 5
+                pts = 4
                 status = 'pass'
             elif ratio >= 1.0:
-                pts = 3
+                pts = 2
                 status = 'pass'
             else:
                 pts = 0
@@ -460,7 +467,7 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
                                      f'CF/share: ${cf_per_share:.2f}, EPS: ${ttm_eps:.2f} (ratio: {ratio:.2f}x)',
                                      "O'Neil Ch.3"))
 
-    # --- Check 5: Earnings stability (4 pts) ---
+    # --- Check 5: Earnings stability (3 pts) ---
     if len(annual) >= 3:
         eps_list = [safe_float(y.get('epsDiluted')) for y in annual]
         growth_rates = []
@@ -475,10 +482,10 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
             stdev = variance ** 0.5
 
             if stdev < 20:
-                pts = 4
+                pts = 3
                 status = 'pass'
             elif stdev < 25:
-                pts = 3
+                pts = 2
                 status = 'pass'
             elif stdev < 35:
                 pts = 1
@@ -491,18 +498,18 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
                                      'Stdev <20 (4pts), <25 (3pts)', status,
                                      f'Annual growth stdev: {stdev:.1f}', "O'Neil Ch.3"))
 
-    return {'score': min(score, 25), 'max': 25, 'checks': checks}
+    return {'score': min(score, 20), 'max': 20, 'checks': checks}
 
 
 # ---------------------------------------------------------------------------
-# N Score: New/Catalyst (15 pts)
+# N Score: New/Catalyst (12 pts)
 # ---------------------------------------------------------------------------
 
 def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> Dict:
     checks = []
     score = 0
 
-    # --- Check 1: IPO age within 10 years (3 pts) ---
+    # --- Check 1: IPO age within 10 years (2 pts) ---
     ipo_date_str = None
     if ranking and ranking.get('ipo_date'):
         ipo_date_str = ranking['ipo_date']
@@ -514,20 +521,20 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
             ipo_dt = datetime.strptime(ipo_date_str[:10], '%Y-%m-%d').date()
             age_years = (date.today() - ipo_dt).days / 365.25
             if age_years < 5:
-                pts = 3
-                status = 'pass'
-            elif age_years < 10:
                 pts = 2
                 status = 'pass'
-            elif age_years < 15:
+            elif age_years < 10:
                 pts = 1
+                status = 'pass'
+            elif age_years < 15:
+                pts = 0
                 status = 'warn'
             else:
                 pts = 0
                 status = 'fail'
             score += pts
             checks.append(make_check('n_ipo_age', 'IPO Age', round(age_years, 1),
-                                     '<5y (3pts), <10y (2pts)', status,
+                                     '<5y (2pts), <10y (1pt)', status,
                                      f'{age_years:.1f} years since IPO', 'Minervini Ch.11'))
         except (ValueError, TypeError):
             checks.append(make_check('n_ipo_age', 'IPO Age', None, '<10y', 'info',
@@ -536,7 +543,7 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
         checks.append(make_check('n_ipo_age', 'IPO Age', None, '<10y', 'info',
                                  'IPO date not available', 'Minervini Ch.11'))
 
-    # --- Check 2: Price within 25% of 52-week high (4 pts) ---
+    # --- Check 2: Price within 25% of 52-week high (3 pts) ---
     quote = data.get('quote')
     year_high = None
     current_price = None
@@ -549,10 +556,10 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
     if year_high and current_price and year_high > 0:
         pct_from_high = ((year_high - current_price) / year_high) * 100
         if pct_from_high <= 15:
-            pts = 4
+            pts = 3
             status = 'pass'
         elif pct_from_high <= 25:
-            pts = 3
+            pts = 2
             status = 'pass'
         elif pct_from_high <= 35:
             pts = 1
@@ -565,7 +572,7 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
                                  'Within 25% (3pts), 15% (4pts)', status,
                                  f'{pct_from_high:.1f}% below 52-week high', "O'Neil Ch.4"))
 
-    # --- Check 3: Recent acceleration in EPS/Rev/Margin (4 pts) ---
+    # --- Check 3: Recent acceleration in EPS/Rev/Margin (3 pts) ---
     accel_count = 0
     if len(income) >= 6:
         # EPS YoY acceleration
@@ -587,10 +594,10 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
             accel_count += 1
 
     if accel_count >= 2:
-        pts = 4
+        pts = 3
         status = 'pass'
     elif accel_count == 1:
-        pts = 2
+        pts = 1
         status = 'warn'
     else:
         pts = 0
@@ -627,11 +634,11 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
                              '≥3 beats (4pts), ≥2 (2pts)', status,
                              f'{beats} positive surprises', 'Minervini Ch.7'))
 
-    return {'score': min(score, 15), 'max': 15, 'checks': checks}
+    return {'score': min(score, 12), 'max': 12, 'checks': checks}
 
 
 # ---------------------------------------------------------------------------
-# S Score: Supply & Demand (15 pts)
+# S Score: Supply & Demand (13 pts)
 # ---------------------------------------------------------------------------
 
 def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dict],
@@ -639,7 +646,7 @@ def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dic
     checks = []
     score = 0
 
-    # --- Check 1: D/E ratio declining over 2-3 years (5 pts) ---
+    # --- Check 1: D/E ratio declining over 2-3 years (4 pts) ---
     if len(balance) >= 5:
         de_ratios = []
         for q in balance:
@@ -655,7 +662,7 @@ def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dic
             old = valid_de[0][1]
             new = valid_de[-1][1]
             if new < old - 0.05:
-                pts = 5
+                pts = 4
                 status = 'pass'
                 detail = f'Declining: {old:.2f} → {new:.2f}'
             elif abs(new - old) <= 0.05:
@@ -670,7 +677,7 @@ def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dic
             checks.append(make_check('s_de_trend', 'D/E Ratio Trend', round(new, 2),
                                      'Declining over time', status, detail, "O'Neil Ch.5"))
 
-    # --- Check 2: Buybacks - shares outstanding declining (5 pts) ---
+    # --- Check 2: Buybacks - shares outstanding declining (4 pts) ---
     if len(income) >= 3:
         shares = [safe_float(q.get('weightedAverageShsOutDil')) for q in income]
         valid_shares = [s for s in shares if s is not None]
@@ -681,10 +688,10 @@ def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dic
                     declining_count += 1
 
             if declining_count >= 2:
-                pts = 5
+                pts = 4
                 status = 'pass'
             elif declining_count >= 1:
-                pts = 3
+                pts = 2
                 status = 'pass'
             else:
                 pts = 0
@@ -738,7 +745,7 @@ def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dic
                                      '>1% (2pts), >0.5% (1pt)', status,
                                      f'{buyback_pct:.2f}% of market cap', "O'Neil Ch.5"))
 
-    return {'score': min(score, 15), 'max': 15, 'checks': checks}
+    return {'score': min(score, 13), 'max': 13, 'checks': checks}
 
 
 # ---------------------------------------------------------------------------
@@ -758,12 +765,12 @@ def compute_sepa_score(income: List[Dict], balance: List[Dict], cash_flow: List[
         # Compute YoY growth for each quarter
         eps_yoy_vals = []
         rev_yoy_vals = []
-        net_margins = []
+        op_margins = []
 
         for i in range(4, len(income)):
             eps_yoy_vals.append(yoy_growth(income[i].get('epsDiluted'), income[i - 4].get('epsDiluted')))
             rev_yoy_vals.append(yoy_growth(income[i].get('revenue'), income[i - 4].get('revenue')))
-            net_margins.append(safe_float(income[i].get('netIncomeRatio')))
+            op_margins.append(safe_float(income[i].get('operatingIncomeRatio')))
 
         # Check for 3 consecutive quarters of acceleration in all three
         if len(eps_yoy_vals) >= 3:
@@ -773,9 +780,9 @@ def compute_sepa_score(income: List[Dict], balance: List[Dict], cash_flow: List[
             rev_accel = all(rev_yoy_vals[i] is not None and rev_yoy_vals[i - 1] is not None
                            and rev_yoy_vals[i] > rev_yoy_vals[i - 1]
                            for i in range(len(rev_yoy_vals) - 2, len(rev_yoy_vals)))
-            margin_accel = all(net_margins[i] is not None and net_margins[i - 1] is not None
-                              and net_margins[i] > net_margins[i - 1]
-                              for i in range(len(net_margins) - 2, len(net_margins)))
+            margin_accel = all(op_margins[i] is not None and op_margins[i - 1] is not None
+                              and op_margins[i] > op_margins[i - 1]
+                              for i in range(len(op_margins) - 2, len(op_margins)))
 
             accel_metrics = sum([eps_accel, rev_accel, margin_accel])
             code_33_detected = accel_metrics == 3
@@ -940,6 +947,183 @@ def compute_sepa_score(income: List[Dict], balance: List[Dict], cash_flow: List[
 
 
 # ---------------------------------------------------------------------------
+# I Score: Institutional Sponsorship (15 pts)
+# ---------------------------------------------------------------------------
+
+# Top fund families — used for quality check
+TOP_FUNDS = {
+    'vanguard', 'fidelity', 'blackrock', 'state street', 't. rowe price',
+    'capital group', 'wellington', 'jpmorgan', 'goldman sachs', 'morgan stanley',
+    'invesco', 'american funds', 'schwab', 'dimensional', 'northern trust',
+    'pimco', 'ark invest', 'berkshire hathaway',
+}
+
+
+def _match_top_fund(name: str) -> bool:
+    lower = name.lower()
+    return any(f in lower for f in TOP_FUNDS)
+
+
+def compute_i_score(data: Dict, quote: Any) -> Dict:
+    """Institutional Sponsorship score from O'Neil Ch.6."""
+    checks = []
+    score = 0
+
+    inst_holders = data.get('institutional_holders')
+    mf_holders = data.get('mutual_fund_holders')
+    float_data = data.get('shares_float')
+
+    # --- Check 1: Number of institutional holders (4 pts) ---
+    holder_count = 0
+    if isinstance(inst_holders, list):
+        holder_count = len(inst_holders)
+    elif isinstance(mf_holders, list):
+        holder_count = len(mf_holders)
+
+    if holder_count >= 50:
+        pts = 4
+        status = 'pass'
+    elif holder_count >= 20:
+        pts = 3
+        status = 'pass'
+    elif holder_count >= 10:
+        pts = 1
+        status = 'warn'
+    else:
+        pts = 0
+        status = 'fail'
+    score += pts
+    checks.append(make_check('i_holder_count', 'Number of Institutional Holders', holder_count,
+                             '≥50 (4pts), ≥20 (3pts)', status,
+                             f'{holder_count} institutional holders', "O'Neil Ch.6"))
+
+    # --- Check 2: Quality — top funds among holders (3 pts) ---
+    top_fund_count = 0
+    top_fund_names = []
+    if isinstance(inst_holders, list):
+        for h in inst_holders:
+            name = h.get('holder') or h.get('investorName') or ''
+            if _match_top_fund(name):
+                top_fund_count += 1
+                if len(top_fund_names) < 3:
+                    top_fund_names.append(name.split(' ')[0])  # First word
+    if isinstance(mf_holders, list) and top_fund_count == 0:
+        for h in mf_holders:
+            name = h.get('holder') or h.get('investorName') or ''
+            if _match_top_fund(name):
+                top_fund_count += 1
+                if len(top_fund_names) < 3:
+                    top_fund_names.append(name.split(' ')[0])
+
+    if top_fund_count >= 3:
+        pts = 3
+        status = 'pass'
+    elif top_fund_count >= 1:
+        pts = 2
+        status = 'pass'
+    else:
+        pts = 0
+        status = 'fail'
+    score += pts
+    detail = f'{top_fund_count} top-tier funds' + (f' ({", ".join(top_fund_names)})' if top_fund_names else '')
+    checks.append(make_check('i_quality', 'Quality: Top Funds Among Holders', top_fund_count,
+                             '≥3 top funds (3pts), ≥1 (2pts)', status, detail, "O'Neil Ch.6"))
+
+    # --- Check 3: Institutional ownership trend — net change (4 pts) ---
+    net_change = 0
+    change_count = 0
+    if isinstance(inst_holders, list):
+        for h in inst_holders:
+            ch = safe_float(h.get('change'))
+            if ch is not None:
+                net_change += ch
+                change_count += 1
+
+    if change_count > 0:
+        if net_change > 0:
+            pts = 4
+            status = 'pass'
+            detail = f'Net increase: {net_change:+,.0f} shares across {change_count} holders'
+        elif net_change == 0:
+            pts = 2
+            status = 'warn'
+            detail = f'Stable across {change_count} holders'
+        else:
+            pts = 0
+            status = 'fail'
+            detail = f'Net decrease: {net_change:+,.0f} shares across {change_count} holders'
+        score += pts
+        checks.append(make_check('i_trend', 'Institutional Ownership Trend (QoQ)', net_change,
+                                 'Increasing (4pts), Stable (2pts)', status, detail, "O'Neil Ch.6"))
+    else:
+        checks.append(make_check('i_trend', 'Institutional Ownership Trend (QoQ)', None,
+                                 'Increasing', 'info', 'Change data not available', "O'Neil Ch.6"))
+
+    # --- Check 4: Overowned warning (2 pts) ---
+    inst_ownership_pct = None
+    if isinstance(float_data, dict):
+        free_float = safe_float(float_data.get('freeFloat'))
+        if free_float is not None:
+            inst_ownership_pct = (1 - free_float / 100) * 100 if free_float <= 100 else None
+    # Fallback: estimate from shares
+    if inst_ownership_pct is None and isinstance(inst_holders, list) and isinstance(quote, dict):
+        total_inst_shares = sum(safe_float(h.get('shares'), 0) for h in inst_holders)
+        outstanding = safe_float(quote.get('sharesOutstanding'))
+        if outstanding and outstanding > 0 and total_inst_shares > 0:
+            inst_ownership_pct = (total_inst_shares / outstanding) * 100
+
+    if inst_ownership_pct is not None:
+        if inst_ownership_pct < 50:
+            pts = 2
+            status = 'pass'
+        elif inst_ownership_pct < 70:
+            pts = 1
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('i_overowned', 'Overowned Warning', round(inst_ownership_pct, 1),
+                                 '<50% (2pts), <70% (1pt)', status,
+                                 f'{inst_ownership_pct:.1f}% institutional ownership', "O'Neil Ch.6"))
+    else:
+        checks.append(make_check('i_overowned', 'Overowned Warning', None,
+                                 '<70% institutional', 'info', 'Ownership data not available', "O'Neil Ch.6"))
+
+    # --- Check 5: Float size (2 pts) ---
+    float_shares = None
+    if isinstance(float_data, dict):
+        float_shares = safe_float(float_data.get('floatShares'))
+    # Fallback to shares outstanding from quote
+    if float_shares is None and isinstance(quote, dict):
+        float_shares = safe_float(quote.get('sharesOutstanding'))
+
+    if float_shares is not None:
+        float_m = float_shares / 1e6
+        if float_m < 50:
+            pts = 2
+            status = 'pass'
+        elif float_m < 200:
+            pts = 1
+            status = 'pass'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('i_float', 'Float Size', round(float_m, 0),
+                                 '<50M (2pts), <200M (1pt)', status,
+                                 f'{float_m:.0f}M float shares', "O'Neil Ch.5"))
+
+    return {
+        'score': min(score, 15), 'max': 15, 'checks': checks,
+        'holder_count': holder_count,
+        'top_funds': top_fund_names,
+        'inst_ownership_pct': round(inst_ownership_pct, 1) if inst_ownership_pct else None,
+        'float_shares_m': round(float_shares / 1e6, 1) if float_shares else None,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Trend Template: 8 Criteria (pass/fail)
 # ---------------------------------------------------------------------------
 
@@ -1055,10 +1239,12 @@ def compute_trend_template(ranking: Optional[Dict], quote: Any) -> Dict:
 # Flags generation
 # ---------------------------------------------------------------------------
 
-def generate_flags(c_score, a_score, n_score, s_score, sepa_score, trend_template) -> List[Dict]:
+def generate_flags(c_score, a_score, n_score, s_score, i_score, sepa_score, trend_template,
+                   income: List[Dict], ranking: Optional[Dict], quote: Any) -> List[Dict]:
     flags = []
 
-    for section in [c_score, a_score, n_score, s_score, sepa_score.get('earnings_quality', sepa_score)]:
+    for section in [c_score, a_score, n_score, s_score, i_score,
+                    sepa_score.get('earnings_quality', sepa_score)]:
         if not isinstance(section, dict):
             continue
         for check in section.get('checks', []):
@@ -1073,7 +1259,7 @@ def generate_flags(c_score, a_score, n_score, s_score, sepa_score, trend_templat
     # Code 33 flag
     code_33 = sepa_score.get('code_33', {})
     if code_33.get('detected'):
-        flags.append({'type': 'green', 'category': 'code_33', 'message': 'CODE 33 ACTIVE: Triple acceleration in EPS, Revenue & Margins',
+        flags.append({'type': 'green', 'category': 'code_33', 'message': 'CODE 33 ACTIVE: Triple acceleration in EPS, Revenue & Operating Margins',
                       'source': 'Minervini Ch.8'})
 
     # Trend Template flag
@@ -1090,6 +1276,66 @@ def generate_flags(c_score, a_score, n_score, s_score, sepa_score, trend_templat
                       'message': f'Trend Template: Only {tt["passing"]}/8 criteria met',
                       'source': 'Minervini Ch.5'})
 
+    # --- GAP 2: Sales validation flag ---
+    # EPS growing but revenue not backing it
+    if len(income) >= 5:
+        eps_yoy = yoy_growth(income[-1].get('epsDiluted'), income[-5].get('epsDiluted'))
+        rev_yoy = yoy_growth(income[-1].get('revenue'), income[-5].get('revenue'))
+        if eps_yoy is not None and rev_yoy is not None:
+            if eps_yoy >= 25 and rev_yoy < 10:
+                flags.append({'type': 'red', 'category': 'sales_validation',
+                              'message': f'EPS +{eps_yoy:.0f}% not backed by sales ({rev_yoy:+.0f}%) — unsustainable',
+                              'source': "O'Neil Ch.2"})
+            if rev_yoy < 0 and eps_yoy > 0:
+                flags.append({'type': 'yellow', 'category': 'rev_eps_diverge',
+                              'message': f'Revenue declining ({rev_yoy:+.0f}%) while EPS growing ({eps_yoy:+.0f}%)',
+                              'source': "O'Neil Ch.2"})
+
+    # --- GAP 4: Earnings declining YoY sell signal ---
+    if len(income) >= 6:
+        latest_eps_yoy = yoy_growth(income[-1].get('epsDiluted'), income[-5].get('epsDiluted'))
+        prev_eps_yoy = yoy_growth(income[-2].get('epsDiluted'), income[-6].get('epsDiluted'))
+        if latest_eps_yoy is not None and prev_eps_yoy is not None:
+            if latest_eps_yoy < 0 and prev_eps_yoy < 0:
+                flags.append({'type': 'red', 'category': 'eps_declining_sell',
+                              'message': f'SELL: 2 consecutive quarters of declining EPS YoY ({prev_eps_yoy:+.0f}% → {latest_eps_yoy:+.0f}%)',
+                              'source': "O'Neil Ch.10"})
+
+    # --- GAP 5: RS below leader threshold ---
+    if ranking:
+        rs = safe_float(ranking.get('rs_rank'))
+        if rs is not None:
+            if rs < 50:
+                flags.append({'type': 'red', 'category': 'rs_lagging',
+                              'message': f'RS Rank {int(rs)} — lagging market, potential sell',
+                              'source': "O'Neil Ch.7"})
+            elif rs < 70:
+                flags.append({'type': 'yellow', 'category': 'rs_below_leader',
+                              'message': f'RS Rank {int(rs)} — below leader threshold (70+)',
+                              'source': "O'Neil Ch.7"})
+
+    # --- GAP 6: Price context flag ---
+    current_price = None
+    if isinstance(quote, dict):
+        current_price = safe_float(quote.get('price'))
+    if not current_price and ranking:
+        current_price = safe_float(ranking.get('current_price'))
+    if current_price and current_price < 15:
+        flags.append({'type': 'yellow', 'category': 'low_price',
+                      'message': f'Price ${current_price:.2f} below institutional-quality range ($15+)',
+                      'source': "O'Neil Ch.5"})
+
+    # --- GAP 10: Below 200-day MA sell signal ---
+    if ranking:
+        ma_200 = safe_float(ranking.get('ma_200'))
+        price = safe_float(ranking.get('current_price'))
+        if ma_200 and price and ma_200 > 0:
+            pct_below = ((ma_200 - price) / ma_200) * 100
+            if pct_below > 5:
+                flags.append({'type': 'red', 'category': 'below_200ma_sell',
+                              'message': f'SELL: Price {pct_below:.1f}% below 200-day MA (${ma_200:.2f})',
+                              'source': "O'Neil Ch.10"})
+
     # Sort: red first, yellow, green
     order = {'red': 0, 'yellow': 1, 'green': 2}
     flags.sort(key=lambda f: order.get(f['type'], 3))
@@ -1100,6 +1346,38 @@ def generate_flags(c_score, a_score, n_score, s_score, sepa_score, trend_templat
 # ---------------------------------------------------------------------------
 # Main scoring orchestrator
 # ---------------------------------------------------------------------------
+
+def compute_eps_rating(c_score: Dict, a_score: Dict) -> int:
+    """Compute a 1-99 EPS Rating: 40% current Q EPS YoY, 60% annual growth."""
+    # Get current Q EPS YoY from c_score checks
+    c_eps_yoy = None
+    for check in c_score.get('checks', []):
+        if check['id'] == 'c_eps_growth' and check['value'] is not None:
+            c_eps_yoy = check['value']
+            break
+
+    # Get annual growth from a_score checks
+    a_growth = None
+    for check in a_score.get('checks', []):
+        if check['id'] == 'a_ann_growth' and check['value'] is not None:
+            a_growth = check['value']
+            break
+
+    # Normalize each to 0-99 range based on O'Neil thresholds
+    # Current Q: 0% → 30, 25% → 70, 50% → 85, 100%+ → 99
+    if c_eps_yoy is not None:
+        c_norm = min(99, max(1, 30 + (c_eps_yoy / 100) * 69))
+    else:
+        c_norm = 30  # Unknown = below average
+
+    # Annual: 0% → 30, 25% → 70, 50% → 85, 100%+ → 99
+    if a_growth is not None:
+        a_norm = min(99, max(1, 30 + (a_growth / 100) * 69))
+    else:
+        a_norm = 30
+
+    return int(min(99, max(1, c_norm * 0.4 + a_norm * 0.6)))
+
 
 def compute_canslim_sepa(data: Dict, ranking: Optional[Dict]) -> Dict:
     income = list(reversed(data.get('income_statement') or []))
@@ -1116,6 +1394,7 @@ def compute_canslim_sepa(data: Dict, ranking: Optional[Dict]) -> Dict:
     a = compute_a_score(income_annual, income, ratios_ttm, cash_flow_ttm)
     n = compute_n_score(data, income, ranking)
     s = compute_s_score(income, balance, cash_flow, quote)
+    i = compute_i_score(data, quote)
     sepa_result = compute_sepa_score(income, balance, cash_flow)
 
     # Extract code_33 and earnings_quality from SEPA
@@ -1124,12 +1403,16 @@ def compute_canslim_sepa(data: Dict, ranking: Optional[Dict]) -> Dict:
 
     tt = compute_trend_template(ranking, quote)
 
-    # Flags
-    flags = generate_flags(c, a, n, s, {'earnings_quality': sepa_eq, 'code_33': code_33}, tt)
+    # EPS Rating composite (Gap 8)
+    eps_rating = compute_eps_rating(c, a)
 
-    # Overall score
-    canslim_total = c['score'] + a['score'] + n['score'] + s['score']
-    canslim_max = c['max'] + a['max'] + n['max'] + s['max']
+    # Flags (with new sell signals)
+    flags = generate_flags(c, a, n, s, i, {'earnings_quality': sepa_eq, 'code_33': code_33}, tt,
+                          income, ranking, quote)
+
+    # Overall score: C(20) + A(20) + N(12) + S(13) + I(15) + SEPA(20) = 100
+    canslim_total = c['score'] + a['score'] + n['score'] + s['score'] + i['score']
+    canslim_max = c['max'] + a['max'] + n['max'] + s['max'] + i['max']
     sepa_total = sepa_eq['score']
     sepa_max = sepa_eq['max']
     overall = max(canslim_total + sepa_total, 0)
@@ -1148,11 +1431,13 @@ def compute_canslim_sepa(data: Dict, ranking: Optional[Dict]) -> Dict:
     return {
         'overall_score': overall,
         'overall_rating': rating,
+        'eps_rating': eps_rating,
         'canslim': {
             'c_score': c,
             'a_score': a,
             'n_score': n,
             's_score': s,
+            'i_score': i,
             'total': canslim_total,
             'max': canslim_max,
         },
