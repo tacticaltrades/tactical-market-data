@@ -2,10 +2,16 @@
 FUNDAMENTALS PIPELINE: process_fundamentals.py
 Fetches fundamental financial data from FMP for all stocks in rankings.json.
 Generates per-symbol JSON files in fundamentals/ directory.
-Includes pre-computed analysis scoring (0-100) with green/yellow/red flags.
+
+Scoring based on O'Neil's CAN SLIM and Minervini's SEPA methodology:
+- C Score: Current Quarterly Earnings (25 pts)
+- A Score: Annual Earnings Growth (25 pts)
+- N Score: New/Catalyst (15 pts)
+- S Score: Supply & Demand (15 pts)
+- SEPA Score: Minervini Overlay (20 pts)
+- Trend Template: 8-criteria pass/fail checklist
 
 Uses /stable/ endpoints only (v3/v4 return 403 on Premium plan).
-Data is quarterly — only needs to run weekly (or on-demand).
 """
 
 import os
@@ -13,34 +19,31 @@ import json
 import requests
 import time
 import sys
-from datetime import datetime
+from datetime import datetime, date
 from typing import Dict, List, Optional, Any
 
 # Configuration
 API_KEY = os.environ.get('FMP_API_KEY')
 BASE_URL = 'https://financialmodelingprep.com'
-RATE_DELAY = 0.25  # seconds between API calls
-QUARTERS_TO_FETCH = 8  # 2 years of quarterly data
-ANNUAL_LIMIT = 4  # 4 years of annual data
+RATE_DELAY = 0.25
+QUARTERS_TO_FETCH = 8
+ANNUAL_LIMIT = 5
 
 
 # ---------------------------------------------------------------------------
-# API helpers (same pattern as process_stocks.py)
+# API helpers
 # ---------------------------------------------------------------------------
 
 def fmp_get(path: str, params: Optional[Dict] = None, timeout: int = 30) -> Optional[Any]:
-    """Make a GET request to FMP. Returns parsed JSON or None."""
     if params is None:
         params = {}
     params['apikey'] = API_KEY
-
     url = f"{BASE_URL}{path}"
     try:
         resp = requests.get(url, params=params, timeout=timeout)
         if not resp.ok:
             return None
         data = resp.json()
-        # Check for error responses
         if isinstance(data, dict) and data.get('Error Message'):
             return None
         if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict) and data[0].get('Error Message'):
@@ -52,7 +55,6 @@ def fmp_get(path: str, params: Optional[Dict] = None, timeout: int = 30) -> Opti
 
 
 def safe_float(val, default=None):
-    """Safely convert to float."""
     if val is None:
         return default
     try:
@@ -61,20 +63,11 @@ def safe_float(val, default=None):
         return default
 
 
-def safe_pct(val, default=None):
-    """Convert ratio to percentage, handling None."""
-    f = safe_float(val)
-    if f is None:
-        return default
-    return round(f * 100, 2)
-
-
 # ---------------------------------------------------------------------------
 # Data fetching
 # ---------------------------------------------------------------------------
 
 def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
-    """Fetch all fundamental data for a symbol from FMP."""
     data = {'symbol': symbol}
 
     endpoints = [
@@ -83,7 +76,7 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
         ('balance_sheet', '/stable/balance-sheet-statement', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
         ('cash_flow', '/stable/cash-flow-statement', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
 
-        # Financial Statements (annual for longer-term trends)
+        # Financial Statements (annual)
         ('income_statement_annual', '/stable/income-statement', {'symbol': symbol, 'period': 'annual', 'limit': ANNUAL_LIMIT}),
         ('balance_sheet_annual', '/stable/balance-sheet-statement', {'symbol': symbol, 'period': 'annual', 'limit': ANNUAL_LIMIT}),
         ('cash_flow_annual', '/stable/cash-flow-statement', {'symbol': symbol, 'period': 'annual', 'limit': ANNUAL_LIMIT}),
@@ -111,16 +104,26 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
         # Segmentation
         ('revenue_product_segments', '/stable/revenue-product-segmentation', {'symbol': symbol}),
         ('revenue_geo_segments', '/stable/revenue-geographic-segmentation', {'symbol': symbol}),
+
+        # NEW: Quote (for yearHigh/yearLow, price, sharesOutstanding)
+        ('quote', '/stable/quote', {'symbol': symbol}),
+
+        # NEW: Company info (for IPO date)
+        ('company_info', '/stable/company-core-information', {'symbol': symbol}),
     ]
 
     for key, path, params in endpoints:
         result = fmp_get(path, params)
         time.sleep(RATE_DELAY)
 
-        # Normalize: TTM endpoints often return single-item arrays
+        # Normalize single-item arrays
         if key.endswith('_ttm') and isinstance(result, list) and len(result) == 1:
             result = result[0]
         elif key == 'financial_scores' and isinstance(result, list) and len(result) == 1:
+            result = result[0]
+        elif key == 'quote' and isinstance(result, list) and len(result) == 1:
+            result = result[0]
+        elif key == 'company_info' and isinstance(result, list) and len(result) == 1:
             result = result[0]
 
         data[key] = result if result else None
@@ -129,244 +132,993 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Analysis scoring
+# Helper: compute YoY growth between two quarterly values
 # ---------------------------------------------------------------------------
 
-def compute_analysis(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Compute analysis score (0-100) and flags from fundamental data."""
-    flags = []
-    scores = {
-        'profitability': 0,
-        'growth': 0,
-        'balance_sheet': 0,
-        'quant_scores': 0,
+def yoy_growth(current, year_ago):
+    """Compute YoY % growth. Returns None if either value missing or year_ago is 0."""
+    c = safe_float(current)
+    y = safe_float(year_ago)
+    if c is None or y is None or y == 0:
+        return None
+    return ((c - y) / abs(y)) * 100
+
+
+def qoq_growth(current, previous):
+    """Compute QoQ % growth."""
+    return yoy_growth(current, previous)
+
+
+def make_check(id: str, label: str, value, threshold: str, status: str, detail: str, source: str) -> Dict:
+    return {
+        'id': id,
+        'label': label,
+        'value': value,
+        'threshold': threshold,
+        'status': status,
+        'detail': detail,
+        'source': source,
     }
 
-    income = data.get('income_statement') or []
-    balance = data.get('balance_sheet') or []
-    cash_flow = data.get('cash_flow') or []
-    ratios = data.get('ratios') or []
-    metrics = data.get('key_metrics') or []
-    fin_scores = data.get('financial_scores')
-    income_growth = data.get('income_growth') or []
 
-    # Reverse to chronological order (oldest first) for trend analysis
-    income = list(reversed(income)) if income else []
-    balance = list(reversed(balance)) if balance else []
-    cash_flow = list(reversed(cash_flow)) if cash_flow else []
-    ratios = list(reversed(ratios)) if ratios else []
-    metrics = list(reversed(metrics)) if metrics else []
-    income_growth = list(reversed(income_growth)) if income_growth else []
+# ---------------------------------------------------------------------------
+# C Score: Current Quarterly Earnings (25 pts)
+# ---------------------------------------------------------------------------
 
-    # ── Profitability (25 pts) ──────────────────────────────────
-    if len(income) >= 2:
-        # Revenue trend
-        revenues = [safe_float(q.get('revenue')) for q in income if safe_float(q.get('revenue')) is not None]
-        if len(revenues) >= 4:
-            recent = revenues[-1]
-            year_ago = revenues[-4] if len(revenues) >= 4 else revenues[0]
-            if year_ago and year_ago > 0:
-                rev_growth = ((recent - year_ago) / year_ago) * 100
-                if rev_growth > 20:
-                    scores['profitability'] += 8
-                    flags.append({'type': 'green', 'category': 'profitability', 'message': f'Revenue growing {rev_growth:.0f}% YoY'})
-                elif rev_growth > 5:
-                    scores['profitability'] += 5
-                    flags.append({'type': 'green', 'category': 'profitability', 'message': f'Revenue growing {rev_growth:.0f}% YoY'})
-                elif rev_growth > 0:
-                    scores['profitability'] += 2
-                elif rev_growth > -10:
-                    scores['profitability'] += 1
-                    flags.append({'type': 'yellow', 'category': 'profitability', 'message': f'Revenue declining {rev_growth:.0f}% YoY'})
-                else:
-                    flags.append({'type': 'red', 'category': 'profitability', 'message': f'Revenue declining {rev_growth:.0f}% YoY'})
+def compute_c_score(income: List[Dict]) -> Dict:
+    """income = list sorted oldest→newest (chronological)."""
+    checks = []
+    score = 0
 
-        # Margin trend
-        margins = [safe_float(q.get('netIncomeRatio')) for q in income if safe_float(q.get('netIncomeRatio')) is not None]
-        if len(margins) >= 4:
-            recent_margin = margins[-1] * 100
-            old_margin = margins[-4] * 100 if len(margins) >= 4 else margins[0] * 100
-            if recent_margin > 15:
-                scores['profitability'] += 5
-                flags.append({'type': 'green', 'category': 'profitability', 'message': f'Net margin strong at {recent_margin:.1f}%'})
-            elif recent_margin > 5:
-                scores['profitability'] += 3
-            elif recent_margin > 0:
-                scores['profitability'] += 1
+    if len(income) < 5:
+        checks.append(make_check('c_data', 'Sufficient Data', None, '5+ quarters', 'fail',
+                                 f'Only {len(income)} quarters available', ''))
+        return {'score': 0, 'max': 25, 'checks': checks}
+
+    latest = income[-1]
+    prev = income[-2]
+    # Find same quarter last year (4 quarters back)
+    yoy_q = income[-5] if len(income) >= 5 else None
+    prev_yoy_q = income[-6] if len(income) >= 6 else None
+
+    # --- Check 1: Latest Q EPS YoY growth (8 pts) ---
+    eps_yoy = yoy_growth(latest.get('epsDiluted'), yoy_q.get('epsDiluted') if yoy_q else None)
+    if eps_yoy is not None:
+        if eps_yoy >= 25:
+            pts = 8
+            status = 'pass'
+        elif eps_yoy >= 18:
+            pts = 5
+            status = 'pass'
+        elif eps_yoy >= 10:
+            pts = 3
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('c_eps_growth', 'Current Q EPS YoY Growth', round(eps_yoy, 1),
+                                 '≥25% (8pts), ≥18% (5pts)', status,
+                                 f'{eps_yoy:+.1f}%', "O'Neil Ch.2"))
+    else:
+        checks.append(make_check('c_eps_growth', 'Current Q EPS YoY Growth', None,
+                                 '≥25%', 'info', 'Insufficient data', "O'Neil Ch.2"))
+
+    # --- Check 2: EPS acceleration (4 pts) ---
+    prev_eps_yoy = yoy_growth(prev.get('epsDiluted'), prev_yoy_q.get('epsDiluted') if prev_yoy_q else None)
+    if eps_yoy is not None and prev_eps_yoy is not None:
+        if eps_yoy > prev_eps_yoy:
+            pts = 4
+            status = 'pass'
+            detail = f'Accelerating: {prev_eps_yoy:+.1f}% → {eps_yoy:+.1f}%'
+        elif abs(eps_yoy - prev_eps_yoy) < 2:
+            pts = 2
+            status = 'warn'
+            detail = f'Flat: {prev_eps_yoy:+.1f}% → {eps_yoy:+.1f}%'
+        else:
+            pts = 0
+            status = 'fail'
+            detail = f'Decelerating: {prev_eps_yoy:+.1f}% → {eps_yoy:+.1f}%'
+        score += pts
+        checks.append(make_check('c_eps_accel', 'EPS Acceleration', round(eps_yoy - prev_eps_yoy, 1),
+                                 'Latest YoY > Prev YoY', status, detail, "O'Neil Ch.2"))
+
+    # --- Check 3: Deceleration SELL signal (-5 penalty) ---
+    # Two consecutive quarters where growth rate drops by ≥2/3
+    decel_detected = False
+    eps_yoy_series = []
+    for i in range(4, len(income)):
+        g = yoy_growth(income[i].get('epsDiluted'), income[i - 4].get('epsDiluted'))
+        eps_yoy_series.append(g)
+
+    if len(eps_yoy_series) >= 3:
+        for i in range(2, len(eps_yoy_series)):
+            g_curr = eps_yoy_series[i]
+            g_prev = eps_yoy_series[i - 1]
+            g_prev2 = eps_yoy_series[i - 2]
+            if g_curr is not None and g_prev is not None and g_prev2 is not None:
+                if g_prev2 > 0:
+                    ratio1 = g_prev / g_prev2 if g_prev2 != 0 else 1
+                    ratio2 = g_curr / g_prev if g_prev != 0 else 1
+                    if ratio1 <= 0.33 and ratio2 <= 0.33:
+                        decel_detected = True
+                        break
+
+    if decel_detected:
+        score -= 5
+        checks.append(make_check('c_decel_sell', 'Deceleration SELL Signal', True,
+                                 'No 2 consecutive ⅔ slowdowns', 'fail',
+                                 'SELL: Two consecutive quarters of ≥⅔ earnings deceleration', "O'Neil Ch.2"))
+    else:
+        checks.append(make_check('c_decel_sell', 'Deceleration SELL Signal', False,
+                                 'No signal', 'pass', 'No deceleration sell signal detected', "O'Neil Ch.2"))
+
+    # --- Check 4: Latest Q sales growth YoY (5 pts) ---
+    rev_yoy = yoy_growth(latest.get('revenue'), yoy_q.get('revenue') if yoy_q else None)
+    if rev_yoy is not None:
+        if rev_yoy >= 25:
+            pts = 5
+            status = 'pass'
+        elif rev_yoy >= 15:
+            pts = 3
+            status = 'pass'
+        elif rev_yoy >= 10:
+            pts = 2
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('c_rev_growth', 'Current Q Revenue YoY Growth', round(rev_yoy, 1),
+                                 '≥25% (5pts), ≥15% (3pts)', status,
+                                 f'{rev_yoy:+.1f}%', "O'Neil Ch.2"))
+
+    # --- Check 5: Sales acceleration over 3 quarters (4 pts) ---
+    rev_yoy_series = []
+    for i in range(max(0, len(income) - 4), len(income)):
+        if i >= 4:
+            g = yoy_growth(income[i].get('revenue'), income[i - 4].get('revenue'))
+            rev_yoy_series.append(g)
+
+    accel_count = 0
+    if len(rev_yoy_series) >= 2:
+        for i in range(1, len(rev_yoy_series)):
+            if rev_yoy_series[i] is not None and rev_yoy_series[i - 1] is not None:
+                if rev_yoy_series[i] > rev_yoy_series[i - 1]:
+                    accel_count += 1
+
+    if accel_count >= 3:
+        pts = 4
+        status = 'pass'
+    elif accel_count >= 2:
+        pts = 2
+        status = 'pass'
+    else:
+        pts = 0
+        status = 'fail'
+    score += pts
+    checks.append(make_check('c_rev_accel', 'Revenue Acceleration (3Q)', accel_count,
+                             '3 consecutive accelerating', status,
+                             f'{accel_count} of last quarters accelerating', "O'Neil Ch.2"))
+
+    # --- Check 6: Net margin at/near 8Q high (4 pts) ---
+    margins = [safe_float(q.get('netIncomeRatio')) for q in income]
+    margins_valid = [m for m in margins if m is not None]
+    if margins_valid and margins[-1] is not None:
+        latest_margin = margins[-1]
+        max_margin = max(margins_valid)
+        if max_margin > 0:
+            pct_of_high = latest_margin / max_margin
+        else:
+            pct_of_high = 0
+
+        if latest_margin >= max_margin:
+            pts = 4
+            status = 'pass'
+            detail = f'At 8Q high ({latest_margin * 100:.1f}%)'
+        elif pct_of_high >= 0.90:
+            pts = 2
+            status = 'pass'
+            detail = f'Within 10% of 8Q high ({latest_margin * 100:.1f}% vs {max_margin * 100:.1f}%)'
+        else:
+            pts = 0
+            status = 'fail'
+            detail = f'Below high ({latest_margin * 100:.1f}% vs {max_margin * 100:.1f}%)'
+        score += pts
+        checks.append(make_check('c_margin_high', 'Net Margin at/near 8Q High', round(latest_margin * 100, 1),
+                                 'At or within 10% of highest', status, detail, "O'Neil Ch.2"))
+
+    return {'score': max(score, 0), 'max': 25, 'checks': checks}
+
+
+# ---------------------------------------------------------------------------
+# A Score: Annual Earnings Growth (25 pts)
+# ---------------------------------------------------------------------------
+
+def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
+                    ratios_ttm: Any, cash_flow_ttm: Any) -> Dict:
+    """income_annual = sorted oldest→newest."""
+    checks = []
+    score = 0
+
+    annual = list(reversed(income_annual)) if income_annual else []  # oldest first
+
+    # --- Check 1: 3 consecutive years EPS growth (7 pts) ---
+    if len(annual) >= 4:
+        eps_list = [safe_float(y.get('epsDiluted')) for y in annual]
+        # Check last 3 year-over-year changes
+        growth_years = []
+        for i in range(1, min(4, len(eps_list))):
+            if eps_list[i] is not None and eps_list[i - 1] is not None and eps_list[i - 1] != 0:
+                growth_years.append(eps_list[i] > eps_list[i - 1])
+
+        up_years = sum(1 for g in growth_years if g)
+        total_years = len(growth_years)
+
+        if total_years >= 3 and up_years == total_years:
+            pts = 7
+            status = 'pass'
+        elif total_years >= 3 and up_years >= 2:
+            pts = 3
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('a_3yr_growth', '3 Consecutive Years EPS Growth', up_years,
+                                 'All 3 years up', status,
+                                 f'{up_years}/{total_years} years with EPS growth', "O'Neil Ch.3"))
+    else:
+        checks.append(make_check('a_3yr_growth', '3 Consecutive Years EPS Growth', None,
+                                 'Need 4+ years data', 'info', f'Only {len(annual)} years available', "O'Neil Ch.3"))
+
+    # --- Check 2: Annual EPS growth rate (5 pts) ---
+    if len(annual) >= 2:
+        latest_eps = safe_float(annual[-1].get('epsDiluted'))
+        prev_eps = safe_float(annual[-2].get('epsDiluted'))
+        ann_growth = yoy_growth(latest_eps, prev_eps)
+        if ann_growth is not None:
+            if ann_growth >= 25:
+                pts = 5
+                status = 'pass'
+            elif ann_growth >= 15:
+                pts = 3
+                status = 'pass'
+            elif ann_growth >= 5:
+                pts = 1
+                status = 'warn'
             else:
-                flags.append({'type': 'red', 'category': 'profitability', 'message': f'Company is unprofitable (net margin {recent_margin:.1f}%)'})
+                pts = 0
+                status = 'fail'
+            score += pts
+            checks.append(make_check('a_ann_growth', 'Annual EPS Growth Rate', round(ann_growth, 1),
+                                     '≥25% (5pts), ≥15% (3pts)', status,
+                                     f'{ann_growth:+.1f}%', "O'Neil Ch.3"))
 
-            if recent_margin > old_margin + 2:
-                scores['profitability'] += 4
-                flags.append({'type': 'green', 'category': 'profitability', 'message': 'Margins expanding'})
-            elif recent_margin < old_margin - 2:
-                scores['profitability'] += 1
-                flags.append({'type': 'yellow', 'category': 'profitability', 'message': 'Margins contracting'})
+    # --- Check 3: ROE (4 pts) ---
+    roe = None
+    if ratios_ttm:
+        ttm = ratios_ttm[0] if isinstance(ratios_ttm, list) else ratios_ttm
+        roe = safe_float(ttm.get('returnOnEquity'))
+
+    if roe is not None:
+        roe_pct = roe * 100
+        if roe_pct >= 25:
+            pts = 4
+            status = 'pass'
+        elif roe_pct >= 17:
+            pts = 3
+            status = 'pass'
+        elif roe_pct >= 10:
+            pts = 1
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('a_roe', 'Return on Equity (TTM)', round(roe_pct, 1),
+                                 '≥25% (4pts), ≥17% (3pts)', status,
+                                 f'{roe_pct:.1f}%', "O'Neil Ch.3"))
+
+    # --- Check 4: Cash flow/share ≥ EPS × 1.2 (5 pts) ---
+    if cash_flow_ttm and income_q:
+        cf_ttm = cash_flow_ttm[0] if isinstance(cash_flow_ttm, list) else cash_flow_ttm
+        ocf = safe_float(cf_ttm.get('operatingCashFlow'))
+        shares = safe_float(income_q[-1].get('weightedAverageShsOutDil'))
+        # Compute TTM EPS from last 4 quarters
+        ttm_eps = sum(safe_float(q.get('epsDiluted'), 0) for q in income_q[-4:])
+
+        if ocf is not None and shares and shares > 0 and ttm_eps and ttm_eps > 0:
+            cf_per_share = ocf / shares
+            ratio = cf_per_share / ttm_eps
+            if ratio >= 1.2:
+                pts = 5
+                status = 'pass'
+            elif ratio >= 1.0:
+                pts = 3
+                status = 'pass'
             else:
-                scores['profitability'] += 2
+                pts = 0
+                status = 'fail'
+            score += pts
+            checks.append(make_check('a_cf_eps', 'Cash Flow/Share vs EPS', round(ratio, 2),
+                                     'CF/share ≥ EPS × 1.2', status,
+                                     f'CF/share: ${cf_per_share:.2f}, EPS: ${ttm_eps:.2f} (ratio: {ratio:.2f}x)',
+                                     "O'Neil Ch.3"))
 
-        # ROE
-        if ratios:
-            roe = safe_float(ratios[-1].get('returnOnEquity'))
-            if roe is not None:
-                roe_pct = roe * 100
-                if roe_pct > 20:
-                    scores['profitability'] += 8
-                    flags.append({'type': 'green', 'category': 'profitability', 'message': f'ROE excellent at {roe_pct:.1f}%'})
-                elif roe_pct > 10:
-                    scores['profitability'] += 5
-                elif roe_pct > 0:
-                    scores['profitability'] += 2
-                else:
-                    flags.append({'type': 'red', 'category': 'profitability', 'message': f'Negative ROE ({roe_pct:.1f}%)'})
+    # --- Check 5: Earnings stability (4 pts) ---
+    if len(annual) >= 3:
+        eps_list = [safe_float(y.get('epsDiluted')) for y in annual]
+        growth_rates = []
+        for i in range(1, len(eps_list)):
+            g = yoy_growth(eps_list[i], eps_list[i - 1])
+            if g is not None:
+                growth_rates.append(g)
 
-    # ── Growth (25 pts) ─────────────────────────────────────────
+        if len(growth_rates) >= 2:
+            mean = sum(growth_rates) / len(growth_rates)
+            variance = sum((g - mean) ** 2 for g in growth_rates) / len(growth_rates)
+            stdev = variance ** 0.5
+
+            if stdev < 20:
+                pts = 4
+                status = 'pass'
+            elif stdev < 25:
+                pts = 3
+                status = 'pass'
+            elif stdev < 35:
+                pts = 1
+                status = 'warn'
+            else:
+                pts = 0
+                status = 'fail'
+            score += pts
+            checks.append(make_check('a_stability', 'Earnings Stability', round(stdev, 1),
+                                     'Stdev <20 (4pts), <25 (3pts)', status,
+                                     f'Annual growth stdev: {stdev:.1f}', "O'Neil Ch.3"))
+
+    return {'score': min(score, 25), 'max': 25, 'checks': checks}
+
+
+# ---------------------------------------------------------------------------
+# N Score: New/Catalyst (15 pts)
+# ---------------------------------------------------------------------------
+
+def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> Dict:
+    checks = []
+    score = 0
+
+    # --- Check 1: IPO age within 10 years (3 pts) ---
+    ipo_date_str = None
+    if ranking and ranking.get('ipo_date'):
+        ipo_date_str = ranking['ipo_date']
+    elif data.get('company_info') and isinstance(data['company_info'], dict):
+        ipo_date_str = data['company_info'].get('ipoDate')
+
+    if ipo_date_str:
+        try:
+            ipo_dt = datetime.strptime(ipo_date_str[:10], '%Y-%m-%d').date()
+            age_years = (date.today() - ipo_dt).days / 365.25
+            if age_years < 5:
+                pts = 3
+                status = 'pass'
+            elif age_years < 10:
+                pts = 2
+                status = 'pass'
+            elif age_years < 15:
+                pts = 1
+                status = 'warn'
+            else:
+                pts = 0
+                status = 'fail'
+            score += pts
+            checks.append(make_check('n_ipo_age', 'IPO Age', round(age_years, 1),
+                                     '<5y (3pts), <10y (2pts)', status,
+                                     f'{age_years:.1f} years since IPO', 'Minervini Ch.11'))
+        except (ValueError, TypeError):
+            checks.append(make_check('n_ipo_age', 'IPO Age', None, '<10y', 'info',
+                                     'IPO date not available', 'Minervini Ch.11'))
+    else:
+        checks.append(make_check('n_ipo_age', 'IPO Age', None, '<10y', 'info',
+                                 'IPO date not available', 'Minervini Ch.11'))
+
+    # --- Check 2: Price within 25% of 52-week high (4 pts) ---
+    quote = data.get('quote')
+    year_high = None
+    current_price = None
+    if isinstance(quote, dict):
+        year_high = safe_float(quote.get('yearHigh'))
+        current_price = safe_float(quote.get('price'))
+    if ranking:
+        current_price = current_price or safe_float(ranking.get('current_price'))
+
+    if year_high and current_price and year_high > 0:
+        pct_from_high = ((year_high - current_price) / year_high) * 100
+        if pct_from_high <= 15:
+            pts = 4
+            status = 'pass'
+        elif pct_from_high <= 25:
+            pts = 3
+            status = 'pass'
+        elif pct_from_high <= 35:
+            pts = 1
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('n_near_high', 'Price Near 52-Week High', round(pct_from_high, 1),
+                                 'Within 25% (3pts), 15% (4pts)', status,
+                                 f'{pct_from_high:.1f}% below 52-week high', "O'Neil Ch.4"))
+
+    # --- Check 3: Recent acceleration in EPS/Rev/Margin (4 pts) ---
+    accel_count = 0
+    if len(income) >= 6:
+        # EPS YoY acceleration
+        eps_yoy_latest = yoy_growth(income[-1].get('epsDiluted'), income[-5].get('epsDiluted') if len(income) >= 5 else None)
+        eps_yoy_prev = yoy_growth(income[-2].get('epsDiluted'), income[-6].get('epsDiluted') if len(income) >= 6 else None)
+        if eps_yoy_latest is not None and eps_yoy_prev is not None and eps_yoy_latest > eps_yoy_prev:
+            accel_count += 1
+
+        # Revenue YoY acceleration
+        rev_yoy_latest = yoy_growth(income[-1].get('revenue'), income[-5].get('revenue') if len(income) >= 5 else None)
+        rev_yoy_prev = yoy_growth(income[-2].get('revenue'), income[-6].get('revenue') if len(income) >= 6 else None)
+        if rev_yoy_latest is not None and rev_yoy_prev is not None and rev_yoy_latest > rev_yoy_prev:
+            accel_count += 1
+
+        # Margin acceleration
+        m_latest = safe_float(income[-1].get('netIncomeRatio'))
+        m_prev = safe_float(income[-2].get('netIncomeRatio'))
+        if m_latest is not None and m_prev is not None and m_latest > m_prev:
+            accel_count += 1
+
+    if accel_count >= 2:
+        pts = 4
+        status = 'pass'
+    elif accel_count == 1:
+        pts = 2
+        status = 'warn'
+    else:
+        pts = 0
+        status = 'fail'
+    score += pts
+    checks.append(make_check('n_accel', 'Recent Acceleration (EPS/Rev/Margin)', accel_count,
+                             '2+ metrics accelerating', status,
+                             f'{accel_count}/3 metrics accelerating', "O'Neil Ch.2"))
+
+    # --- Check 4: Positive earnings surprises (4 pts) ---
+    beats = 0
+    if ranking and ranking.get('earnings'):
+        earnings_data = ranking['earnings']
+        beats = earnings_data.get('eps_beats') or 0
+        if isinstance(beats, int):
+            pass
+        else:
+            beats = 0
+
+    if beats >= 3:
+        pts = 4
+        status = 'pass'
+    elif beats >= 2:
+        pts = 2
+        status = 'pass'
+    elif beats >= 1:
+        pts = 1
+        status = 'warn'
+    else:
+        pts = 0
+        status = 'fail'
+    score += pts
+    checks.append(make_check('n_surprises', 'Positive EPS Surprises (Last 4Q)', beats,
+                             '≥3 beats (4pts), ≥2 (2pts)', status,
+                             f'{beats} positive surprises', 'Minervini Ch.7'))
+
+    return {'score': min(score, 15), 'max': 15, 'checks': checks}
+
+
+# ---------------------------------------------------------------------------
+# S Score: Supply & Demand (15 pts)
+# ---------------------------------------------------------------------------
+
+def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dict],
+                    quote: Any) -> Dict:
+    checks = []
+    score = 0
+
+    # --- Check 1: D/E ratio declining over 2-3 years (5 pts) ---
+    if len(balance) >= 5:
+        de_ratios = []
+        for q in balance:
+            debt = safe_float(q.get('totalDebt', 0))
+            equity = safe_float(q.get('totalStockholdersEquity'))
+            if equity and equity > 0 and debt is not None:
+                de_ratios.append(debt / equity)
+            else:
+                de_ratios.append(None)
+
+        valid_de = [(i, d) for i, d in enumerate(de_ratios) if d is not None]
+        if len(valid_de) >= 4:
+            old = valid_de[0][1]
+            new = valid_de[-1][1]
+            if new < old - 0.05:
+                pts = 5
+                status = 'pass'
+                detail = f'Declining: {old:.2f} → {new:.2f}'
+            elif abs(new - old) <= 0.05:
+                pts = 3
+                status = 'pass'
+                detail = f'Stable: {old:.2f} → {new:.2f}'
+            else:
+                pts = 0
+                status = 'fail'
+                detail = f'Increasing: {old:.2f} → {new:.2f}'
+            score += pts
+            checks.append(make_check('s_de_trend', 'D/E Ratio Trend', round(new, 2),
+                                     'Declining over time', status, detail, "O'Neil Ch.5"))
+
+    # --- Check 2: Buybacks - shares outstanding declining (5 pts) ---
+    if len(income) >= 3:
+        shares = [safe_float(q.get('weightedAverageShsOutDil')) for q in income]
+        valid_shares = [s for s in shares if s is not None]
+        if len(valid_shares) >= 3:
+            declining_count = 0
+            for i in range(1, len(valid_shares)):
+                if valid_shares[i] < valid_shares[i - 1]:
+                    declining_count += 1
+
+            if declining_count >= 2:
+                pts = 5
+                status = 'pass'
+            elif declining_count >= 1:
+                pts = 3
+                status = 'pass'
+            else:
+                pts = 0
+                status = 'fail'
+            pct_change = ((valid_shares[-1] - valid_shares[0]) / valid_shares[0]) * 100 if valid_shares[0] else 0
+            score += pts
+            checks.append(make_check('s_buybacks', 'Share Buybacks (Declining Shares)', round(pct_change, 1),
+                                     'Shares declining 2+Q', status,
+                                     f'Shares outstanding change: {pct_change:+.1f}%', "O'Neil Ch.5"))
+
+    # --- Check 3: Shares outstanding absolute size (3 pts) ---
+    latest_shares = None
+    if income:
+        latest_shares = safe_float(income[-1].get('weightedAverageShsOutDil'))
+    if latest_shares:
+        shares_m = latest_shares / 1e6
+        if shares_m < 100:
+            pts = 3
+            status = 'pass'
+        elif shares_m < 500:
+            pts = 2
+            status = 'pass'
+        elif shares_m < 1000:
+            pts = 1
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('s_float_size', 'Shares Outstanding', round(shares_m, 0),
+                                 '<100M (3pts), <500M (2pts)', status,
+                                 f'{shares_m:.0f}M shares', "O'Neil Ch.5"))
+
+    # --- Check 4: Net buyback % of market cap (2 pts) ---
+    if cash_flow and isinstance(quote, dict):
+        mkt_cap = safe_float(quote.get('marketCap'))
+        buyback_amt = abs(safe_float(cash_flow[-1].get('commonStockRepurchased'), 0))
+        if mkt_cap and mkt_cap > 0:
+            buyback_pct = (buyback_amt / mkt_cap) * 100
+            if buyback_pct > 1:
+                pts = 2
+                status = 'pass'
+            elif buyback_pct > 0.5:
+                pts = 1
+                status = 'pass'
+            else:
+                pts = 0
+                status = 'fail'
+            score += pts
+            checks.append(make_check('s_buyback_pct', 'Buyback % of Market Cap', round(buyback_pct, 2),
+                                     '>1% (2pts), >0.5% (1pt)', status,
+                                     f'{buyback_pct:.2f}% of market cap', "O'Neil Ch.5"))
+
+    return {'score': min(score, 15), 'max': 15, 'checks': checks}
+
+
+# ---------------------------------------------------------------------------
+# SEPA Score: Minervini Overlay (20 pts)
+# ---------------------------------------------------------------------------
+
+def compute_sepa_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dict]) -> Dict:
+    checks = []
+    score = 0
+
+    # --- Check 1: Code 33 — 3Q consecutive acceleration in EPS + Rev + Margins (6 pts) ---
+    code_33_detected = False
+    code_33_quarters = 0
+    accel_metrics = 0
+
+    if len(income) >= 7:  # Need 7 quarters: 3 current + 4 for YoY
+        # Compute YoY growth for each quarter
+        eps_yoy_vals = []
+        rev_yoy_vals = []
+        net_margins = []
+
+        for i in range(4, len(income)):
+            eps_yoy_vals.append(yoy_growth(income[i].get('epsDiluted'), income[i - 4].get('epsDiluted')))
+            rev_yoy_vals.append(yoy_growth(income[i].get('revenue'), income[i - 4].get('revenue')))
+            net_margins.append(safe_float(income[i].get('netIncomeRatio')))
+
+        # Check for 3 consecutive quarters of acceleration in all three
+        if len(eps_yoy_vals) >= 3:
+            eps_accel = all(eps_yoy_vals[i] is not None and eps_yoy_vals[i - 1] is not None
+                           and eps_yoy_vals[i] > eps_yoy_vals[i - 1]
+                           for i in range(len(eps_yoy_vals) - 2, len(eps_yoy_vals)))
+            rev_accel = all(rev_yoy_vals[i] is not None and rev_yoy_vals[i - 1] is not None
+                           and rev_yoy_vals[i] > rev_yoy_vals[i - 1]
+                           for i in range(len(rev_yoy_vals) - 2, len(rev_yoy_vals)))
+            margin_accel = all(net_margins[i] is not None and net_margins[i - 1] is not None
+                              and net_margins[i] > net_margins[i - 1]
+                              for i in range(len(net_margins) - 2, len(net_margins)))
+
+            accel_metrics = sum([eps_accel, rev_accel, margin_accel])
+            code_33_detected = accel_metrics == 3
+
+            # Count consecutive quarters
+            if code_33_detected:
+                code_33_quarters = 3
+
+    if code_33_detected:
+        pts = 6
+        status = 'pass'
+    elif accel_metrics >= 2:
+        pts = 3
+        status = 'warn'
+    else:
+        pts = 0
+        status = 'fail'
+    score += pts
+
+    code_33_data = {
+        'detected': code_33_detected,
+        'consecutive_quarters': code_33_quarters,
+        'checks': [make_check('sepa_code33', 'Code 33 (Triple Acceleration)', code_33_detected,
+                              '3Q accel in EPS + Rev + Margins', status,
+                              f'{"ACTIVE" if code_33_detected else "Not detected"} — {accel_metrics}/3 metrics accelerating',
+                              'Minervini Ch.8')]
+    }
+
+    # --- Check 2: Inventory vs sales growth (3 pts) ---
+    if len(income) >= 2 and len(balance) >= 2:
+        rev_growth = qoq_growth(income[-1].get('revenue'), income[-2].get('revenue'))
+        inv_growth = qoq_growth(balance[-1].get('inventory'), balance[-2].get('inventory'))
+
+        if inv_growth is not None and rev_growth is not None:
+            if rev_growth == 0:
+                ratio = abs(inv_growth) if inv_growth else 0
+            else:
+                ratio = inv_growth / abs(rev_growth) if rev_growth != 0 else 0
+
+            if inv_growth <= rev_growth or (inv_growth is not None and inv_growth <= 0):
+                pts = 3
+                status = 'pass'
+            elif ratio < 2:
+                pts = 2
+                status = 'warn'
+            elif ratio >= 4:
+                pts = 0
+                status = 'fail'
+            else:
+                pts = 1
+                status = 'warn'
+            score += pts
+            checks.append(make_check('sepa_inv_sales', 'Inventory vs Sales Growth', round(ratio, 1) if rev_growth else None,
+                                     'Inventory ≤ sales growth', status,
+                                     f'Inv: {inv_growth:+.1f}% vs Rev: {rev_growth:+.1f}%', 'Minervini Ch.8'))
+        else:
+            checks.append(make_check('sepa_inv_sales', 'Inventory vs Sales Growth', None,
+                                     'Inventory ≤ sales growth', 'info',
+                                     'No inventory data (may be service company)', 'Minervini Ch.8'))
+            score += 3  # Don't penalize service companies with no inventory
+
+    # --- Check 3: Receivables vs sales growth (3 pts) ---
+    if len(income) >= 2 and len(balance) >= 2:
+        recv_growth = qoq_growth(
+            balance[-1].get('netReceivables', balance[-1].get('accountsReceivables')),
+            balance[-2].get('netReceivables', balance[-2].get('accountsReceivables'))
+        )
+        rev_growth = qoq_growth(income[-1].get('revenue'), income[-2].get('revenue'))
+
+        if recv_growth is not None and rev_growth is not None:
+            if rev_growth == 0:
+                ratio = abs(recv_growth) if recv_growth else 0
+            else:
+                ratio = recv_growth / abs(rev_growth) if rev_growth != 0 else 0
+
+            if recv_growth <= rev_growth or (recv_growth is not None and recv_growth <= 0):
+                pts = 3
+                status = 'pass'
+            elif ratio < 2:
+                pts = 2
+                status = 'warn'
+            elif ratio >= 3:
+                pts = 0
+                status = 'fail'
+            else:
+                pts = 1
+                status = 'warn'
+            score += pts
+            checks.append(make_check('sepa_recv_sales', 'Receivables vs Sales Growth',
+                                     round(ratio, 1) if rev_growth else None,
+                                     'Receivables ≤ sales growth', status,
+                                     f'Recv: {recv_growth:+.1f}% vs Rev: {rev_growth:+.1f}%', 'Minervini Ch.8'))
+
+    # --- Check 4: Margin expansion — gross + net (4 pts) ---
     if len(income) >= 5:
-        # EPS acceleration (last 4 quarters)
-        eps_vals = [safe_float(q.get('eps')) for q in income[-5:] if safe_float(q.get('eps')) is not None]
-        if len(eps_vals) >= 4:
-            # Check for consecutive QoQ growth
-            consecutive = 0
-            for i in range(1, len(eps_vals)):
-                if eps_vals[i] > eps_vals[i - 1]:
-                    consecutive += 1
-                else:
-                    consecutive = 0
-            if consecutive >= 3:
-                scores['growth'] += 10
-                flags.append({'type': 'green', 'category': 'growth', 'message': f'EPS accelerating {consecutive} consecutive quarters'})
-            elif consecutive >= 2:
-                scores['growth'] += 6
-            elif consecutive >= 1:
-                scores['growth'] += 3
+        gross_latest = safe_float(income[-1].get('grossProfitRatio'))
+        gross_yoy = safe_float(income[-5].get('grossProfitRatio'))
+        net_latest = safe_float(income[-1].get('netIncomeRatio'))
+        net_yoy = safe_float(income[-5].get('netIncomeRatio'))
 
-        # YoY EPS growth
-        if len(eps_vals) >= 4:
-            recent_eps = eps_vals[-1]
-            year_ago_eps = eps_vals[-4] if len(eps_vals) >= 4 else eps_vals[0]
-            if year_ago_eps and year_ago_eps > 0 and recent_eps is not None:
-                eps_growth = ((recent_eps - year_ago_eps) / abs(year_ago_eps)) * 100
-                if eps_growth > 25:
-                    scores['growth'] += 8
-                    flags.append({'type': 'green', 'category': 'growth', 'message': f'EPS growing {eps_growth:.0f}% YoY'})
-                elif eps_growth > 10:
-                    scores['growth'] += 5
-                elif eps_growth > 0:
-                    scores['growth'] += 2
-                elif eps_growth > -15:
-                    flags.append({'type': 'yellow', 'category': 'growth', 'message': f'EPS declining {eps_growth:.0f}% YoY'})
-                else:
-                    flags.append({'type': 'red', 'category': 'growth', 'message': f'EPS declining {eps_growth:.0f}% YoY'})
+        gross_expanding = gross_latest is not None and gross_yoy is not None and gross_latest > gross_yoy
+        net_expanding = net_latest is not None and net_yoy is not None and net_latest > net_yoy
 
-    # Revenue growth acceleration
-    if income_growth and len(income_growth) >= 2:
-        rev_growths = [safe_float(q.get('growthRevenue')) for q in income_growth if safe_float(q.get('growthRevenue')) is not None]
-        if len(rev_growths) >= 2 and rev_growths[-1] is not None and rev_growths[-2] is not None:
-            if rev_growths[-1] > rev_growths[-2]:
-                scores['growth'] += 7
-                flags.append({'type': 'green', 'category': 'growth', 'message': 'Revenue growth accelerating'})
+        if gross_expanding and net_expanding:
+            pts = 4
+            status = 'pass'
+        elif gross_expanding or net_expanding:
+            pts = 2
+            status = 'warn'
+        elif gross_latest is not None and gross_yoy is not None and abs(gross_latest - gross_yoy) < 0.01:
+            pts = 1
+            status = 'warn'
+        else:
+            pts = 0
+            status = 'fail'
+        score += pts
+        checks.append(make_check('sepa_margin_exp', 'Margin Expansion (Gross + Net)', None,
+                                 'Both expanding YoY', status,
+                                 f'Gross: {"expanding" if gross_expanding else "contracting"}, '
+                                 f'Net: {"expanding" if net_expanding else "contracting"}',
+                                 'Minervini Ch.7'))
+
+    # --- Check 5: SBC dilution (2 pts) ---
+    if cash_flow and income:
+        sbc = safe_float(cash_flow[-1].get('stockBasedCompensation'), 0)
+        ni = safe_float(income[-1].get('netIncome'))
+        if ni and ni > 0:
+            sbc_pct = (sbc / ni) * 100
+            if sbc_pct < 10:
+                pts = 2
+                status = 'pass'
+            elif sbc_pct < 20:
+                pts = 1
+                status = 'warn'
             else:
-                scores['growth'] += 3
+                pts = 0
+                status = 'fail'
+            score += pts
+            checks.append(make_check('sepa_sbc', 'SBC Dilution Impact', round(sbc_pct, 1),
+                                     'SBC <10% of NI', status,
+                                     f'SBC is {sbc_pct:.1f}% of net income', 'Minervini Ch.8'))
 
-    # ── Balance Sheet Health (25 pts) ───────────────────────────
-    if balance:
-        latest_bs = balance[-1]
-
-        # Debt-to-equity
-        total_debt = safe_float(latest_bs.get('totalDebt', latest_bs.get('longTermDebt', 0)))
-        total_equity = safe_float(latest_bs.get('totalStockholdersEquity'))
-        if total_equity and total_equity > 0 and total_debt is not None:
-            de_ratio = total_debt / total_equity
-            if de_ratio < 0.5:
-                scores['balance_sheet'] += 8
-                flags.append({'type': 'green', 'category': 'balance_sheet', 'message': f'Low debt-to-equity ({de_ratio:.2f})'})
-            elif de_ratio < 1.0:
-                scores['balance_sheet'] += 5
-            elif de_ratio < 2.0:
-                scores['balance_sheet'] += 2
-                flags.append({'type': 'yellow', 'category': 'balance_sheet', 'message': f'Moderate debt-to-equity ({de_ratio:.2f})'})
+    # --- Check 6: Leadership profile — EPS growth 20%+ (2 pts) ---
+    if len(income) >= 5:
+        eps_yoy = yoy_growth(income[-1].get('epsDiluted'), income[-5].get('epsDiluted'))
+        if eps_yoy is not None:
+            if eps_yoy >= 35:
+                pts = 2
+                status = 'pass'
+            elif eps_yoy >= 20:
+                pts = 1
+                status = 'pass'
             else:
-                flags.append({'type': 'red', 'category': 'balance_sheet', 'message': f'High debt-to-equity ({de_ratio:.2f})'})
+                pts = 0
+                status = 'fail'
+            score += pts
+            checks.append(make_check('sepa_leadership', 'Leadership Profile (EPS 20%+)', round(eps_yoy, 1),
+                                     '≥35% (2pts), ≥20% (1pt)', status,
+                                     f'EPS YoY: {eps_yoy:+.1f}%', 'Minervini Ch.6'))
 
-            # D/E trend
-            if len(balance) >= 4:
-                old_equity = safe_float(balance[-4].get('totalStockholdersEquity'))
-                old_debt = safe_float(balance[-4].get('totalDebt', balance[-4].get('longTermDebt', 0)))
-                if old_equity and old_equity > 0 and old_debt is not None:
-                    old_de = old_debt / old_equity
-                    if de_ratio > old_de + 0.3:
-                        flags.append({'type': 'yellow', 'category': 'balance_sheet', 'message': f'Debt-to-equity rising ({old_de:.2f} → {de_ratio:.2f})'})
+    return {'score': min(score, 20), 'max': 20, 'checks': checks, 'code_33': code_33_data}
 
-        # Current ratio
-        current_assets = safe_float(latest_bs.get('totalCurrentAssets'))
-        current_liabilities = safe_float(latest_bs.get('totalCurrentLiabilities'))
-        if current_assets and current_liabilities and current_liabilities > 0:
-            current_ratio = current_assets / current_liabilities
-            if current_ratio > 2.0:
-                scores['balance_sheet'] += 6
-                flags.append({'type': 'green', 'category': 'balance_sheet', 'message': f'Strong current ratio ({current_ratio:.2f})'})
-            elif current_ratio > 1.5:
-                scores['balance_sheet'] += 4
-            elif current_ratio > 1.0:
-                scores['balance_sheet'] += 2
-            else:
-                flags.append({'type': 'red', 'category': 'balance_sheet', 'message': f'Current ratio below 1 ({current_ratio:.2f})'})
 
-    # Free cash flow trend
-    if cash_flow and len(cash_flow) >= 2:
-        fcf_vals = [safe_float(q.get('freeCashFlow')) for q in cash_flow if safe_float(q.get('freeCashFlow')) is not None]
-        if len(fcf_vals) >= 2:
-            if fcf_vals[-1] and fcf_vals[-1] > 0:
-                scores['balance_sheet'] += 5
-                if len(fcf_vals) >= 4 and all(f and f > 0 for f in fcf_vals[-4:]):
-                    scores['balance_sheet'] += 6
-                    flags.append({'type': 'green', 'category': 'balance_sheet', 'message': 'Positive free cash flow for 4+ quarters'})
-            else:
-                flags.append({'type': 'red', 'category': 'balance_sheet', 'message': 'Negative free cash flow'})
+# ---------------------------------------------------------------------------
+# Trend Template: 8 Criteria (pass/fail)
+# ---------------------------------------------------------------------------
 
-    # ── Quantitative Scores (25 pts) ───────────────────────────
-    if fin_scores and isinstance(fin_scores, dict):
-        # Piotroski F-Score (0-9)
-        piotroski = safe_float(fin_scores.get('piotroskiScore'))
-        if piotroski is not None:
-            if piotroski >= 7:
-                scores['quant_scores'] += 10
-                flags.append({'type': 'green', 'category': 'quant_scores', 'message': f'Piotroski F-Score: {int(piotroski)}/9 (strong)'})
-            elif piotroski >= 5:
-                scores['quant_scores'] += 6
-            elif piotroski >= 3:
-                scores['quant_scores'] += 3
-                flags.append({'type': 'yellow', 'category': 'quant_scores', 'message': f'Piotroski F-Score: {int(piotroski)}/9 (weak)'})
-            else:
-                flags.append({'type': 'red', 'category': 'quant_scores', 'message': f'Piotroski F-Score: {int(piotroski)}/9 (poor)'})
+def compute_trend_template(ranking: Optional[Dict], quote: Any) -> Dict:
+    checks = []
+    passing = 0
 
-        # Altman Z-Score
-        altman = safe_float(fin_scores.get('altmanZScore'))
-        if altman is not None:
-            if altman > 3.0:
-                scores['quant_scores'] += 10
-                flags.append({'type': 'green', 'category': 'quant_scores', 'message': f'Altman Z-Score: {altman:.1f} (safe zone)'})
-            elif altman > 1.8:
-                scores['quant_scores'] += 5
-                flags.append({'type': 'yellow', 'category': 'quant_scores', 'message': f'Altman Z-Score: {altman:.1f} (grey zone)'})
-            else:
-                flags.append({'type': 'red', 'category': 'quant_scores', 'message': f'Altman Z-Score: {altman:.1f} (distress zone)'})
+    if not ranking:
+        return {'passing': 0, 'total': 8, 'checks': [
+            make_check('tt_no_data', 'No ranking data', None, '', 'info',
+                       'Stock not found in rankings.json', 'Minervini Ch.5')
+        ]}
 
-    # Owner earnings trend
-    owner = data.get('owner_earnings') or []
-    if isinstance(owner, list) and len(owner) >= 2:
-        oe_vals = [safe_float(q.get('ownerEarnings')) for q in reversed(owner) if safe_float(q.get('ownerEarnings')) is not None]
-        if len(oe_vals) >= 2 and oe_vals[-1] and oe_vals[0]:
-            if oe_vals[-1] > oe_vals[0]:
-                scores['quant_scores'] += 5
-                flags.append({'type': 'green', 'category': 'quant_scores', 'message': 'Owner earnings trending up'})
+    price = safe_float(ranking.get('current_price'))
+    ma_50 = safe_float(ranking.get('ma_50'))
+    ma_150 = safe_float(ranking.get('ma_150'))
+    ma_200 = safe_float(ranking.get('ma_200'))
+    rs_rank = safe_float(ranking.get('rs_rank'))
 
-    # ── Compute overall ─────────────────────────────────────────
-    # Cap each category at 25
-    for k in scores:
-        scores[k] = min(scores[k], 25)
+    year_high = None
+    year_low = None
+    if isinstance(quote, dict):
+        year_high = safe_float(quote.get('yearHigh'))
+        year_low = safe_float(quote.get('yearLow'))
 
-    overall = sum(scores.values())
+    # 1. Price > 150-day AND 200-day MA
+    if price and ma_150 and ma_200:
+        ok = price > ma_150 and price > ma_200
+        if ok:
+            passing += 1
+        checks.append(make_check('tt_price_above_150_200', 'Price > 150-day & 200-day MA',
+                                 price, 'Price above both MAs', 'pass' if ok else 'fail',
+                                 f'Price: ${price:.2f}, MA150: ${ma_150:.2f}, MA200: ${ma_200:.2f}',
+                                 'Minervini Ch.5'))
+
+    # 2. 150-day MA > 200-day MA
+    if ma_150 and ma_200:
+        ok = ma_150 > ma_200
+        if ok:
+            passing += 1
+        checks.append(make_check('tt_150_above_200', '150-day MA > 200-day MA',
+                                 round(ma_150 - ma_200, 2), 'MA150 > MA200', 'pass' if ok else 'fail',
+                                 f'MA150: ${ma_150:.2f}, MA200: ${ma_200:.2f}',
+                                 'Minervini Ch.5'))
+
+    # 3. 200-day MA trending up (approximate: if MA150 > MA200, 200 is likely rising)
+    if ma_150 and ma_200:
+        ok = ma_150 > ma_200  # Proxy: if 150 > 200 for an extended period, 200 is trending up
+        if ok:
+            passing += 1
+        checks.append(make_check('tt_200_trending_up', '200-day MA Trending Up',
+                                 None, 'Rising for 1+ month', 'pass' if ok else 'fail',
+                                 f'{"Likely trending up" if ok else "May not be trending up"} (MA150 {">" if ok else "<"} MA200)',
+                                 'Minervini Ch.5'))
+
+    # 4. 50-day MA > 150-day AND 200-day MA
+    if ma_50 and ma_150 and ma_200:
+        ok = ma_50 > ma_150 and ma_50 > ma_200
+        if ok:
+            passing += 1
+        checks.append(make_check('tt_50_above_150_200', '50-day MA > 150-day & 200-day MA',
+                                 round(ma_50, 2), 'MA50 above both', 'pass' if ok else 'fail',
+                                 f'MA50: ${ma_50:.2f}, MA150: ${ma_150:.2f}, MA200: ${ma_200:.2f}',
+                                 'Minervini Ch.5'))
+
+    # 5. Price > 50-day MA
+    if price and ma_50:
+        ok = price > ma_50
+        if ok:
+            passing += 1
+        checks.append(make_check('tt_price_above_50', 'Price > 50-day MA',
+                                 price, 'Price above MA50', 'pass' if ok else 'fail',
+                                 f'Price: ${price:.2f}, MA50: ${ma_50:.2f}',
+                                 'Minervini Ch.5'))
+
+    # 6. Price ≥30% above 52-week low
+    if price and year_low and year_low > 0:
+        pct_above_low = ((price - year_low) / year_low) * 100
+        ok = pct_above_low >= 30
+        if ok:
+            passing += 1
+        checks.append(make_check('tt_30pct_above_low', 'Price ≥30% Above 52-Week Low',
+                                 round(pct_above_low, 1), '≥30% above low', 'pass' if ok else 'fail',
+                                 f'{pct_above_low:.1f}% above low (${year_low:.2f})',
+                                 'Minervini Ch.5'))
+
+    # 7. Price within 25% of 52-week high
+    if price and year_high and year_high > 0:
+        pct_from_high = ((year_high - price) / year_high) * 100
+        ok = pct_from_high <= 25
+        if ok:
+            passing += 1
+        checks.append(make_check('tt_within_25pct_high', 'Price Within 25% of 52-Week High',
+                                 round(pct_from_high, 1), '≤25% from high', 'pass' if ok else 'fail',
+                                 f'{pct_from_high:.1f}% below high (${year_high:.2f})',
+                                 'Minervini Ch.5'))
+
+    # 8. RS rating ≥70
+    if rs_rank is not None:
+        ok = rs_rank >= 70
+        if ok:
+            passing += 1
+        status = 'pass' if rs_rank >= 80 else ('pass' if ok else 'fail')
+        checks.append(make_check('tt_rs_70', 'RS Rating ≥70 (prefer 80+)',
+                                 int(rs_rank), '≥70, prefer 80+', status,
+                                 f'RS Rank: {int(rs_rank)}',
+                                 'Minervini Ch.5'))
+
+    return {'passing': passing, 'total': 8, 'checks': checks}
+
+
+# ---------------------------------------------------------------------------
+# Flags generation
+# ---------------------------------------------------------------------------
+
+def generate_flags(c_score, a_score, n_score, s_score, sepa_score, trend_template) -> List[Dict]:
+    flags = []
+
+    for section in [c_score, a_score, n_score, s_score, sepa_score.get('earnings_quality', sepa_score)]:
+        if not isinstance(section, dict):
+            continue
+        for check in section.get('checks', []):
+            if check['status'] == 'pass' and check['value'] is not None:
+                flags.append({'type': 'green', 'category': check['id'], 'message': check['detail'],
+                              'source': check['source']})
+            elif check['status'] == 'fail':
+                flag_type = 'red' if 'SELL' in str(check.get('detail', '')) or 'RED' in str(check.get('label', '')) else 'yellow'
+                flags.append({'type': flag_type, 'category': check['id'], 'message': check['detail'],
+                              'source': check['source']})
+
+    # Code 33 flag
+    code_33 = sepa_score.get('code_33', {})
+    if code_33.get('detected'):
+        flags.append({'type': 'green', 'category': 'code_33', 'message': 'CODE 33 ACTIVE: Triple acceleration in EPS, Revenue & Margins',
+                      'source': 'Minervini Ch.8'})
+
+    # Trend Template flag
+    tt = trend_template
+    if tt.get('passing', 0) == 8:
+        flags.append({'type': 'green', 'category': 'trend_template', 'message': 'All 8 Trend Template criteria met',
+                      'source': 'Minervini Ch.5'})
+    elif tt.get('passing', 0) >= 6:
+        flags.append({'type': 'yellow', 'category': 'trend_template',
+                      'message': f'Trend Template: {tt["passing"]}/8 criteria met',
+                      'source': 'Minervini Ch.5'})
+    elif tt.get('passing', 0) < 6:
+        flags.append({'type': 'red', 'category': 'trend_template',
+                      'message': f'Trend Template: Only {tt["passing"]}/8 criteria met',
+                      'source': 'Minervini Ch.5'})
+
+    # Sort: red first, yellow, green
+    order = {'red': 0, 'yellow': 1, 'green': 2}
+    flags.sort(key=lambda f: order.get(f['type'], 3))
+
+    return flags
+
+
+# ---------------------------------------------------------------------------
+# Main scoring orchestrator
+# ---------------------------------------------------------------------------
+
+def compute_canslim_sepa(data: Dict, ranking: Optional[Dict]) -> Dict:
+    income = list(reversed(data.get('income_statement') or []))
+    balance = list(reversed(data.get('balance_sheet') or []))
+    cash_flow = list(reversed(data.get('cash_flow') or []))
+    income_annual = data.get('income_statement_annual') or []
+
+    ratios_ttm = data.get('ratios_ttm')
+    cash_flow_ttm = data.get('cash_flow_ttm')
+    quote = data.get('quote')
+
+    # Compute each score
+    c = compute_c_score(income)
+    a = compute_a_score(income_annual, income, ratios_ttm, cash_flow_ttm)
+    n = compute_n_score(data, income, ranking)
+    s = compute_s_score(income, balance, cash_flow, quote)
+    sepa_result = compute_sepa_score(income, balance, cash_flow)
+
+    # Extract code_33 and earnings_quality from SEPA
+    code_33 = sepa_result.pop('code_33', {'detected': False, 'consecutive_quarters': 0, 'checks': []})
+    sepa_eq = {'score': sepa_result['score'], 'max': sepa_result['max'], 'checks': sepa_result['checks']}
+
+    tt = compute_trend_template(ranking, quote)
+
+    # Flags
+    flags = generate_flags(c, a, n, s, {'earnings_quality': sepa_eq, 'code_33': code_33}, tt)
+
+    # Overall score
+    canslim_total = c['score'] + a['score'] + n['score'] + s['score']
+    canslim_max = c['max'] + a['max'] + n['max'] + s['max']
+    sepa_total = sepa_eq['score']
+    sepa_max = sepa_eq['max']
+    overall = max(canslim_total + sepa_total, 0)
 
     if overall >= 86:
         rating = 'excellent'
@@ -381,8 +1133,22 @@ def compute_analysis(data: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         'overall_score': overall,
-        'rating': rating,
-        'category_scores': scores,
+        'overall_rating': rating,
+        'canslim': {
+            'c_score': c,
+            'a_score': a,
+            'n_score': n,
+            's_score': s,
+            'total': canslim_total,
+            'max': canslim_max,
+        },
+        'sepa': {
+            'trend_template': tt,
+            'code_33': code_33,
+            'earnings_quality': sepa_eq,
+            'total': sepa_total,
+            'max': sepa_max,
+        },
         'flags': flags,
     }
 
@@ -397,11 +1163,11 @@ def main():
         sys.exit(1)
 
     print("=" * 80)
-    print("FUNDAMENTALS PIPELINE")
+    print("FUNDAMENTALS PIPELINE (CAN SLIM + SEPA)")
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 80)
 
-    # Load symbols from rankings.json
+    # Load rankings
     if not os.path.exists('rankings.json'):
         print("ERROR: rankings.json not found. Run process_stocks.py first.")
         sys.exit(1)
@@ -410,19 +1176,20 @@ def main():
         rankings = json.load(f)
 
     all_stocks = rankings.get('data', [])
-    # Filter to RS rank 70+ (covers the stocks people actually look at)
+    rankings_map = {s['symbol']: s for s in all_stocks}
+
+    # Filter to RS rank 70+
     min_rs = int(os.environ.get('FUNDAMENTALS_MIN_RS', '70'))
     filtered = [s for s in all_stocks if s.get('rs_rank', 0) >= min_rs]
     all_symbols = [s['symbol'] for s in filtered]
-    print(f"Found {len(all_stocks)} total symbols, {len(all_symbols)} with RS >= {min_rs}")
+    print(f"Found {len(all_stocks)} total, {len(all_symbols)} with RS >= {min_rs}")
 
-    # Optional: limit to subset via env var (for testing)
+    # Optional limit
     limit = os.environ.get('FUNDAMENTALS_LIMIT')
     if limit:
         all_symbols = all_symbols[:int(limit)]
-        print(f"Limited to {len(all_symbols)} symbols (FUNDAMENTALS_LIMIT={limit})")
+        print(f"Limited to {len(all_symbols)} symbols")
 
-    # Create output directory
     os.makedirs('fundamentals', exist_ok=True)
 
     success = 0
@@ -432,39 +1199,39 @@ def main():
         print(f"\n[{i+1}/{len(all_symbols)}] {symbol}")
 
         try:
-            # Fetch all fundamental data
             fund_data = fetch_fundamentals(symbol)
 
-            # Skip if no income statement data (probably not a real company)
             if not fund_data.get('income_statement'):
                 print(f"  Skipping {symbol} — no income statement data")
                 errors += 1
                 continue
 
-            # Compute analysis
-            fund_data['analysis'] = compute_analysis(fund_data)
+            # Get ranking data for cross-reference
+            ranking = rankings_map.get(symbol)
+
+            # Compute CAN SLIM + SEPA analysis
+            fund_data['analysis'] = compute_canslim_sepa(fund_data, ranking)
             fund_data['last_updated'] = datetime.now().isoformat()
 
-            # Save per-symbol JSON
+            # Save
             output_path = f"fundamentals/{symbol}.json"
             with open(output_path, 'w') as f:
-                json.dump(fund_data, f, separators=(',', ':'))  # compact JSON
+                json.dump(fund_data, f, separators=(',', ':'))
 
             score = fund_data['analysis']['overall_score']
-            rating = fund_data['analysis']['rating']
-            n_flags = len(fund_data['analysis']['flags'])
-            print(f"  Score: {score}/100 ({rating}) — {n_flags} flags")
+            rating = fund_data['analysis']['overall_rating']
+            tt_pass = fund_data['analysis']['sepa']['trend_template']['passing']
+            code33 = fund_data['analysis']['sepa']['code_33']['detected']
+            print(f"  Score: {score}/100 ({rating}) | TT: {tt_pass}/8 | Code33: {'YES' if code33 else 'no'}")
             success += 1
 
         except Exception as e:
-            print(f"  ERROR processing {symbol}: {e}")
+            print(f"  ERROR: {e}")
             errors += 1
 
-    # Summary
     print()
     print("=" * 80)
     print(f"COMPLETE: {success} succeeded, {errors} failed")
-    print(f"Output: fundamentals/ ({success} JSON files)")
     print(f"Finished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 80)
 
