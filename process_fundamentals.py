@@ -1248,12 +1248,15 @@ def generate_flags(c_score, a_score, n_score, s_score, i_score, sepa_score, tren
         if not isinstance(section, dict):
             continue
         for check in section.get('checks', []):
+            label = check.get('label', '')
+            detail = check.get('detail', '')
+            msg = f'{label}: {detail}' if label and detail and label not in detail else (detail or label)
             if check['status'] == 'pass' and check['value'] is not None:
-                flags.append({'type': 'green', 'category': check['id'], 'message': check['detail'],
+                flags.append({'type': 'green', 'category': check['id'], 'message': msg,
                               'source': check['source']})
             elif check['status'] == 'fail':
-                flag_type = 'red' if 'SELL' in str(check.get('detail', '')) or 'RED' in str(check.get('label', '')) else 'yellow'
-                flags.append({'type': flag_type, 'category': check['id'], 'message': check['detail'],
+                flag_type = 'red' if 'SELL' in detail or 'RED' in label else 'yellow'
+                flags.append({'type': flag_type, 'category': check['id'], 'message': msg,
                               'source': check['source']})
 
     # Code 33 flag
