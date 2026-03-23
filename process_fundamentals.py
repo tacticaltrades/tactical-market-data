@@ -1528,6 +1528,52 @@ def main():
             print(f"  ERROR: {e}")
             errors += 1
 
+    # Build screener index
+    print("\nBuilding fundamentals/index.json...")
+    index_stocks = []
+    for symbol_file in sorted(os.listdir('fundamentals')):
+        if not symbol_file.endswith('.json') or symbol_file == 'index.json':
+            continue
+        try:
+            with open(f'fundamentals/{symbol_file}') as f:
+                d = json.load(f)
+            a = d.get('analysis', {})
+            cs = a.get('canslim', {})
+            sepa = a.get('sepa', {})
+            tt = sepa.get('trend_template', {})
+            fl = a.get('flags', [])
+            index_stocks.append({
+                'symbol': d.get('symbol', symbol_file.replace('.json', '')),
+                'score': a.get('overall_score', 0),
+                'rating': a.get('overall_rating', 'weak'),
+                'eps_rating': a.get('eps_rating'),
+                'c': cs.get('c_score', {}).get('score', 0),
+                'a': cs.get('a_score', {}).get('score', 0),
+                'n': cs.get('n_score', {}).get('score', 0),
+                's': cs.get('s_score', {}).get('score', 0),
+                'i': cs.get('i_score', {}).get('score', 0),
+                'sepa': sepa.get('earnings_quality', {}).get('score', 0),
+                'tt': tt.get('passing', 0),
+                'code33': sepa.get('code_33', {}).get('detected', False),
+                'sells': any(f['type'] == 'red' and 'SELL' in f.get('message', '') for f in fl),
+                'decel': any(f.get('category') == 'c_decel_sell' for f in fl if f['type'] == 'red'),
+            })
+        except Exception as e:
+            print(f"  Warning: Could not read {symbol_file}: {e}")
+
+    index_stocks.sort(key=lambda x: x['score'], reverse=True)
+
+    with open('fundamentals/index.json', 'w') as f:
+        json.dump({
+            'last_updated': datetime.now().isoformat(),
+            'count': len(index_stocks),
+            'stocks': index_stocks,
+        }, f, separators=(',', ':'))
+
+    print(f"Index: {len(index_stocks)} stocks written to fundamentals/index.json")
+    if index_stocks:
+        print(f"Top 5: {', '.join(f'{s[\"symbol\"]}({s[\"score\"]})' for s in index_stocks[:5])}")
+
     print()
     print("=" * 80)
     print(f"COMPLETE: {success} succeeded, {errors} failed")
