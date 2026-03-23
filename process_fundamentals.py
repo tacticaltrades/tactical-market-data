@@ -409,8 +409,12 @@ def main():
     with open('rankings.json', 'r') as f:
         rankings = json.load(f)
 
-    all_symbols = [s['symbol'] for s in rankings.get('data', [])]
-    print(f"Found {len(all_symbols)} symbols in rankings.json")
+    all_stocks = rankings.get('data', [])
+    # Filter to RS rank 70+ (covers the stocks people actually look at)
+    min_rs = int(os.environ.get('FUNDAMENTALS_MIN_RS', '70'))
+    filtered = [s for s in all_stocks if s.get('rs_rank', 0) >= min_rs]
+    all_symbols = [s['symbol'] for s in filtered]
+    print(f"Found {len(all_stocks)} total symbols, {len(all_symbols)} with RS >= {min_rs}")
 
     # Optional: limit to subset via env var (for testing)
     limit = os.environ.get('FUNDAMENTALS_LIMIT')
