@@ -221,7 +221,7 @@ def compute_c_score(income: List[Dict]) -> Dict:
         score += pts
         checks.append(make_check('c_eps_growth', 'Current Q EPS YoY Growth', round(eps_yoy, 1),
                                  '≥25% (6pts), ≥18% (4pts)', status,
-                                 f'{eps_yoy:+.1f}%', "O'Neil Ch.2"))
+                                 f'EPS YoY: {eps_yoy:+.1f}%', "O'Neil Ch.2"))
     else:
         checks.append(make_check('c_eps_growth', 'Current Q EPS YoY Growth', None,
                                  '≥25%', 'info', 'Insufficient data', "O'Neil Ch.2"))
@@ -293,7 +293,7 @@ def compute_c_score(income: List[Dict]) -> Dict:
         score += pts
         checks.append(make_check('c_rev_growth', 'Current Q Revenue YoY Growth', round(rev_yoy, 1),
                                  '≥25% (4pts), ≥15% (3pts)', status,
-                                 f'{rev_yoy:+.1f}%', "O'Neil Ch.2"))
+                                 f'Revenue YoY: {rev_yoy:+.1f}%', "O'Neil Ch.2"))
 
     # --- Check 5: Sales acceleration over 3 quarters (4 pts) ---
     rev_yoy_series = []
@@ -321,7 +321,7 @@ def compute_c_score(income: List[Dict]) -> Dict:
     score += pts
     checks.append(make_check('c_rev_accel', 'Revenue Acceleration (3Q)', accel_count,
                              '3 consecutive accelerating', status,
-                             f'{accel_count} of last quarters accelerating', "O'Neil Ch.2"))
+                             f'Revenue Accel: {accel_count} of last quarters accelerating', "O'Neil Ch.2"))
 
     # --- Check 6: Net margin at/near 8Q high (4 pts) ---
     margins = [safe_float(q.get('netIncomeRatio')) for q in income]
@@ -415,7 +415,7 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
             score += pts
             checks.append(make_check('a_ann_growth', 'Annual EPS Growth Rate', round(ann_growth, 1),
                                      '≥25% (4pts), ≥15% (3pts)', status,
-                                     f'{ann_growth:+.1f}%', "O'Neil Ch.3"))
+                                     f'Annual EPS Growth: {ann_growth:+.1f}%', "O'Neil Ch.3"))
 
     # --- Check 3: ROE (4 pts) ---
     roe = None
@@ -440,7 +440,7 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
         score += pts
         checks.append(make_check('a_roe', 'Return on Equity (TTM)', round(roe_pct, 1),
                                  '≥25% (4pts), ≥17% (3pts)', status,
-                                 f'{roe_pct:.1f}%', "O'Neil Ch.3"))
+                                 f'ROE: {roe_pct:.1f}%', "O'Neil Ch.3"))
 
     # --- Check 4: Cash flow/share ≥ EPS × 1.2 (4 pts) ---
     if cash_flow_ttm and income_q:
@@ -637,7 +637,7 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
     score += pts
     checks.append(make_check('n_surprises', 'Positive EPS Surprises (Last 4Q)', beats,
                              '≥3 beats (4pts), ≥2 (2pts)', status,
-                             f'{beats} positive surprises', 'Minervini Ch.7'))
+                             f'EPS Beats: {beats}/4 quarters', 'Minervini Ch.7'))
 
     return {'score': min(score, 12), 'max': 12, 'checks': checks}
 
@@ -728,7 +728,7 @@ def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dic
         score += pts
         checks.append(make_check('s_float_size', 'Shares Outstanding', round(shares_m, 0),
                                  '<100M (3pts), <500M (2pts)', status,
-                                 f'{shares_m:.0f}M shares', "O'Neil Ch.5"))
+                                 f'Float: {shares_m:.0f}M shares', "O'Neil Ch.5"))
 
     # --- Check 4: Net buyback % of market cap (2 pts) ---
     if cash_flow and isinstance(quote, dict):
@@ -748,7 +748,7 @@ def compute_s_score(income: List[Dict], balance: List[Dict], cash_flow: List[Dic
             score += pts
             checks.append(make_check('s_buyback_pct', 'Buyback % of Market Cap', round(buyback_pct, 2),
                                      '>1% (2pts), >0.5% (1pt)', status,
-                                     f'{buyback_pct:.2f}% of market cap', "O'Neil Ch.5"))
+                                     f'Buyback: {buyback_pct:.2f}% of market cap', "O'Neil Ch.5"))
 
     return {'score': min(score, 13), 'max': 13, 'checks': checks}
 
