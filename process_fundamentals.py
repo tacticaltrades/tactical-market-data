@@ -485,19 +485,23 @@ def compute_a_score(income_annual: List[Dict], income_q: List[Dict],
             if stdev < 20:
                 pts = 3
                 status = 'pass'
+                stability_label = 'Highly Consistent'
             elif stdev < 25:
                 pts = 2
                 status = 'pass'
+                stability_label = 'Consistent'
             elif stdev < 35:
                 pts = 1
                 status = 'warn'
+                stability_label = 'Moderate'
             else:
                 pts = 0
                 status = 'fail'
+                stability_label = 'Erratic'
             score += pts
             checks.append(make_check('a_stability', 'Earnings Stability', round(stdev, 1),
-                                     'Stdev <20 (4pts), <25 (3pts)', status,
-                                     f'Annual growth stdev: {stdev:.1f}', "O'Neil Ch.3"))
+                                     'Consistent growth preferred', status,
+                                     f'Earnings Stability: {stability_label}', "O'Neil Ch.3"))
 
     return {'score': min(score, 20), 'max': 20, 'checks': checks}
 
