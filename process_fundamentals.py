@@ -1495,7 +1495,12 @@ def main():
 
     os.makedirs('fundamentals', exist_ok=True)
 
+    # Determine freshness threshold — skip stocks updated within this window
+    max_age_days = int(os.environ.get('FUNDAMENTALS_MAX_AGE_DAYS', '7'))
+    now = datetime.now()
+
     success = 0
+    skipped = 0
     errors = 0
     pipeline_start = time.time()
 
@@ -1503,8 +1508,25 @@ def main():
         # Timeout safety — save what we have and exit cleanly
         elapsed = time.time() - pipeline_start
         if elapsed > MAX_RUNTIME_SECONDS:
-            print(f"\n⚠ Runtime limit reached ({elapsed/3600:.1f}h). Saving {success} stocks and exiting.")
+            print(f"\n⚠ Runtime limit reached ({elapsed/3600:.1f}h). Processed {success}, skipped {skipped}. Saving and exiting.")
             break
+
+        # Skip fresh files — if JSON exists and is recent, don't re-fetch
+        output_path = f"fundamentals/{symbol}.json"
+        if os.path.exists(output_path) and max_age_days > 0:
+            try:
+                with open(output_path, 'r') as f:
+                    existing = json.load(f)
+                last_updated = existing.get('last_updated', '')
+                if last_updated:
+                    age = (now - datetime.fromisoformat(last_updated)).total_seconds() / 86400
+                    if age < max_age_days:
+                        skipped += 1
+                        if skipped <= 5 or skipped % 100 == 0:
+                            print(f"  [{i+1}/{len(all_symbols)}] {symbol} — fresh ({age:.1f}d old), skipping")
+                        continue
+            except Exception:
+                pass  # If we can't read it, re-process
 
         print(f"\n[{i+1}/{len(all_symbols)}] {symbol}")
 
@@ -1588,7 +1610,7 @@ def main():
 
     print()
     print("=" * 80)
-    print(f"COMPLETE: {success} succeeded, {errors} failed")
+    print(f"COMPLETE: {success} processed, {skipped} skipped (fresh), {errors} failed")
     print(f"Finished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 80)
 
