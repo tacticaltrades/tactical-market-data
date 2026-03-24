@@ -61,6 +61,20 @@ jobs:
 
     - name: Commit and push changes
       run: |
-        git pull --rebase origin main
         git add fundamentals/
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Fundamentals rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git pull --rebase origin main && git push)
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        git commit -m "Fundamentals rebuild - $(date +'%Y-%m-%d %H:%M:%S')"
+        # Retry push with rebase up to 3 times in case of concurrent pushes
+        for i in 1 2 3; do
+          if git push; then
+            echo "Push succeeded on attempt $i"
+            exit 0
+          fi
+          echo "Push failed, pulling with rebase (attempt $i)..."
+          git pull --rebase origin main
+        done
+        echo "Push failed after 3 attempts"
+        exit 1
