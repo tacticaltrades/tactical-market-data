@@ -1,6 +1,6 @@
 {
-  "last_updated": "2026-03-22T21:22:09.390463",
+  "last_updated": "2026-03-24T02:45:47.156252",
   "total_stocks": 0,
-  "update_type": "full_rebuild",
+  "update_type": "daily_incremental",
   "data": []
 }
