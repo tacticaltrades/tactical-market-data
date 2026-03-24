@@ -61,5 +61,6 @@ jobs:
 
     - name: Commit and push changes
       run: |
+        git pull --rebase origin main
         git add fundamentals/
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Fundamentals rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Fundamentals rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git pull --rebase origin main && git push)
