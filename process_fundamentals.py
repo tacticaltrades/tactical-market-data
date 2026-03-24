@@ -25,7 +25,8 @@ from typing import Dict, List, Optional, Any
 # Configuration
 API_KEY = os.environ.get('FMP_API_KEY')
 BASE_URL = 'https://financialmodelingprep.com'
-RATE_DELAY = 0.25
+RATE_DELAY = 0.15
+MAX_RUNTIME_SECONDS = 5 * 60 * 60  # 5 hours — save and exit if exceeded
 QUARTERS_TO_FETCH = 8
 ANNUAL_LIMIT = 5
 
@@ -1496,8 +1497,15 @@ def main():
 
     success = 0
     errors = 0
+    pipeline_start = time.time()
 
     for i, symbol in enumerate(all_symbols):
+        # Timeout safety — save what we have and exit cleanly
+        elapsed = time.time() - pipeline_start
+        if elapsed > MAX_RUNTIME_SECONDS:
+            print(f"\n⚠ Runtime limit reached ({elapsed/3600:.1f}h). Saving {success} stocks and exiting.")
+            break
+
         print(f"\n[{i+1}/{len(all_symbols)}] {symbol}")
 
         try:
