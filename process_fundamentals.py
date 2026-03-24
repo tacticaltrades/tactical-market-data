@@ -1590,6 +1590,7 @@ def main():
                 'code33': sepa.get('code_33', {}).get('detected', False),
                 'sells': any(f['type'] == 'red' and 'SELL' in f.get('message', '') for f in fl),
                 'decel': any(f.get('category') == 'c_decel_sell' for f in fl if f['type'] == 'red'),
+                'eps_accel': any(c.get('id') == 'c_eps_accel' and c.get('status') == 'pass' for c in cs.get('c_score', {}).get('checks', [])),
             })
         except Exception as e:
             print(f"  Warning: Could not read {symbol_file}: {e}")
