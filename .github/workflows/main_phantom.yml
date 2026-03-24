@@ -1,18 +1,28 @@
-# Daily Full Rebuild - FMP Edition
-# Runs every day at 4:20 PM EST (after market close)
-# Fetches all US stocks from Financial Modeling Prep, calculates RS rankings
+# Stock Rankings Pipeline
+# Daily (Mon-Fri): Incremental price update — reuses profiles/earnings, ~30 min
+# Weekly (Sunday): Full rebuild — fresh profiles, earnings, market cap, ~2 hours
 
 name: Daily Full Rebuild
 
 on:
   schedule:
-    - cron: '20 21 * * 1-5'  # 4:20 PM EST = 21:20 UTC (Mon-Fri)
-  workflow_dispatch:  # Allow manual trigger
+    - cron: '20 21 * * 1-5'  # 4:20 PM EST Mon-Fri (daily incremental)
+    - cron: '20 21 * * 0'    # 4:20 PM EST Sunday (weekly full rebuild)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Run mode: daily (price update only) or full (complete rebuild)'
+        required: false
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - full
 
 jobs:
-  full-rebuild:
+  rebuild:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
     - name: Checkout repository
@@ -30,11 +40,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run full stock data rebuild
+    - name: Determine run mode
+      id: mode
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "mode=${{ github.event.inputs.mode || 'daily' }}" >> $GITHUB_OUTPUT
+        elif [ "$(date -u +%u)" = "7" ]; then
+          echo "mode=full" >> $GITHUB_OUTPUT
+        else
+          echo "mode=daily" >> $GITHUB_OUTPUT
+        fi
+        echo "Running in $(cat $GITHUB_OUTPUT | grep mode | cut -d= -f2) mode"
+
+    - name: Run stock data pipeline
       env:
         FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
       run: |
-        python process_stocks.py
+        python process_stocks.py --mode ${{ steps.mode.outputs.mode }}
 
     - name: Adjust RS rankings with phantom stocks (optional)
       run: |
@@ -60,4 +82,4 @@ jobs:
       run: |
         git add rankings.json recent_ipos.json
         [ -f rankings_adjusted.json ] && git add rankings_adjusted.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Daily rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
+        git diff --quiet && git diff --staged --quiet || (git commit -m "${{ steps.mode.outputs.mode }} rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
