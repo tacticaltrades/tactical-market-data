@@ -171,11 +171,12 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
     stock_data = []
 
     us_exchanges = {'NYSE', 'NASDAQ', 'AMEX', 'New York Stock Exchange',
-                    'NasdaqGS', 'NasdaqGM', 'NasdaqCM', 'NYSEArca'}
+                    'NasdaqGS', 'NasdaqGM', 'NasdaqCM', 'NYSEArca',
+                    'OTC', 'PNK', 'OTCQX', 'OTCQB', 'OTCBB', 'OTCPink'}
 
     # Strategy 1: company-screener per exchange with high limit
     print("  Using /stable/company-screener...")
-    for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
+    for exchange in ['NYSE', 'NASDAQ', 'AMEX', 'OTC']:
         print(f"    {exchange}...", end=' ', flush=True)
         data = fmp_get('/stable/company-screener', {
             'exchange': exchange,
@@ -191,16 +192,20 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
             stock_data.extend(data)
             print(f"{len(data)} stocks")
         else:
-            print(f"failed (got {type(data)})")
+            print(f"failed or empty")
         time.sleep(RATE_DELAY)
 
-    # Strategy 2 fallback: stock-list
-    if not stock_data:
-        print("  Screener failed. Trying /stable/stock-list...")
-        data = fmp_get('/stable/stock-list', timeout=60)
-        if isinstance(data, list) and data:
-            print(f"    Got {len(data)} entries (global, will filter to US)")
-            stock_data = data
+    # Strategy 2: stock-list as supplement to catch anything screener missed
+    print("  Supplementing with /stable/stock-list...")
+    existing_symbols = {s.get('symbol') for s in stock_data}
+    data = fmp_get('/stable/stock-list', timeout=60)
+    if isinstance(data, list) and data:
+        supplement = [s for s in data if s.get('symbol') not in existing_symbols
+                      and s.get('exchangeShortName', s.get('exchange', '')) in us_exchanges]
+        stock_data.extend(supplement)
+        print(f"    Added {len(supplement)} stocks from stock-list (had {len(data)} total)")
+    else:
+        print(f"    stock-list failed")
 
     if not stock_data:
         print("  ERROR: No stock data from any endpoint!")
