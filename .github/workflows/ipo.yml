@@ -1,0 +1,38 @@
+name: IPO Data Update
+
+on:
+  schedule:
+    - cron: '0 22 * * 5'  # 5:00 PM EST Friday (before full rebuild)
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  ipo-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Run IPO pipeline
+      env:
+        FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+      run: python process_ipo.py
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+
+    - name: Commit and push changes
+      run: |
+        git add ipo_dates.json recent_ipos.json
+        git pull --rebase || true
+        git diff --quiet && git diff --staged --quiet || (git commit -m "IPO data update - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
