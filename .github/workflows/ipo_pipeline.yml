@@ -1,0 +1,66 @@
+# Weekly IPO Calendar Rebuild
+# Fetches IPO dates from FMP and saves ipo_dates.json
+# Runs Friday 3:00 PM EST (before full stock rebuild at 4:20 PM EST)
+
+name: Weekly IPO Calendar
+
+on:
+  schedule:
+    - cron: '0 20 * * 5'  # 3:00 PM EST = 20:00 UTC (Friday)
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: 'Days to look back for IPOs (default 730 = 2 years)'
+        required: false
+        default: '730'
+
+jobs:
+  ipo-rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run IPO pipeline
+      env:
+        FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+      run: |
+        python process_ipo.py --lookback-days ${{ github.event.inputs.lookback_days || '730' }}
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+
+    - name: Commit and push changes
+      run: |
+        git add ipo_dates.json
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        git commit -m "IPO calendar update - $(date +'%Y-%m-%d %H:%M:%S')"
+        for i in 1 2 3; do
+          if git push; then
+            echo "Push succeeded on attempt $i"
+            exit 0
+          fi
+          echo "Push failed, pulling with rebase (attempt $i)..."
+          git pull --rebase origin main
+        done
+        echo "Push failed after 3 attempts"
+        exit 1

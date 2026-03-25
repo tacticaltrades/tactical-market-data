@@ -28,7 +28,7 @@ from typing import Dict, List, Optional, Tuple
 # Configuration
 API_KEY = os.environ.get('FMP_API_KEY')
 BASE_URL = 'https://financialmodelingprep.com'
-RATE_DELAY = 0.25  # seconds between API calls
+RATE_DELAY = 0.15  # seconds between API calls (FMP Premium: 300 req/min = 5/sec)
 
 
 # ---------------------------------------------------------------------------
@@ -236,35 +236,24 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
 
     print(f"  Total US common stocks: {len(all_stocks)}")
 
-    # Fetch IPO dates via profile endpoint (screener doesn't include them)
-    missing_ipo = [sym for sym in all_stocks if not profiles[sym].get('ipo_date')]
-    if missing_ipo:
-        print(f"  Fetching IPO dates for {len(missing_ipo)} stocks...")
-        fetched = 0
-        for i in range(0, len(missing_ipo), 50):
-            batch = missing_ipo[i:i + 50]
-            symbols_str = ','.join(batch)
-            try:
-                # /stable/profile accepts comma-separated symbols
-                data = fmp_get('/stable/profile', {'symbol': symbols_str}, timeout=30)
-                if isinstance(data, list):
-                    for p in data:
-                        sym = p.get('symbol')
-                        if sym and sym in profiles:
-                            if p.get('ipoDate'):
-                                profiles[sym]['ipo_date'] = p['ipoDate']
-                                fetched += 1
-                            if p.get('industry') and not profiles[sym].get('industry'):
-                                profiles[sym]['industry'] = p['industry']
-                            if p.get('sector') and not profiles[sym].get('sector'):
-                                profiles[sym]['sector'] = p['sector']
-            except Exception:
-                pass
+    # Load IPO dates from dedicated IPO pipeline (process_ipo.py output)
+    ipo_lookup = {}
+    if os.path.exists('ipo_dates.json'):
+        try:
+            with open('ipo_dates.json', 'r') as f:
+                ipo_data_file = json.load(f)
+            ipo_lookup = ipo_data_file.get('data', {})
+            print(f"  Loaded {len(ipo_lookup)} IPO dates from ipo_dates.json")
+        except Exception as e:
+            print(f"  Warning: Could not load ipo_dates.json: {e}")
 
-            if i % 500 == 0 and i > 0:
-                print(f"    Profiles: {i}/{len(missing_ipo)} ({fetched} IPO dates found)")
-            time.sleep(RATE_DELAY)
-        print(f"  Found {fetched} IPO dates")
+    ipo_filled = 0
+    for sym in all_stocks:
+        if not profiles[sym].get('ipo_date') and sym in ipo_lookup:
+            profiles[sym]['ipo_date'] = ipo_lookup[sym]
+            ipo_filled += 1
+    if ipo_filled:
+        print(f"  Filled {ipo_filled} IPO dates from ipo_dates.json")
 
     return all_stocks, profiles
 
