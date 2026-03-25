@@ -8,7 +8,7 @@ name: Weekly Fundamentals Rebuild
 
 on:
   schedule:
-    - cron: '0 10 * * 6'  # 5:00 AM EST Saturday (after full rebuild)
+    - cron: '0 0 * * 6'   # 7:00 PM EST Friday (after full rebuild finishes)
   workflow_dispatch:
     inputs:
       limit:
