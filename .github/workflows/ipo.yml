@@ -34,5 +34,10 @@ jobs:
     - name: Commit and push changes
       run: |
         git add ipo_dates.json recent_ipos.json
-        git pull --rebase || true
-        git diff --quiet && git diff --staged --quiet || (git commit -m "IPO data update - $(date +'%Y-%m-%d %H:%M:%S')" && git push)
+        git diff --quiet && git diff --staged --quiet && exit 0
+        git commit -m "IPO data update - $(date +'%Y-%m-%d %H:%M:%S')"
+        for i in 1 2 3; do
+          git pull --rebase && git push && break
+          echo "Push attempt $i failed, retrying..."
+          sleep 5
+        done
