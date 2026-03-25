@@ -2,7 +2,7 @@ name: IPO Data Update
 
 on:
   schedule:
-    - cron: '0 22 * * 5'  # 5:00 PM EST Friday (before full rebuild)
+    - cron: '0 21 * * 5'  # 4:00 PM EST Friday (before full rebuild at 4:20)
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
