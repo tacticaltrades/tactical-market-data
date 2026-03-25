@@ -7,7 +7,7 @@ name: Daily Full Rebuild
 on:
   schedule:
     - cron: '20 21 * * 1-5'  # 4:20 PM EST Mon-Fri (daily incremental)
-    - cron: '20 21 * * 0'    # 4:20 PM EST Sunday (weekly full rebuild)
+    - cron: '0 7 * * 6'     # 2:00 AM EST Saturday (weekly full rebuild)
   workflow_dispatch:
     inputs:
       mode:
