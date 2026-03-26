@@ -82,4 +82,6 @@ jobs:
       run: |
         git add rankings.json recent_ipos.json
         [ -f rankings_adjusted.json ] && git add rankings_adjusted.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "${{ steps.mode.outputs.mode }} rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git pull --rebase && git push || (sleep 5 && git pull --rebase && git push))
+        [ -f ipo_dates.json ] && git add ipo_dates.json
+        [ -f industry_rank_history.json ] && git add industry_rank_history.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "${{ steps.mode.outputs.mode }} rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git stash --include-untracked && git pull --rebase && git stash pop && git push || (sleep 5 && git stash --include-untracked && git pull --rebase && git stash pop && git push))
