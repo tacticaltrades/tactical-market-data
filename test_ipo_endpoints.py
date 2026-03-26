@@ -34,6 +34,13 @@ ENDPOINTS_TO_TEST = [
     # Stock list / profile (check if ipoDate exists)
     '/stable/stock-list',
     '/stable/profile',
+    # Earnings calendar endpoints
+    '/stable/earning-calendar',
+    '/stable/earnings-calendar',
+    '/stable/earning_calendar',
+    '/stable/earnings_calendar',
+    '/stable/earnings-announcement',
+    '/stable/earnings-announcement-history',
 ]
 
 def test_endpoint(path, params=None):
@@ -108,6 +115,25 @@ def main():
                 print(f"  Fields: {list(entry.keys())}")
             else:
                 print(f"  Returned: {type(data)} (empty or error)")
+
+        elif 'earning' in endpoint:
+            # Earnings endpoints — test with AAPL, look for date + time fields
+            print("  Params: symbol=AAPL, from=2026-03-26, to=2026-09-30")
+            data = test_endpoint(endpoint, {'symbol': 'AAPL', 'from': '2026-03-26', 'to': '2026-09-30'})
+            if isinstance(data, list) and data:
+                print(f"  Returned: {len(data)} entries")
+                sample = data[0]
+                print(f"  Fields: {list(sample.keys())}")
+                print(f"  Sample: {json.dumps(sample, indent=2)[:500]}")
+                has_time = any(e.get('time') for e in data)
+                print(f"  'time' field present: {has_time}")
+                dates = [e.get('date','') for e in data if e.get('date')]
+                if dates:
+                    print(f"  Date range: {min(dates)} to {max(dates)}")
+            elif isinstance(data, list):
+                print("  Returned: empty list")
+            else:
+                print(f"  Returned: {type(data)}")
 
         else:
             # IPO calendar/prospectus/disclosure endpoints
