@@ -403,6 +403,42 @@ def get_earnings_data(ticker: str) -> Optional[Dict]:
     }
 
 
+def get_next_earnings(ticker: str) -> tuple:
+    """Fetch next upcoming earnings date and time (bmo/amc) for a stock.
+    Returns (date_str, time_str) or (None, None) if not found."""
+    today = datetime.now().strftime('%Y-%m-%d')
+    future = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
+
+    data = fmp_get('/stable/earning-calendar', {'symbol': ticker, 'from': today, 'to': future})
+
+    if not isinstance(data, list) or not data:
+        return None, None
+
+    upper = ticker.upper()
+    upcoming = [
+        e for e in data
+        if e.get('date', '') >= today
+        and (not e.get('symbol') or e.get('symbol', '').upper() == upper)
+    ]
+    upcoming.sort(key=lambda x: x.get('date', ''))
+
+    if not upcoming:
+        return None, None
+
+    nxt = upcoming[0]
+    date = nxt.get('date')
+    raw_time = (nxt.get('time') or '').lower().strip()
+
+    if 'bmo' in raw_time or 'before' in raw_time or 'pre' in raw_time:
+        time_str = 'bmo'
+    elif 'amc' in raw_time or 'after' in raw_time or 'post' in raw_time:
+        time_str = 'amc'
+    else:
+        time_str = None
+
+    return date, time_str
+
+
 # ---------------------------------------------------------------------------
 # Calculation functions
 # ---------------------------------------------------------------------------
@@ -692,6 +728,7 @@ def main():
 
             # Fetch earnings data (EPS/revenue actual vs estimated + margins)
             earnings = get_earnings_data(ticker)
+            next_earn_date, next_earn_time = get_next_earnings(ticker)
             time.sleep(RATE_DELAY)  # extra calls for earnings + income stmt
 
             profile = profiles.get(ticker, {})
@@ -723,6 +760,8 @@ def main():
                 'industry': profile.get('industry'),
                 'exchange': profile.get('exchange'),
                 'ticker_type': profile.get('ticker_type'),
+                'next_earnings_date': next_earn_date,
+                'next_earnings_time': next_earn_time,
             }
 
             # Add earnings data if available
@@ -811,6 +850,8 @@ def main():
             'industry': stock.get('industry'),
             'exchange': stock.get('exchange'),
             'ticker_type': stock.get('ticker_type'),
+            'next_earnings_date': stock.get('next_earnings_date'),
+            'next_earnings_time': stock.get('next_earnings_time'),
         }
 
         # Add earnings data if present
@@ -975,6 +1016,7 @@ def daily_update():
 
             # For existing stocks, reuse profile/earnings from previous run
             # For new stocks, use fresh profile data
+            today_str = datetime.now().strftime('%Y-%m-%d')
             if ticker in prev_profiles:
                 prev = prev_profiles[ticker]
                 profile = {
@@ -985,9 +1027,18 @@ def daily_update():
                     'ipo_date': prev.get('ipo_date'),
                 }
                 earnings = prev.get('earnings')
+                # Carry forward next earnings date if still in the future
+                prev_earn_date = prev.get('next_earnings_date')
+                if prev_earn_date and prev_earn_date >= today_str:
+                    next_earn_date = prev_earn_date
+                    next_earn_time = prev.get('next_earnings_time')
+                else:
+                    next_earn_date, next_earn_time = get_next_earnings(ticker)
+                    time.sleep(RATE_DELAY)
             else:
                 profile = new_profiles.get(ticker, {})
                 earnings = get_earnings_data(ticker)
+                next_earn_date, next_earn_time = get_next_earnings(ticker)
                 time.sleep(RATE_DELAY)
 
             market_cap = profile.get('market_cap')
@@ -1018,6 +1069,8 @@ def daily_update():
                 'industry': profile.get('industry'),
                 'exchange': profile.get('exchange'),
                 'ticker_type': profile.get('ticker_type'),
+                'next_earnings_date': next_earn_date,
+                'next_earnings_time': next_earn_time,
             }
 
             if earnings:
@@ -1096,6 +1149,8 @@ def daily_update():
             'industry': stock.get('industry'),
             'exchange': stock.get('exchange'),
             'ticker_type': stock.get('ticker_type'),
+            'next_earnings_date': stock.get('next_earnings_date'),
+            'next_earnings_time': stock.get('next_earnings_time'),
         }
         if stock.get('earnings'):
             entry['earnings'] = stock['earnings']
