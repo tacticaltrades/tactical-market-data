@@ -171,12 +171,12 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
     stock_data = []
 
     us_exchanges = {'NYSE', 'NASDAQ', 'AMEX', 'New York Stock Exchange',
-                    'NasdaqGS', 'NasdaqGM', 'NasdaqCM', 'NYSEArca',
-                    'OTC', 'PNK', 'OTCQX', 'OTCQB', 'OTCBB', 'OTCPink'}
+                    'NasdaqGS', 'NasdaqGM', 'NasdaqCM', 'NYSEArca'}
+
 
     # Strategy 1: company-screener per exchange with high limit
     print("  Using /stable/company-screener...")
-    for exchange in ['NYSE', 'NASDAQ', 'AMEX', 'OTC']:
+    for exchange in ['NYSE', 'NASDAQ', 'AMEX']:
         print(f"    {exchange}...", end=' ', flush=True)
         data = fmp_get('/stable/company-screener', {
             'exchange': exchange,
