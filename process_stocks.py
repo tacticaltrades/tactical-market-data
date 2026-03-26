@@ -317,36 +317,42 @@ def get_stock_history(ticker: str, start_date: str, end_date: str,
 # Earnings & fundamentals
 # ---------------------------------------------------------------------------
 
+def fetch_earnings_calendar(weeks_ahead: int = 6) -> dict:
+    """Fetch upcoming earnings dates for all companies in one bulk call.
+    Returns dict: symbol (uppercase) -> earliest upcoming earnings date (YYYY-MM-DD).
+    Uses /stable/earnings-calendar which ignores symbol param and returns all companies."""
+    today = datetime.now().strftime('%Y-%m-%d')
+    future = (datetime.now() + timedelta(weeks=weeks_ahead)).strftime('%Y-%m-%d')
+
+    print(f"  Fetching earnings calendar {today} → {future}...")
+    data = fmp_get('/stable/earnings-calendar', {'from': today, 'to': future})
+
+    if not isinstance(data, list):
+        print("  Warning: earnings calendar returned no data")
+        return {}
+
+    calendar = {}
+    for entry in data:
+        symbol = (entry.get('symbol') or '').upper().strip()
+        date = entry.get('date', '')
+        # Only include future entries with no actual reported yet
+        if symbol and date >= today and entry.get('epsActual') is None:
+            if symbol not in calendar or date < calendar[symbol]:
+                calendar[symbol] = date
+
+    print(f"  Got {len(calendar)} upcoming earnings dates")
+    return calendar
+
+
 def get_earnings_data(ticker: str) -> Optional[Dict]:
     """Fetch last 4 quarters of earnings (EPS + revenue actual vs estimated)
-    and income statement margins. Returns summary dict for screener display.
-    Also extracts next_earnings_date and next_earnings_time from upcoming entries."""
+    and income statement margins. Returns summary dict for screener display."""
 
-    # 1. Earnings: fetch extra entries so we catch upcoming (unreported) quarters too
-    earnings_raw = fmp_get('/stable/earnings', {'symbol': ticker, 'limit': 12})
+    # 1. Earnings: EPS and revenue actual vs estimated (fetch 8 to ensure 4 reported)
+    earnings_raw = fmp_get('/stable/earnings', {'symbol': ticker, 'limit': 8})
     # 2. Income statement: margins
     income_raw = fmp_get('/stable/income-statement',
                          {'symbol': ticker, 'period': 'quarter', 'limit': 8})
-
-    # Extract next upcoming earnings date from entries with no actual EPS yet
-    next_earnings_date = None
-    next_earnings_time = None
-    today_str = datetime.now().strftime('%Y-%m-%d')
-    if isinstance(earnings_raw, list):
-        upcoming = [
-            q for q in earnings_raw
-            if q.get('epsActual') is None
-            and q.get('date', '') >= today_str
-        ]
-        upcoming.sort(key=lambda x: x.get('date', ''))
-        if upcoming:
-            nxt = upcoming[0]
-            next_earnings_date = nxt.get('date')
-            raw_time = (nxt.get('time') or '').lower().strip()
-            if 'bmo' in raw_time or 'before' in raw_time or 'pre' in raw_time:
-                next_earnings_time = 'bmo'
-            elif 'amc' in raw_time or 'after' in raw_time or 'post' in raw_time:
-                next_earnings_time = 'amc'
 
     quarters = []
 
@@ -421,8 +427,6 @@ def get_earnings_data(ticker: str) -> Optional[Dict]:
         'latest_gross_margin': margins[0].get('gross_margin') if margins else None,
         'latest_operating_margin': margins[0].get('operating_margin') if margins else None,
         'latest_net_margin': margins[0].get('net_margin') if margins else None,
-        'next_earnings_date': next_earnings_date,
-        'next_earnings_time': next_earnings_time,
     }
 
 
@@ -671,6 +675,9 @@ def main():
     # ---- Phase 4: Full processing ----
     print(f"Processing {len(symbols)} stocks...\n")
 
+    # Fetch full earnings calendar once — one API call for all stocks
+    earnings_calendar = fetch_earnings_calendar(weeks_ahead=6)
+
     all_stock_data = []
     historical_stocks = []
     processed = 0
@@ -716,8 +723,7 @@ def main():
 
             # Fetch earnings data (EPS/revenue actual vs estimated + margins)
             earnings = get_earnings_data(ticker)
-            next_earn_date = earnings.get('next_earnings_date') if earnings else None
-            next_earn_time = earnings.get('next_earnings_time') if earnings else None
+            next_earn_date = earnings_calendar.get(ticker.upper())
             time.sleep(RATE_DELAY)  # extra calls for earnings + income stmt
 
             profile = profiles.get(ticker, {})
@@ -750,7 +756,6 @@ def main():
                 'exchange': profile.get('exchange'),
                 'ticker_type': profile.get('ticker_type'),
                 'next_earnings_date': next_earn_date,
-                'next_earnings_time': next_earn_time,
             }
 
             # Add earnings data if available
@@ -840,7 +845,6 @@ def main():
             'exchange': stock.get('exchange'),
             'ticker_type': stock.get('ticker_type'),
             'next_earnings_date': stock.get('next_earnings_date'),
-            'next_earnings_time': stock.get('next_earnings_time'),
         }
 
         # Add earnings data if present
@@ -964,6 +968,9 @@ def daily_update():
     all_symbols = list(symbols_prev | new_set)
     print(f"  Total symbols to update: {len(all_symbols)}")
 
+    # Fetch earnings calendar once for all stocks
+    earnings_calendar = fetch_earnings_calendar(weeks_ahead=6)
+
     # Date range for price history
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365 * 5)
@@ -1005,7 +1012,6 @@ def daily_update():
 
             # For existing stocks, reuse profile/earnings from previous run
             # For new stocks, use fresh profile data
-            today_str = datetime.now().strftime('%Y-%m-%d')
             if ticker in prev_profiles:
                 prev = prev_profiles[ticker]
                 profile = {
@@ -1016,23 +1022,12 @@ def daily_update():
                     'ipo_date': prev.get('ipo_date'),
                 }
                 earnings = prev.get('earnings')
-                # Carry forward next earnings date if still in the future
-                prev_earn_date = prev.get('next_earnings_date')
-                if prev_earn_date and prev_earn_date >= today_str:
-                    next_earn_date = prev_earn_date
-                    next_earn_time = prev.get('next_earnings_time')
-                else:
-                    # Re-fetch earnings to get updated next date
-                    fresh = get_earnings_data(ticker)
-                    next_earn_date = fresh.get('next_earnings_date') if fresh else None
-                    next_earn_time = fresh.get('next_earnings_time') if fresh else None
-                    time.sleep(RATE_DELAY)
             else:
                 profile = new_profiles.get(ticker, {})
                 earnings = get_earnings_data(ticker)
-                next_earn_date = earnings.get('next_earnings_date') if earnings else None
-                next_earn_time = earnings.get('next_earnings_time') if earnings else None
                 time.sleep(RATE_DELAY)
+
+            next_earn_date = earnings_calendar.get(ticker.upper())
 
             market_cap = profile.get('market_cap')
             market_cap_category = get_market_cap_category(market_cap)
@@ -1063,7 +1058,6 @@ def daily_update():
                 'exchange': profile.get('exchange'),
                 'ticker_type': profile.get('ticker_type'),
                 'next_earnings_date': next_earn_date,
-                'next_earnings_time': next_earn_time,
             }
 
             if earnings:
@@ -1143,7 +1137,6 @@ def daily_update():
             'exchange': stock.get('exchange'),
             'ticker_type': stock.get('ticker_type'),
             'next_earnings_date': stock.get('next_earnings_date'),
-            'next_earnings_time': stock.get('next_earnings_time'),
         }
         if stock.get('earnings'):
             entry['earnings'] = stock['earnings']
