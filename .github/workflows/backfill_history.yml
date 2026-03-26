@@ -1,0 +1,84 @@
+# Extended Price History Backfill
+# Fetches full OHLCV history back to FROM_DATE for all ranked stocks.
+# Saves per-stock history/{SYMBOL}.json files used by the fmp-history edge
+# function to serve deep chart history without slowing the daily pipeline.
+#
+# Run manually via workflow_dispatch. No schedule — run once after initial
+# setup, then re-run if you want to extend the history further.
+
+name: Backfill Price History
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_date:
+        description: 'History start date (YYYY-MM-DD)'
+        required: false
+        default: '2010-01-01'
+      symbols:
+        description: 'Space-separated symbols to backfill (leave blank for all in rankings.json)'
+        required: false
+        default: ''
+      force:
+        description: 'Re-fetch even if file is recent (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # Up to 6 hours for full backfill (~5800 stocks)
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run backfill
+      env:
+        FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+      run: |
+        ARGS="--from-date ${{ github.event.inputs.from_date || '2010-01-01' }}"
+        if [ "${{ github.event.inputs.force }}" = "true" ]; then
+          ARGS="$ARGS --force"
+        fi
+        if [ -n "${{ github.event.inputs.symbols }}" ]; then
+          ARGS="$ARGS --symbols ${{ github.event.inputs.symbols }}"
+        fi
+        python process_backfill.py $ARGS
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+
+    - name: Commit and push history files
+      run: |
+        git add history/
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        COUNT=$(git diff --staged --name-only | wc -l)
+        git commit -m "Backfill price history ($COUNT files) - $(date +'%Y-%m-%d')"
+        for i in 1 2 3; do
+          if git push; then
+            echo "Push succeeded on attempt $i"
+            exit 0
+          fi
+          echo "Push failed, pulling with rebase (attempt $i)..."
+          git pull --rebase origin main
+        done
+        echo "Push failed after 3 attempts"
+        exit 1
