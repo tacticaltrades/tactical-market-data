@@ -616,9 +616,14 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
     beats = 0
     if ranking and ranking.get('earnings'):
         earnings_data = ranking['earnings']
-        beats = earnings_data.get('eps_beats') or 0
-        if isinstance(beats, int):
-            pass
+        raw_beats = earnings_data.get('eps_beats') or 0
+        if isinstance(raw_beats, int):
+            beats = raw_beats
+        elif isinstance(raw_beats, str) and '/' in raw_beats:
+            try:
+                beats = int(raw_beats.split('/')[0])
+            except ValueError:
+                beats = 0
         else:
             beats = 0
 
