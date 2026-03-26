@@ -195,18 +195,6 @@ def get_all_tickers() -> Tuple[List[str], Dict[str, Dict]]:
             print(f"failed or empty")
         time.sleep(RATE_DELAY)
 
-    # Strategy 2: stock-list as supplement to catch anything screener missed
-    print("  Supplementing with /stable/stock-list...")
-    existing_symbols = {s.get('symbol') for s in stock_data}
-    data = fmp_get('/stable/stock-list', timeout=60)
-    if isinstance(data, list) and data:
-        supplement = [s for s in data if s.get('symbol') not in existing_symbols
-                      and s.get('exchangeShortName', s.get('exchange', '')) in us_exchanges]
-        stock_data.extend(supplement)
-        print(f"    Added {len(supplement)} stocks from stock-list (had {len(data)} total)")
-    else:
-        print(f"    stock-list failed")
-
     if not stock_data:
         print("  ERROR: No stock data from any endpoint!")
         return [], {}
