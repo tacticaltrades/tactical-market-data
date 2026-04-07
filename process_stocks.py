@@ -317,42 +317,13 @@ def get_stock_history(ticker: str, start_date: str, end_date: str,
 # Earnings & fundamentals
 # ---------------------------------------------------------------------------
 
-def fetch_earnings_calendar(weeks_ahead: int = 6) -> dict:
-    """Fetch upcoming earnings dates for all companies in one bulk call.
-    Returns dict: symbol (uppercase) -> earliest upcoming earnings date (YYYY-MM-DD).
-    Uses /stable/earnings-calendar which ignores symbol param and returns all companies."""
-    today = datetime.now().strftime('%Y-%m-%d')
-    future = (datetime.now() + timedelta(weeks=weeks_ahead)).strftime('%Y-%m-%d')
-
-    print(f"  Fetching earnings calendar {today} → {future}...")
-    data = fmp_get('/stable/earnings-calendar', {'from': today, 'to': future})
-
-    if not isinstance(data, list):
-        print("  Warning: earnings calendar returned no data")
-        return {}
-
-    calendar = {}
-    for entry in data:
-        symbol = (entry.get('symbol') or '').upper().strip()
-        date = entry.get('date', '')
-        # Only include future entries with no actual reported yet
-        if symbol and date >= today and entry.get('epsActual') is None:
-            if symbol not in calendar or date < calendar[symbol]:
-                calendar[symbol] = date
-
-    print(f"  Got {len(calendar)} upcoming earnings dates")
-    return calendar
-
 
 def get_earnings_data(ticker: str) -> Optional[Dict]:
-    """Fetch last 4 quarters of earnings (EPS + revenue actual vs estimated)
-    and income statement margins. Returns summary dict for screener display."""
+    """Fetch last 4 quarters of earnings (EPS + revenue actual vs estimated).
+    Margin data available via fundamentals pipeline — removed income-statement
+    call here to save ~5,000 API calls per rebuild."""
 
-    # 1. Earnings: EPS and revenue actual vs estimated (fetch 8 to ensure 4 reported)
     earnings_raw = fmp_get('/stable/earnings', {'symbol': ticker, 'limit': 8})
-    # 2. Income statement: margins
-    income_raw = fmp_get('/stable/income-statement',
-                         {'symbol': ticker, 'period': 'quarter', 'limit': 8})
 
     quarters = []
 
@@ -381,38 +352,16 @@ def get_earnings_data(ticker: str) -> Optional[Dict]:
                 'revenue_surprise_pct': rev_surprise,
             })
 
-    # Add margins from income statement
-    margins = []
-    if isinstance(income_raw, list) and income_raw:
-        for stmt in income_raw:
-            margins.append({
-                'date': stmt.get('date'),
-                'gross_margin': round(stmt['grossProfitRatio'] * 100, 1) if stmt.get('grossProfitRatio') else None,
-                'operating_margin': round(stmt['operatingIncomeRatio'] * 100, 1) if stmt.get('operatingIncomeRatio') else None,
-                'net_margin': round(stmt['netIncomeRatio'] * 100, 1) if stmt.get('netIncomeRatio') else None,
-                'revenue': stmt.get('revenue'),
-            })
-
-    if not quarters and not margins:
+    if not quarters:
         return None
 
     # Filter to only reported quarters (have actual EPS or revenue) and take most recent 4
     quarters = [q for q in quarters if q.get('eps_actual') is not None or q.get('revenue_actual') is not None]
     quarters = quarters[:4]  # already sorted newest-first from FMP
 
-    # Match margins to quarters by date
-    margin_by_date = {m['date']: m for m in margins}
-    for q in quarters:
-        m = margin_by_date.get(q['date'], {})
-        q['gross_margin'] = m.get('gross_margin')
-        q['operating_margin'] = m.get('operating_margin')
-        q['net_margin'] = m.get('net_margin')
-
     # Calculate overall summary numbers
     eps_surprises = [q['eps_surprise_pct'] for q in quarters if q.get('eps_surprise_pct') is not None]
     rev_surprises = [q['revenue_surprise_pct'] for q in quarters if q.get('revenue_surprise_pct') is not None]
-    eps_actuals = [q['eps_actual'] for q in quarters if q.get('eps_actual') is not None]
-    rev_actuals = [q['revenue_actual'] for q in quarters if q.get('revenue_actual') is not None]
 
     # Count beats
     eps_beats = len([s for s in eps_surprises if s > 0])
@@ -424,9 +373,6 @@ def get_earnings_data(ticker: str) -> Optional[Dict]:
         'avg_revenue_surprise': round(np.mean(rev_surprises), 1) if rev_surprises else None,
         'eps_beats': f"{eps_beats}/{len(eps_surprises)}" if eps_surprises else None,
         'revenue_beats': f"{rev_beats}/{len(rev_surprises)}" if rev_surprises else None,
-        'latest_gross_margin': margins[0].get('gross_margin') if margins else None,
-        'latest_operating_margin': margins[0].get('operating_margin') if margins else None,
-        'latest_net_margin': margins[0].get('net_margin') if margins else None,
     }
 
 
@@ -675,9 +621,6 @@ def main():
     # ---- Phase 4: Full processing ----
     print(f"Processing {len(symbols)} stocks...\n")
 
-    # Fetch full earnings calendar once — one API call for all stocks
-    earnings_calendar = fetch_earnings_calendar(weeks_ahead=6)
-
     all_stock_data = []
     historical_stocks = []
     processed = 0
@@ -721,11 +664,6 @@ def main():
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
 
-            # Fetch earnings data (EPS/revenue actual vs estimated + margins)
-            earnings = get_earnings_data(ticker)
-            next_earn_date = earnings_calendar.get(ticker.upper())
-            time.sleep(RATE_DELAY)  # extra calls for earnings + income stmt
-
             profile = profiles.get(ticker, {})
             market_cap = profile.get('market_cap')
             market_cap_category = get_market_cap_category(market_cap)
@@ -755,12 +693,7 @@ def main():
                 'industry': profile.get('industry'),
                 'exchange': profile.get('exchange'),
                 'ticker_type': profile.get('ticker_type'),
-                'next_earnings_date': next_earn_date,
             }
-
-            # Add earnings data if available
-            if earnings:
-                stock_entry['earnings'] = earnings
 
             all_stock_data.append(stock_entry)
 
@@ -811,6 +744,20 @@ def main():
     for i, stock in enumerate(all_stock_data):
         stock['rs_rank'] = min(int(((total_stocks - i) / total_stocks) * 99) + 1, 99)
 
+    # Second pass: fetch earnings only for RS >= 50 stocks (saves ~2,500 API calls)
+    earnings_eligible = [s for s in all_stock_data if s['rs_rank'] >= 50]
+    print(f"\nFetching earnings for {len(earnings_eligible)} stocks (RS >= 50)...")
+    earnings_fetched = 0
+    for i, stock in enumerate(earnings_eligible):
+        if i % 200 == 0 and i > 0:
+            print(f"  Earnings progress: {i}/{len(earnings_eligible)}")
+        earnings = get_earnings_data(stock['symbol'])
+        if earnings:
+            stock['earnings'] = earnings
+            earnings_fetched += 1
+        time.sleep(RATE_DELAY)
+    print(f"  Fetched earnings for {earnings_fetched} stocks")
+
     # Format output
     output_data = []
     ipo_data = []
@@ -844,7 +791,6 @@ def main():
             'industry': stock.get('industry'),
             'exchange': stock.get('exchange'),
             'ticker_type': stock.get('ticker_type'),
-            'next_earnings_date': stock.get('next_earnings_date'),
         }
 
         # Add earnings data if present
@@ -968,9 +914,6 @@ def daily_update():
     all_symbols = list(symbols_prev | new_set)
     print(f"  Total symbols to update: {len(all_symbols)}")
 
-    # Fetch earnings calendar once for all stocks
-    earnings_calendar = fetch_earnings_calendar(weeks_ahead=6)
-
     # Date range for price history
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365 * 5)
@@ -1027,8 +970,6 @@ def daily_update():
                 earnings = get_earnings_data(ticker)
                 time.sleep(RATE_DELAY)
 
-            next_earn_date = earnings_calendar.get(ticker.upper())
-
             market_cap = profile.get('market_cap')
             market_cap_category = get_market_cap_category(market_cap)
             cap_counts[market_cap_category] = cap_counts.get(market_cap_category, 0) + 1
@@ -1057,7 +998,6 @@ def daily_update():
                 'industry': profile.get('industry'),
                 'exchange': profile.get('exchange'),
                 'ticker_type': profile.get('ticker_type'),
-                'next_earnings_date': next_earn_date,
             }
 
             if earnings:
@@ -1136,7 +1076,6 @@ def daily_update():
             'industry': stock.get('industry'),
             'exchange': stock.get('exchange'),
             'ticker_type': stock.get('ticker_type'),
-            'next_earnings_date': stock.get('next_earnings_date'),
         }
         if stock.get('earnings'):
             entry['earnings'] = stock['earnings']

@@ -72,50 +72,33 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
     data = {'symbol': symbol}
 
     endpoints = [
-        # Financial Statements (quarterly)
+        # Financial Statements (quarterly) — used in scoring + frontend
         ('income_statement', '/stable/income-statement', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
         ('balance_sheet', '/stable/balance-sheet-statement', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
         ('cash_flow', '/stable/cash-flow-statement', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
 
-        # Financial Statements (annual)
+        # Financial Statements (annual) — income needed for A Score
         ('income_statement_annual', '/stable/income-statement', {'symbol': symbol, 'period': 'annual', 'limit': ANNUAL_LIMIT}),
-        ('balance_sheet_annual', '/stable/balance-sheet-statement', {'symbol': symbol, 'period': 'annual', 'limit': ANNUAL_LIMIT}),
-        ('cash_flow_annual', '/stable/cash-flow-statement', {'symbol': symbol, 'period': 'annual', 'limit': ANNUAL_LIMIT}),
 
-        # TTM
-        ('income_statement_ttm', '/stable/income-statement-ttm', {'symbol': symbol}),
-        ('balance_sheet_ttm', '/stable/balance-sheet-statement-ttm', {'symbol': symbol}),
+        # TTM — cash_flow needed for A Score CF/share, ratios for ROE
         ('cash_flow_ttm', '/stable/cash-flow-statement-ttm', {'symbol': symbol}),
 
-        # Ratios & Metrics
-        ('key_metrics', '/stable/key-metrics', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
-        ('ratios', '/stable/ratios', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
+        # Ratios & Metrics (TTM only — quarterly not used)
         ('key_metrics_ttm', '/stable/key-metrics-ttm', {'symbol': symbol}),
         ('ratios_ttm', '/stable/ratios-ttm', {'symbol': symbol}),
 
-        # Analysis & Scores
+        # Analysis & Scores — frontend displays Piotroski/Altman Z
         ('financial_scores', '/stable/financial-scores', {'symbol': symbol}),
-        ('owner_earnings', '/stable/owner-earnings', {'symbol': symbol, 'limit': QUARTERS_TO_FETCH}),
-        ('enterprise_values', '/stable/enterprise-values', {'symbol': symbol, 'limit': ANNUAL_LIMIT}),
 
-        # Growth
+        # Growth (quarterly only — annual not used)
         ('income_growth', '/stable/income-statement-growth', {'symbol': symbol, 'period': 'quarter', 'limit': QUARTERS_TO_FETCH}),
-        ('financial_growth', '/stable/financial-growth', {'symbol': symbol, 'limit': ANNUAL_LIMIT}),
 
-        # Segmentation
+        # Segmentation — frontend Segments tab
         ('revenue_product_segments', '/stable/revenue-product-segmentation', {'symbol': symbol}),
         ('revenue_geo_segments', '/stable/revenue-geographic-segmentation', {'symbol': symbol}),
 
-        # NEW: Quote (for yearHigh/yearLow, price, sharesOutstanding)
+        # Quote — scoring + frontend (yearHigh/yearLow, price)
         ('quote', '/stable/quote', {'symbol': symbol}),
-
-        # NEW: Company info (for IPO date)
-        ('company_info', '/stable/company-core-information', {'symbol': symbol}),
-
-        # NEW: Institutional sponsorship (I in CAN SLIM)
-        ('institutional_holders', '/stable/institutional-holder', {'symbol': symbol}),
-        ('mutual_fund_holders', '/stable/mutual-fund-holder', {'symbol': symbol}),
-        ('shares_float', '/stable/shares-float', {'symbol': symbol}),
     ]
 
     for key, path, params in endpoints:
@@ -128,10 +111,6 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
         elif key == 'financial_scores' and isinstance(result, list) and len(result) == 1:
             result = result[0]
         elif key == 'quote' and isinstance(result, list) and len(result) == 1:
-            result = result[0]
-        elif key == 'company_info' and isinstance(result, list) and len(result) == 1:
-            result = result[0]
-        elif key == 'shares_float' and isinstance(result, list) and len(result) == 1:
             result = result[0]
 
         data[key] = result if result else None
@@ -518,8 +497,6 @@ def compute_n_score(data: Dict, income: List[Dict], ranking: Optional[Dict]) -> 
     ipo_date_str = None
     if ranking and ranking.get('ipo_date'):
         ipo_date_str = ranking['ipo_date']
-    elif data.get('company_info') and isinstance(data['company_info'], dict):
-        ipo_date_str = data['company_info'].get('ipoDate')
 
     if ipo_date_str:
         try:
@@ -960,176 +937,21 @@ def compute_sepa_score(income: List[Dict], balance: List[Dict], cash_flow: List[
 # I Score: Institutional Sponsorship (15 pts)
 # ---------------------------------------------------------------------------
 
-# Top fund families — used for quality check
-TOP_FUNDS = {
-    'vanguard', 'fidelity', 'blackrock', 'state street', 't. rowe price',
-    'capital group', 'wellington', 'jpmorgan', 'goldman sachs', 'morgan stanley',
-    'invesco', 'american funds', 'schwab', 'dimensional', 'northern trust',
-    'pimco', 'ark invest', 'berkshire hathaway',
-}
-
-
-def _match_top_fund(name: str) -> bool:
-    lower = name.lower()
-    return any(f in lower for f in TOP_FUNDS)
-
-
 def compute_i_score(data: Dict, quote: Any) -> Dict:
-    """Institutional Sponsorship score from O'Neil Ch.6."""
-    checks = []
-    score = 0
-
-    inst_holders = data.get('institutional_holders')
-    mf_holders = data.get('mutual_fund_holders')
-    float_data = data.get('shares_float')
-
-    # --- Check 1: Number of institutional holders (4 pts) ---
-    holder_count = 0
-    if isinstance(inst_holders, list):
-        holder_count = len(inst_holders)
-    elif isinstance(mf_holders, list):
-        holder_count = len(mf_holders)
-
-    if holder_count >= 50:
-        pts = 4
-        status = 'pass'
-    elif holder_count >= 20:
-        pts = 3
-        status = 'pass'
-    elif holder_count >= 10:
-        pts = 1
-        status = 'warn'
-    else:
-        pts = 0
-        status = 'fail'
-    score += pts
-    checks.append(make_check('i_holder_count', 'Number of Institutional Holders', holder_count,
-                             '≥50 (4pts), ≥20 (3pts)', status,
-                             f'{holder_count} institutional holders', "O'Neil Ch.6"))
-
-    # --- Check 2: Quality — top funds among holders (3 pts) ---
-    top_fund_count = 0
-    top_fund_names = []
-    if isinstance(inst_holders, list):
-        for h in inst_holders:
-            name = h.get('holder') or h.get('investorName') or ''
-            if _match_top_fund(name):
-                top_fund_count += 1
-                if len(top_fund_names) < 3:
-                    top_fund_names.append(name.split(' ')[0])  # First word
-    if isinstance(mf_holders, list) and top_fund_count == 0:
-        for h in mf_holders:
-            name = h.get('holder') or h.get('investorName') or ''
-            if _match_top_fund(name):
-                top_fund_count += 1
-                if len(top_fund_names) < 3:
-                    top_fund_names.append(name.split(' ')[0])
-
-    if top_fund_count >= 3:
-        pts = 3
-        status = 'pass'
-    elif top_fund_count >= 1:
-        pts = 2
-        status = 'pass'
-    else:
-        pts = 0
-        status = 'fail'
-    score += pts
-    detail = f'{top_fund_count} top-tier funds' + (f' ({", ".join(top_fund_names)})' if top_fund_names else '')
-    checks.append(make_check('i_quality', 'Quality: Top Funds Among Holders', top_fund_count,
-                             '≥3 top funds (3pts), ≥1 (2pts)', status, detail, "O'Neil Ch.6"))
-
-    # --- Check 3: Institutional ownership trend — net change (4 pts) ---
-    net_change = 0
-    change_count = 0
-    if isinstance(inst_holders, list):
-        for h in inst_holders:
-            ch = safe_float(h.get('change'))
-            if ch is not None:
-                net_change += ch
-                change_count += 1
-
-    if change_count > 0:
-        if net_change > 0:
-            pts = 4
-            status = 'pass'
-            detail = f'Net increase: {net_change:+,.0f} shares across {change_count} holders'
-        elif net_change == 0:
-            pts = 2
-            status = 'warn'
-            detail = f'Stable across {change_count} holders'
-        else:
-            pts = 0
-            status = 'fail'
-            detail = f'Net decrease: {net_change:+,.0f} shares across {change_count} holders'
-        score += pts
-        checks.append(make_check('i_trend', 'Institutional Ownership Trend (QoQ)', net_change,
-                                 'Increasing (4pts), Stable (2pts)', status, detail, "O'Neil Ch.6"))
-    else:
-        checks.append(make_check('i_trend', 'Institutional Ownership Trend (QoQ)', None,
-                                 'Increasing', 'info', 'Change data not available', "O'Neil Ch.6"))
-
-    # --- Check 4: Overowned warning (2 pts) ---
-    inst_ownership_pct = None
-    if isinstance(float_data, dict):
-        free_float = safe_float(float_data.get('freeFloat'))
-        if free_float is not None:
-            inst_ownership_pct = (1 - free_float / 100) * 100 if free_float <= 100 else None
-    # Fallback: estimate from shares
-    if inst_ownership_pct is None and isinstance(inst_holders, list) and isinstance(quote, dict):
-        total_inst_shares = sum(safe_float(h.get('shares'), 0) for h in inst_holders)
-        outstanding = safe_float(quote.get('sharesOutstanding'))
-        if outstanding and outstanding > 0 and total_inst_shares > 0:
-            inst_ownership_pct = (total_inst_shares / outstanding) * 100
-
-    if inst_ownership_pct is not None:
-        if inst_ownership_pct < 50:
-            pts = 2
-            status = 'pass'
-        elif inst_ownership_pct < 70:
-            pts = 1
-            status = 'warn'
-        else:
-            pts = 0
-            status = 'fail'
-        score += pts
-        checks.append(make_check('i_overowned', 'Overowned Warning', round(inst_ownership_pct, 1),
-                                 '<50% (2pts), <70% (1pt)', status,
-                                 f'{inst_ownership_pct:.1f}% institutional ownership', "O'Neil Ch.6"))
-    else:
-        checks.append(make_check('i_overowned', 'Overowned Warning', None,
-                                 '<70% institutional', 'info', 'Ownership data not available', "O'Neil Ch.6"))
-
-    # --- Check 5: Float size (2 pts) ---
-    float_shares = None
-    if isinstance(float_data, dict):
-        float_shares = safe_float(float_data.get('floatShares'))
-    # Fallback to shares outstanding from quote
-    if float_shares is None and isinstance(quote, dict):
-        float_shares = safe_float(quote.get('sharesOutstanding'))
-
-    if float_shares is not None:
-        float_m = float_shares / 1e6
-        if float_m < 50:
-            pts = 2
-            status = 'pass'
-        elif float_m < 200:
-            pts = 1
-            status = 'pass'
-        else:
-            pts = 0
-            status = 'fail'
-        score += pts
-        checks.append(make_check('i_float', 'Float Size', round(float_m, 0),
-                                 '<50M (2pts), <200M (1pt)', status,
-                                 f'{float_m:.0f}M float shares', "O'Neil Ch.5"))
-
+    """Institutional Sponsorship score — DISABLED.
+    FMP Premium returns empty for institutional-holder/mutual-fund-holder/shares-float.
+    Frontend hides I Score entirely. Returns zero score to avoid penalizing stocks."""
     return {
-        'score': min(score, 15), 'max': 15, 'checks': checks,
-        'holder_count': holder_count,
-        'top_funds': top_fund_names,
-        'inst_ownership_pct': round(inst_ownership_pct, 1) if inst_ownership_pct else None,
-        'float_shares_m': round(float_shares / 1e6, 1) if float_shares else None,
+        'score': 0, 'max': 15, 'checks': [
+            make_check('i_disabled', 'Institutional Sponsorship', None,
+                       'Data unavailable', 'info',
+                       'I Score disabled — FMP Premium endpoints return empty',
+                       "O'Neil Ch.6")
+        ],
+        'holder_count': 0,
+        'top_funds': [],
+        'inst_ownership_pct': None,
+        'float_shares_m': None,
     }
 
 
@@ -1505,7 +1327,7 @@ def main():
     os.makedirs('fundamentals', exist_ok=True)
 
     # Determine freshness threshold — skip stocks updated within this window
-    max_age_days = int(os.environ.get('FUNDAMENTALS_MAX_AGE_DAYS', '7'))
+    max_age_days = int(os.environ.get('FUNDAMENTALS_MAX_AGE_DAYS', '14'))
     now = datetime.now()
 
     success = 0
