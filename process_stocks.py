@@ -1,13 +1,24 @@
 """
-FULL REBUILD: process_stocks.py (FMP Edition)
+Stock Rankings Pipeline: process_stocks.py (FMP Edition)
+
+Modes:
+  --mode full   Complete rebuild: fresh profiles, earnings, full history.
+                Writes to history/ cache for future daily runs.
+  --mode daily  Incremental: reuse profiles/earnings from previous rankings.json,
+                read cached bars from history/, fetch only the delta from FMP.
+
 Fetches all active US common stocks from Financial Modeling Prep API.
 Calculates RS scores, moving averages, ADR, ATR, Stage 2 status.
 Includes market cap, industry/sector, IPO date.
 
 Uses /stable/ endpoints (v3/v4 deprecated Aug 2025).
-Fetches last 5 years of historical data.
 
-Formula adapts based on data availability:
+Price caching (history/{SYMBOL}.json):
+  Daily mode reads cached bars from disk and fetches only new bars since
+  the last cached date.  Full mode fetches complete 5-year history and
+  writes to cache so subsequent daily runs have a warm cache.
+
+RS formula adapts based on data availability:
 - 252+ days: Full formula (0.4x3m + 0.2x6m + 0.2x9m + 0.2x12m)
 - 189-251 days: 3m, 6m, 9m only (reweighted)
 - 126-188 days: 3m, 6m only (reweighted)
@@ -23,6 +34,7 @@ import sys
 import argparse
 import numpy as np
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 # Configuration
@@ -314,6 +326,116 @@ def get_stock_history(ticker: str, start_date: str, end_date: str,
 
 
 # ---------------------------------------------------------------------------
+# Price history cache (reads/writes history/{SYMBOL}.json)
+# ---------------------------------------------------------------------------
+
+HISTORY_DIR = Path('history')
+
+
+def read_price_cache(symbol: str) -> Optional[List[Dict]]:
+    """Read cached bars from history/{SYMBOL}.json.
+    Returns list of cache-format bars (oldest-first) or None."""
+    path = HISTORY_DIR / f"{symbol}.json"
+    if not path.exists():
+        return None
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        bars = data.get('bars', [])
+        return bars if bars else None
+    except (json.JSONDecodeError, KeyError, IOError):
+        return None
+
+
+def write_price_cache(symbol: str, cache_bars: List[Dict]):
+    """Write bars to history/{SYMBOL}.json in backfill-compatible format."""
+    HISTORY_DIR.mkdir(exist_ok=True)
+    path = HISTORY_DIR / f"{symbol}.json"
+    with open(path, 'w') as f:
+        json.dump({'symbol': symbol, 'updated': datetime.now().isoformat(),
+                   'bars': cache_bars}, f, separators=(',', ':'))
+
+
+def cache_bars_to_pipeline(cache_bars: List[Dict]) -> List[Dict]:
+    """Convert cache-format bars {time,open,...} to pipeline-format {t,o,...}."""
+    result = []
+    for bar in cache_bars:
+        if bar.get('open') and bar.get('close'):
+            result.append({
+                't': int(datetime.strptime(bar['time'], '%Y-%m-%d').timestamp() * 1000),
+                'o': bar['open'],
+                'h': bar['high'],
+                'l': bar['low'],
+                'c': bar['close'],
+                'v': bar.get('volume', 0),
+            })
+    return result
+
+
+def pipeline_bars_to_cache(pipeline_bars: List[Dict]) -> List[Dict]:
+    """Convert pipeline-format bars {t,o,...} to cache-format {time,open,...}."""
+    result = []
+    for bar in pipeline_bars:
+        dt = datetime.fromtimestamp(bar['t'] / 1000)
+        result.append({
+            'time': dt.strftime('%Y-%m-%d'),
+            'open': round(float(bar['o']), 4),
+            'high': round(float(bar['h']), 4),
+            'low': round(float(bar['l']), 4),
+            'close': round(float(bar['c']), 4),
+            'volume': int(bar.get('v', 0)),
+        })
+    return result
+
+
+def get_stock_history_cached(ticker: str, start_date: str, end_date: str,
+                             mode: str = 'daily',
+                             verbose: bool = False) -> Tuple[List[Dict], bool]:
+    """Fetch stock history with disk-cache support.
+
+    mode='daily': read cache, fetch only the delta, merge, write back.
+    mode='full':  full FMP fetch, write to cache for future daily runs.
+
+    Returns (pipeline_format_bars, api_called).
+    """
+    start_ts = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000)
+
+    if mode == 'daily':
+        cache_bars = read_price_cache(ticker)
+        if cache_bars is not None:
+            last_date = cache_bars[-1]['time']
+            next_day = (datetime.strptime(last_date, '%Y-%m-%d')
+                        + timedelta(days=1)).strftime('%Y-%m-%d')
+
+            if next_day > end_date:
+                # Cache is fully current — no API call needed
+                pipeline = [b for b in cache_bars_to_pipeline(cache_bars)
+                            if b['t'] >= start_ts]
+                return pipeline, False
+
+            # Fetch only the delta from FMP
+            delta = get_stock_history(ticker, next_day, end_date, verbose=verbose)
+            if delta:
+                delta_cache = pipeline_bars_to_cache(delta)
+                existing_dates = {b['time'] for b in cache_bars}
+                for bar in delta_cache:
+                    if bar['time'] not in existing_dates:
+                        cache_bars.append(bar)
+                cache_bars.sort(key=lambda b: b['time'])
+                write_price_cache(ticker, cache_bars)
+
+            pipeline = [b for b in cache_bars_to_pipeline(cache_bars)
+                        if b['t'] >= start_ts]
+            return pipeline, True  # API was attempted even if delta was empty
+
+    # Full mode, or daily with no cache file: full FMP fetch
+    pipeline_bars = get_stock_history(ticker, start_date, end_date, verbose=verbose)
+    if pipeline_bars:
+        write_price_cache(ticker, pipeline_bars_to_cache(pipeline_bars))
+    return pipeline_bars, True
+
+
+# ---------------------------------------------------------------------------
 # Earnings & fundamentals
 # ---------------------------------------------------------------------------
 
@@ -558,13 +680,24 @@ def format_return(val: float) -> str:
     return f"{val * 100:.1f}%"
 
 
+
 # ---------------------------------------------------------------------------
-# Main
+# Main pipeline
 # ---------------------------------------------------------------------------
 
-def main():
+def run_pipeline(mode: str = 'full'):
+    """Unified pipeline entry point.
+
+    mode='full':  Complete rebuild — fresh profiles, earnings for RS>=50,
+                  full 5-year history.  Writes to history/ cache.
+    mode='daily': Incremental — reuses profiles/earnings from previous
+                  rankings.json, reads history/ cache + delta fetch.
+    """
     print("=" * 80)
-    print("IBD-Style RS Calculator (FMP Edition)")
+    if mode == 'full':
+        print("IBD-Style RS Calculator (FMP Edition)")
+    else:
+        print("DAILY INCREMENTAL UPDATE")
     print("=" * 80)
     print()
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -574,52 +707,79 @@ def main():
         print("ERROR: FMP_API_KEY not found!")
         return
 
-    # ---- Phase 0: Test API connection ----
-    test_api_connection()
+    # ---- Phase 0: Test API connection (full mode only) ----
+    if mode == 'full':
+        test_api_connection()
 
-    # ---- Phase 1: Test with a single stock (AAPL) ----
-    print("PHASE 1: Testing with AAPL...")
-    test_bars = get_stock_history('AAPL', '2025-01-01', '2025-03-01', verbose=True)
-    if not test_bars:
-        print("FATAL: Cannot fetch historical data for AAPL!")
-        print("The API key may not have access to historical data.")
-        print("Aborting.")
-        return
-    print(f"  AAPL test passed: {len(test_bars)} bars")
-    print()
+        print("PHASE 1: Testing with AAPL...")
+        test_bars = get_stock_history('AAPL', '2025-01-01', '2025-03-01', verbose=True)
+        if not test_bars:
+            print("FATAL: Cannot fetch historical data for AAPL!")
+            print("The API key may not have access to historical data.")
+            print("Aborting.")
+            return
+        print(f"  AAPL test passed: {len(test_bars)} bars")
+        print()
 
-    # ---- Phase 2: Get stock list ----
+    # ---- Phase 1: Get stock list ----
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365 * 5)  # 5 years
     start_str = start_date.strftime('%Y-%m-%d')
     end_str = end_date.strftime('%Y-%m-%d')
     print(f"Date range: {start_str} to {end_str}\n")
 
-    symbols, profiles = get_all_tickers()
-    if not symbols:
-        print("ERROR: Failed to get tickers!")
-        return
+    new_symbols, new_profiles = get_all_tickers()
 
-    # ---- Phase 3: Small batch test (first 10 stocks) ----
-    print(f"\nPHASE 3: Testing first 10 stocks...")
-    test_success = 0
-    for ticker in symbols[:10]:
-        bars = get_stock_history(ticker, start_str, end_str)
-        status = f"{len(bars)} bars" if bars else "NO DATA"
-        print(f"  {ticker}: {status}")
-        if bars:
-            test_success += 1
-        time.sleep(RATE_DELAY)
+    prev_profiles = {}  # populated only in daily mode
+    if mode == 'daily':
+        if not os.path.exists('rankings.json'):
+            print("ERROR: rankings.json not found. Run a full rebuild first.")
+            return
+        with open('rankings.json', 'r') as f:
+            prev_rankings = json.load(f)
+        prev_data = prev_rankings.get('data', [])
+        if not prev_data:
+            print("ERROR: Previous rankings.json has no data. Run a full rebuild.")
+            return
+        print(f"Loaded {len(prev_data)} stocks from previous rankings.json")
+        prev_profiles = {s['symbol']: s for s in prev_data}
+        symbols_prev = set(prev_profiles.keys())
+        new_set = set(new_symbols)
+        added = new_set - symbols_prev
+        removed = symbols_prev - new_set
+        if added:
+            print(f"  New tickers since last run: {len(added)} (will do full fetch for these)")
+        if removed:
+            print(f"  Removed tickers: {len(removed)}")
+        all_symbols = list(symbols_prev | new_set)
+        print(f"  Total symbols to update: {len(all_symbols)}")
+    else:
+        if not new_symbols:
+            print("ERROR: Failed to get tickers!")
+            return
+        all_symbols = new_symbols
 
-    print(f"\n  Test result: {test_success}/10 succeeded")
-    if test_success == 0:
-        print("FATAL: No stocks returned data in test batch!")
-        print("Aborting.")
-        return
-    print()
+    # ---- Phase 2: Batch test (full mode only) ----
+    if mode == 'full':
+        print(f"\nPHASE 3: Testing first 10 stocks...")
+        test_success = 0
+        for ticker in all_symbols[:10]:
+            bars = get_stock_history(ticker, start_str, end_str)
+            status = f"{len(bars)} bars" if bars else "NO DATA"
+            print(f"  {ticker}: {status}")
+            if bars:
+                test_success += 1
+            time.sleep(RATE_DELAY)
 
-    # ---- Phase 4: Full processing ----
-    print(f"Processing {len(symbols)} stocks...\n")
+        print(f"\n  Test result: {test_success}/10 succeeded")
+        if test_success == 0:
+            print("FATAL: No stocks returned data in test batch!")
+            print("Aborting.")
+            return
+        print()
+
+    # ---- Phase 3: Full processing ----
+    print(f"Processing {len(all_symbols)} stocks...\n")
 
     all_stock_data = []
     historical_stocks = []
@@ -630,15 +790,16 @@ def main():
     stage_2_count = 0
     cap_counts = {'Large Cap': 0, 'Mid Cap': 0, 'Small Cap': 0, 'Micro Cap': 0, 'Unknown': 0}
 
-    for i, ticker in enumerate(symbols):
+    for i, ticker in enumerate(all_symbols):
         try:
             if i % 200 == 0 and i > 0:
                 print(
-                    f"Progress: {i}/{len(symbols)} ({i / len(symbols) * 100:.1f}%) "
+                    f"Progress: {i}/{len(all_symbols)} ({i / len(all_symbols) * 100:.1f}%) "
                     f"| OK: {processed} | Fail: {failed} | Stage2: {stage_2_count}"
                 )
 
-            stock_prices = get_stock_history(ticker, start_str, end_str)
+            stock_prices, api_called = get_stock_history_cached(
+                ticker, start_str, end_str, mode=mode)
             if not stock_prices:
                 failed += 1
                 continue
@@ -664,7 +825,27 @@ def main():
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
 
-            profile = profiles.get(ticker, {})
+            # ---- Source profile and earnings based on mode ----
+            if mode == 'daily' and ticker in prev_profiles:
+                prev_entry = prev_profiles[ticker]
+                profile = {
+                    'market_cap': prev_entry.get('market_cap'),
+                    'industry': prev_entry.get('industry'),
+                    'exchange': prev_entry.get('exchange'),
+                    'ticker_type': prev_entry.get('ticker_type'),
+                    'ipo_date': prev_entry.get('ipo_date'),
+                }
+                earnings = prev_entry.get('earnings')
+            elif mode == 'daily':
+                # New ticker in daily mode — fresh profile + inline earnings fetch
+                profile = new_profiles.get(ticker, {})
+                earnings = get_earnings_data(ticker)
+                time.sleep(RATE_DELAY)
+            else:
+                # Full mode — earnings fetched in a separate pass after ranking
+                profile = new_profiles.get(ticker, {})
+                earnings = None
+
             market_cap = profile.get('market_cap')
             market_cap_category = get_market_cap_category(market_cap)
             cap_counts[market_cap_category] = cap_counts.get(market_cap_category, 0) + 1
@@ -695,6 +876,9 @@ def main():
                 'ticker_type': profile.get('ticker_type'),
             }
 
+            if earnings:
+                stock_entry['earnings'] = earnings
+
             all_stock_data.append(stock_entry)
 
             # Compressed historical data: close-only for older, full OHLCV for recent 30
@@ -715,7 +899,8 @@ def main():
             })
 
             processed += 1
-            time.sleep(RATE_DELAY)
+            if api_called:
+                time.sleep(RATE_DELAY)
 
         except Exception as e:
             print(f"Error processing {ticker}: {e}")
@@ -744,21 +929,22 @@ def main():
     for i, stock in enumerate(all_stock_data):
         stock['rs_rank'] = min(int(((total_stocks - i) / total_stocks) * 99) + 1, 99)
 
-    # Second pass: fetch earnings only for RS >= 50 stocks (saves ~2,500 API calls)
-    earnings_eligible = [s for s in all_stock_data if s['rs_rank'] >= 50]
-    print(f"\nFetching earnings for {len(earnings_eligible)} stocks (RS >= 50)...")
-    earnings_fetched = 0
-    for i, stock in enumerate(earnings_eligible):
-        if i % 200 == 0 and i > 0:
-            print(f"  Earnings progress: {i}/{len(earnings_eligible)}")
-        earnings = get_earnings_data(stock['symbol'])
-        if earnings:
-            stock['earnings'] = earnings
-            earnings_fetched += 1
-        time.sleep(RATE_DELAY)
-    print(f"  Fetched earnings for {earnings_fetched} stocks")
+    # ---- Earnings fetch (full mode: separate pass for RS >= 50) ----
+    if mode == 'full':
+        earnings_eligible = [s for s in all_stock_data if s['rs_rank'] >= 50]
+        print(f"\nFetching earnings for {len(earnings_eligible)} stocks (RS >= 50)...")
+        earnings_fetched = 0
+        for i, stock in enumerate(earnings_eligible):
+            if i % 200 == 0 and i > 0:
+                print(f"  Earnings progress: {i}/{len(earnings_eligible)}")
+            earnings = get_earnings_data(stock['symbol'])
+            if earnings:
+                stock['earnings'] = earnings
+                earnings_fetched += 1
+            time.sleep(RATE_DELAY)
+        print(f"  Fetched earnings for {earnings_fetched} stocks")
 
-    # Format output
+    # ---- Format output ----
     output_data = []
     ipo_data = []
     two_years_ago = datetime.now() - timedelta(days=730)
@@ -809,7 +995,9 @@ def main():
             except ValueError:
                 pass
 
-    # Save rankings.json
+    # ---- Save output files ----
+    update_type = 'full_rebuild' if mode == 'full' else 'daily_incremental'
+
     rankings_output = {
         'last_updated': datetime.now().isoformat(),
         'formula_used': 'Flexible: Adapts to available data',
@@ -821,7 +1009,7 @@ def main():
         'partial_calculations': partial_calculations,
         'stage_2_stocks': stage_2_count,
         'market_cap_distribution': {k: v for k, v in cap_counts.items() if v > 0},
-        'update_type': 'full_rebuild',
+        'update_type': update_type,
         'data_source': 'Financial Modeling Prep',
         'data': output_data,
     }
@@ -834,7 +1022,7 @@ def main():
     ipo_output = {
         'last_updated': datetime.now().isoformat(),
         'total_stocks': len(ipo_data),
-        'update_type': 'full_rebuild',
+        'update_type': update_type,
         'data': sorted(ipo_data, key=lambda x: x.get('ipo_date', ''), reverse=True),
     }
     with open('recent_ipos.json', 'w') as f:
@@ -868,273 +1056,10 @@ def main():
     print("=" * 80)
 
 
-def daily_update():
-    """Incremental daily update: reload previous rankings, re-fetch prices only,
-    recompute MAs/RS/ATR/ADR. Keeps existing profiles, earnings, industry data."""
-    print("=" * 80)
-    print("DAILY INCREMENTAL UPDATE")
-    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 80)
-    print()
-
-    if not API_KEY:
-        print("ERROR: FMP_API_KEY not found!")
-        return
-
-    # Load previous rankings as baseline
-    if not os.path.exists('rankings.json'):
-        print("ERROR: rankings.json not found. Run a full rebuild first.")
-        return
-
-    with open('rankings.json', 'r') as f:
-        prev = json.load(f)
-
-    prev_data = prev.get('data', [])
-    if not prev_data:
-        print("ERROR: Previous rankings.json has no data. Run a full rebuild.")
-        return
-
-    print(f"Loaded {len(prev_data)} stocks from previous rankings.json")
-
-    # Also check for new tickers not in previous run
-    symbols_prev = {s['symbol'] for s in prev_data}
-    prev_profiles = {s['symbol']: s for s in prev_data}
-
-    # Fetch current ticker list to detect new additions
-    new_symbols, new_profiles = get_all_tickers()
-    new_set = set(new_symbols)
-    added = new_set - symbols_prev
-    removed = symbols_prev - new_set
-    if added:
-        print(f"  New tickers since last run: {len(added)} (will do full fetch for these)")
-    if removed:
-        print(f"  Removed tickers: {len(removed)}")
-
-    # All symbols to process = previous + new
-    all_symbols = list(symbols_prev | new_set)
-    print(f"  Total symbols to update: {len(all_symbols)}")
-
-    # Date range for price history
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=365 * 5)
-    start_str = start_date.strftime('%Y-%m-%d')
-    end_str = end_date.strftime('%Y-%m-%d')
-
-    all_stock_data = []
-    historical_stocks = []
-    processed = 0
-    failed = 0
-    stage_2_count = 0
-    cap_counts = {'Large Cap': 0, 'Mid Cap': 0, 'Small Cap': 0, 'Micro Cap': 0, 'Unknown': 0}
-
-    for i, ticker in enumerate(all_symbols):
-        try:
-            if i % 200 == 0 and i > 0:
-                print(f"Progress: {i}/{len(all_symbols)} ({i / len(all_symbols) * 100:.1f}%) | OK: {processed} | Fail: {failed}")
-
-            # Fetch fresh price history
-            stock_prices = get_stock_history(ticker, start_str, end_str)
-            if not stock_prices:
-                failed += 1
-                continue
-
-            result = calculate_stock_returns_flexible(stock_prices)
-            if result[0] is None:
-                failed += 1
-                continue
-
-            stock_returns, avg_volume, days_available, is_partial = result
-            rs_score = calculate_ibd_rs_score_flexible(stock_returns, days_available)
-            ma_data = calculate_moving_averages(stock_prices)
-            adr_20 = calculate_adr(stock_prices, period=20)
-            atr_14 = calculate_atr(stock_prices, period=14)
-            current_price = round(stock_prices[-1]['c'], 2)
-
-            if ma_data and ma_data['is_stage_2']:
-                stage_2_count += 1
-
-            # For existing stocks, reuse profile/earnings from previous run
-            # For new stocks, use fresh profile data
-            if ticker in prev_profiles:
-                prev = prev_profiles[ticker]
-                profile = {
-                    'market_cap': prev.get('market_cap'),
-                    'industry': prev.get('industry'),
-                    'exchange': prev.get('exchange'),
-                    'ticker_type': prev.get('ticker_type'),
-                    'ipo_date': prev.get('ipo_date'),
-                }
-                earnings = prev.get('earnings')
-            else:
-                profile = new_profiles.get(ticker, {})
-                earnings = get_earnings_data(ticker)
-                time.sleep(RATE_DELAY)
-
-            market_cap = profile.get('market_cap')
-            market_cap_category = get_market_cap_category(market_cap)
-            cap_counts[market_cap_category] = cap_counts.get(market_cap_category, 0) + 1
-
-            stock_entry = {
-                'symbol': ticker,
-                'rs_score': rs_score,
-                'avg_volume': int(avg_volume),
-                'stock_return_2m': stock_returns.get('2m', 0),
-                'stock_return_3m': stock_returns.get('3m', 0),
-                'stock_return_6m': stock_returns.get('6m', 0),
-                'stock_return_9m': stock_returns.get('9m', 0),
-                'stock_return_12m': stock_returns.get('12m', 0),
-                'days_of_data': days_available,
-                'is_partial': is_partial,
-                'ipo_date': profile.get('ipo_date'),
-                'current_price': current_price,
-                'ma_50': ma_data['ma_50'] if ma_data else None,
-                'ma_150': ma_data['ma_150'] if ma_data else None,
-                'ma_200': ma_data['ma_200'] if ma_data else None,
-                'is_stage_2': ma_data['is_stage_2'] if ma_data else False,
-                'adr_20': round(adr_20, 2) if adr_20 is not None else None,
-                'atr_14': round(atr_14, 2) if atr_14 is not None else None,
-                'market_cap': market_cap,
-                'market_cap_category': market_cap_category,
-                'industry': profile.get('industry'),
-                'exchange': profile.get('exchange'),
-                'ticker_type': profile.get('ticker_type'),
-            }
-
-            if earnings:
-                stock_entry['earnings'] = earnings
-
-            all_stock_data.append(stock_entry)
-
-            # Compressed historical data
-            minimal_history = []
-            older = stock_prices[:-30] if len(stock_prices) > 30 else []
-            recent = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices
-            for p in older[::5]:
-                minimal_history.append({'t': p['t'], 'c': p['c']})
-            for p in recent:
-                minimal_history.append({'t': p['t'], 'o': p['o'], 'h': p['h'],
-                                        'l': p['l'], 'c': p['c'], 'v': p['v']})
-            historical_stocks.append({
-                's': ticker, 'h': minimal_history,
-                'u': datetime.now().isoformat(),
-                'i': profile.get('ipo_date'), 'd': days_available,
-            })
-
-            processed += 1
-            time.sleep(RATE_DELAY)
-
-        except Exception as e:
-            print(f"Error processing {ticker}: {e}")
-            failed += 1
-
-    print()
-    print("=" * 80)
-    print("DAILY UPDATE COMPLETE")
-    print(f"Processed: {processed} | Failed: {failed} | Stage 2: {stage_2_count}")
-    print("=" * 80)
-
-    if not all_stock_data:
-        print("ERROR: No stock data processed!")
-        return
-
-    # Percentile rankings (1-99)
-    all_stock_data.sort(key=lambda x: x['rs_score'], reverse=True)
-    total_stocks = len(all_stock_data)
-    for i, stock in enumerate(all_stock_data):
-        stock['rs_rank'] = min(int(((total_stocks - i) / total_stocks) * 99) + 1, 99)
-
-    # Format and save (same format as full rebuild)
-    output_data = []
-    ipo_data = []
-    two_years_ago = datetime.now() - timedelta(days=730)
-
-    for stock in all_stock_data:
-        entry = {
-            'symbol': stock['symbol'],
-            'rs_rank': stock['rs_rank'],
-            'rs_score': round(stock['rs_score'], 4),
-            'avg_volume': format_volume(stock['avg_volume']),
-            'raw_volume': stock['avg_volume'],
-            'stock_return_2m': format_return(stock['stock_return_2m']),
-            'stock_return_3m': format_return(stock['stock_return_3m']),
-            'stock_return_6m': format_return(stock['stock_return_6m']),
-            'stock_return_9m': format_return(stock['stock_return_9m']),
-            'stock_return_12m': format_return(stock['stock_return_12m']),
-            'days_of_data': stock['days_of_data'],
-            'is_partial': stock['is_partial'],
-            'ipo_date': stock.get('ipo_date'),
-            'current_price': stock.get('current_price'),
-            'ma_50': stock.get('ma_50'),
-            'ma_150': stock.get('ma_150'),
-            'ma_200': stock.get('ma_200'),
-            'is_stage_2': stock.get('is_stage_2', False),
-            'adr_20': stock.get('adr_20'),
-            'atr_14': stock.get('atr_14'),
-            'market_cap': stock.get('market_cap'),
-            'market_cap_formatted': format_market_cap(stock.get('market_cap')),
-            'market_cap_category': stock.get('market_cap_category'),
-            'industry': stock.get('industry'),
-            'exchange': stock.get('exchange'),
-            'ticker_type': stock.get('ticker_type'),
-        }
-        if stock.get('earnings'):
-            entry['earnings'] = stock['earnings']
-        output_data.append(entry)
-
-        ipo_str = stock.get('ipo_date')
-        if ipo_str:
-            try:
-                ipo_dt = datetime.strptime(ipo_str, '%Y-%m-%d')
-                if ipo_dt >= two_years_ago:
-                    ipo_data.append(entry)
-            except ValueError:
-                pass
-
-    rankings_output = {
-        'last_updated': datetime.now().isoformat(),
-        'formula_used': 'Flexible: Adapts to available data',
-        'stage_2_criteria': '50dma > 150dma > 200dma',
-        'volatility_metrics': 'ADR (20-day), ATR (14-day)',
-        'includes_market_data': True,
-        'total_stocks': len(output_data),
-        'stage_2_stocks': stage_2_count,
-        'market_cap_distribution': {k: v for k, v in cap_counts.items() if v > 0},
-        'update_type': 'daily_incremental',
-        'data_source': 'Financial Modeling Prep',
-        'data': output_data,
-    }
-
-    with open('rankings.json', 'w') as f:
-        json.dump(rankings_output, f, indent=2)
-    print(f"Saved {len(output_data)} stocks to rankings.json")
-
-    with open('recent_ipos.json', 'w') as f:
-        json.dump({
-            'last_updated': datetime.now().isoformat(),
-            'total_stocks': len(ipo_data),
-            'update_type': 'daily_incremental',
-            'data': sorted(ipo_data, key=lambda x: x.get('ipo_date', ''), reverse=True),
-        }, f, indent=2)
-    print(f"Saved {len(ipo_data)} recent IPOs to recent_ipos.json")
-
-    with open('historical_data.json', 'w') as f:
-        json.dump({
-            'u': datetime.now().isoformat(),
-            'n': len(historical_stocks),
-            'd': historical_stocks,
-        }, f, indent=2)
-    print(f"Saved historical data for {len(historical_stocks)} stocks")
-
-    print(f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='IBD-Style RS Calculator')
     parser.add_argument('--mode', choices=['full', 'daily'], default='full',
                         help='full = rebuild everything, daily = incremental price update')
     args = parser.parse_args()
 
-    if args.mode == 'daily':
-        daily_update()
-    else:
-        main()
+    run_pipeline(args.mode)
