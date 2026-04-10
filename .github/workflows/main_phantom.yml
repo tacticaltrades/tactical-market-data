@@ -1,6 +1,6 @@
 # Stock Rankings Pipeline
-# Daily (Mon-Fri): Incremental price update — reuses profiles/earnings, ~30 min
-# Weekly (Sunday): Full rebuild — fresh profiles, earnings, market cap, ~2 hours
+# Mon-Thu: Incremental price update — reuses profiles/earnings, cache-accelerated
+# Friday: Full rebuild — fresh profiles, earnings, market cap, writes history cache
 
 name: Daily Full Rebuild
 
@@ -45,7 +45,7 @@ jobs:
       run: |
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo "mode=${{ github.event.inputs.mode || 'daily' }}" >> $GITHUB_OUTPUT
-        elif [ "$(date -u +%u)" = "7" ]; then
+        elif [ "$(date -u +%u)" = "5" ]; then
           echo "mode=full" >> $GITHUB_OUTPUT
         else
           echo "mode=daily" >> $GITHUB_OUTPUT
