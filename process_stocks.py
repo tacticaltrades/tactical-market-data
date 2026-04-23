@@ -915,13 +915,15 @@ def daily_update():
     print(f"  Total symbols to update: {len(all_symbols)}")
 
     # Date range for price history
+    # 400 calendar days guarantees ~280 trading days, which covers the longest
+    # math window (200dma-1m = 220 trading days, 12m return = 252 trading days).
+    # historical_data.json is owned by the Friday full rebuild and not refreshed here.
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=365 * 5)
+    start_date = end_date - timedelta(days=400)
     start_str = start_date.strftime('%Y-%m-%d')
     end_str = end_date.strftime('%Y-%m-%d')
 
     all_stock_data = []
-    historical_stocks = []
     processed = 0
     failed = 0
     stage_2_count = 0
@@ -1004,21 +1006,6 @@ def daily_update():
                 stock_entry['earnings'] = earnings
 
             all_stock_data.append(stock_entry)
-
-            # Compressed historical data
-            minimal_history = []
-            older = stock_prices[:-30] if len(stock_prices) > 30 else []
-            recent = stock_prices[-30:] if len(stock_prices) >= 30 else stock_prices
-            for p in older[::5]:
-                minimal_history.append({'t': p['t'], 'c': p['c']})
-            for p in recent:
-                minimal_history.append({'t': p['t'], 'o': p['o'], 'h': p['h'],
-                                        'l': p['l'], 'c': p['c'], 'v': p['v']})
-            historical_stocks.append({
-                's': ticker, 'h': minimal_history,
-                'u': datetime.now().isoformat(),
-                'i': profile.get('ipo_date'), 'd': days_available,
-            })
 
             processed += 1
             time.sleep(RATE_DELAY)
@@ -1116,14 +1103,6 @@ def daily_update():
             'data': sorted(ipo_data, key=lambda x: x.get('ipo_date', ''), reverse=True),
         }, f, indent=2)
     print(f"Saved {len(ipo_data)} recent IPOs to recent_ipos.json")
-
-    with open('historical_data.json', 'w') as f:
-        json.dump({
-            'u': datetime.now().isoformat(),
-            'n': len(historical_stocks),
-            'd': historical_stocks,
-        }, f, indent=2)
-    print(f"Saved historical data for {len(historical_stocks)} stocks")
 
     print(f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
