@@ -84,4 +84,20 @@ jobs:
         [ -f rankings_adjusted.json ] && git add rankings_adjusted.json
         [ -f ipo_dates.json ] && git add ipo_dates.json
         [ -f industry_rank_history.json ] && git add industry_rank_history.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "${{ steps.mode.outputs.mode }} rebuild - $(date +'%Y-%m-%d %H:%M:%S')" && git stash --include-untracked && git pull --rebase && git stash pop && git push || (sleep 5 && git stash --include-untracked && git pull --rebase && git stash pop && git push))
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        git commit -m "${{ steps.mode.outputs.mode }} rebuild - $(date +'%Y-%m-%d %H:%M:%S')"
+        # --autostash handles any remaining untracked files (e.g. historical_data.json)
+        # without the empty-stash-pop failure the old chained command had.
+        for i in 1 2 3; do
+          if git pull --rebase --autostash origin main && git push; then
+            echo "Push succeeded on attempt $i"
+            exit 0
+          fi
+          echo "Push failed (attempt $i), retrying..."
+          sleep 5
+        done
+        echo "Push failed after 3 attempts"
+        exit 1
