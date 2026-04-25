@@ -625,6 +625,7 @@ def main():
     historical_stocks = []
     processed = 0
     failed = 0
+    zombies = 0  # Halted/frozen stocks dropped by liveness filter
     partial_calculations = 0
     full_calculations = 0
     stage_2_count = 0
@@ -635,7 +636,7 @@ def main():
             if i % 200 == 0 and i > 0:
                 print(
                     f"Progress: {i}/{len(symbols)} ({i / len(symbols) * 100:.1f}%) "
-                    f"| OK: {processed} | Fail: {failed} | Stage2: {stage_2_count}"
+                    f"| OK: {processed} | Fail: {failed} | Zombies: {zombies} | Stage2: {stage_2_count}"
                 )
 
             stock_prices = get_stock_history(ticker, start_str, end_str)
@@ -660,6 +661,15 @@ def main():
             adr_20 = calculate_adr(stock_prices, period=20)
             atr_14 = calculate_atr(stock_prices, period=14)
             current_price = round(stock_prices[-1]['c'], 2)
+
+            # Liveness filter: skip halted/frozen stocks. ADR/ATR both at zero
+            # means the stock hasn't moved at all in 20 trading days — almost
+            # certainly halted, delisted, or otherwise non-trading. Without this
+            # filter, stocks like QMMM keep their stale 9m/12m spike returns and
+            # bubble to the top of the leaderboard.
+            if (adr_20 or 0) == 0 and (atr_14 or 0) == 0:
+                zombies += 1
+                continue
 
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
@@ -725,7 +735,7 @@ def main():
     print("=" * 80)
     print("PROCESSING COMPLETE")
     print("=" * 80)
-    print(f"Processed: {processed} | Failed: {failed}")
+    print(f"Processed: {processed} | Failed: {failed} | Zombies dropped: {zombies}")
     print(f"Full (252+ days): {full_calculations} | Partial: {partial_calculations}")
     print(f"Stage 2: {stage_2_count}")
     for cat, cnt in cap_counts.items():
@@ -926,13 +936,14 @@ def daily_update():
     all_stock_data = []
     processed = 0
     failed = 0
+    zombies = 0  # Halted/frozen stocks dropped by liveness filter
     stage_2_count = 0
     cap_counts = {'Large Cap': 0, 'Mid Cap': 0, 'Small Cap': 0, 'Micro Cap': 0, 'Unknown': 0}
 
     for i, ticker in enumerate(all_symbols):
         try:
             if i % 200 == 0 and i > 0:
-                print(f"Progress: {i}/{len(all_symbols)} ({i / len(all_symbols) * 100:.1f}%) | OK: {processed} | Fail: {failed}")
+                print(f"Progress: {i}/{len(all_symbols)} ({i / len(all_symbols) * 100:.1f}%) | OK: {processed} | Fail: {failed} | Zombies: {zombies}")
 
             # Fetch fresh price history
             stock_prices = get_stock_history(ticker, start_str, end_str)
@@ -951,6 +962,12 @@ def daily_update():
             adr_20 = calculate_adr(stock_prices, period=20)
             atr_14 = calculate_atr(stock_prices, period=14)
             current_price = round(stock_prices[-1]['c'], 2)
+
+            # Liveness filter: drop halted/frozen stocks (zero ADR & ATR over
+            # 20 days = no trading activity). See main() for rationale.
+            if (adr_20 or 0) == 0 and (atr_14 or 0) == 0:
+                zombies += 1
+                continue
 
             if ma_data and ma_data['is_stage_2']:
                 stage_2_count += 1
@@ -1017,7 +1034,7 @@ def daily_update():
     print()
     print("=" * 80)
     print("DAILY UPDATE COMPLETE")
-    print(f"Processed: {processed} | Failed: {failed} | Stage 2: {stage_2_count}")
+    print(f"Processed: {processed} | Failed: {failed} | Zombies dropped: {zombies} | Stage 2: {stage_2_count}")
     print("=" * 80)
 
     if not all_stock_data:
