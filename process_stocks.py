@@ -428,6 +428,78 @@ def calculate_moving_averages(stock_prices: List[Dict]) -> Optional[Dict]:
     }
 
 
+def calculate_breadth_metrics(stock_prices: List[Dict]) -> Dict:
+    """Today's price action vs prior session and vs 52-week range.
+
+    Used by the Market Breadth dashboard to count advancing/declining
+    stocks (per Finviz convention) and stocks at fresh 52-week highs/lows.
+
+    Returns at_52w_high/low using the prior-period-exclusive form (today's
+    close compared against the max/min of the previous ~252 sessions),
+    which matches StockCharts and exchange-published breadth.
+    """
+    closes = [bar['c'] for bar in stock_prices]
+    if len(closes) < 2:
+        return {'daily_change_pct': None, 'at_52w_high': False, 'at_52w_low': False}
+
+    today = closes[-1]
+    prior = closes[-2]
+    daily_change_pct = (today - prior) / prior * 100 if prior else None
+
+    if len(closes) >= 253:
+        prior_window = closes[-253:-1]
+        at_52w_high = today >= max(prior_window)
+        at_52w_low = today <= min(prior_window)
+    else:
+        at_52w_high = False
+        at_52w_low = False
+
+    return {
+        'daily_change_pct': round(daily_change_pct, 2) if daily_change_pct is not None else None,
+        'at_52w_high': at_52w_high,
+        'at_52w_low': at_52w_low,
+    }
+
+
+def aggregate_breadth(output_data: List[Dict]) -> Dict:
+    """Tally Finviz-style breadth across the universe.
+
+    advancing/declining = today's close up/down vs prior close
+    new_highs/new_lows  = fresh 52-week extremes today (prior-window-exclusive)
+    up_volume/down_volume = sum of raw_volume by direction (proxy: avg_volume
+    is what's available; close to advancing/declining volume in normal markets)
+    """
+    advancing = declining = unchanged = 0
+    new_highs = new_lows = 0
+    up_vol = down_vol = 0
+    for s in output_data:
+        chg = s.get('daily_change_pct')
+        vol = s.get('raw_volume') or 0
+        if chg is None:
+            continue
+        if chg > 0:
+            advancing += 1
+            up_vol += vol
+        elif chg < 0:
+            declining += 1
+            down_vol += vol
+        else:
+            unchanged += 1
+        if s.get('at_52w_high'):
+            new_highs += 1
+        if s.get('at_52w_low'):
+            new_lows += 1
+    return {
+        'advancing': advancing,
+        'declining': declining,
+        'unchanged': unchanged,
+        'new_highs': new_highs,
+        'new_lows': new_lows,
+        'up_volume': up_vol,
+        'down_volume': down_vol,
+    }
+
+
 def calculate_adr(stock_prices: List[Dict], period: int = 20) -> Optional[float]:
     if len(stock_prices) < period:
         return None
@@ -660,6 +732,7 @@ def main():
             ma_data = calculate_moving_averages(stock_prices)
             adr_20 = calculate_adr(stock_prices, period=20)
             atr_14 = calculate_atr(stock_prices, period=14)
+            breadth_data = calculate_breadth_metrics(stock_prices)
             current_price = round(stock_prices[-1]['c'], 2)
 
             # Liveness filter: skip halted/frozen stocks. ADR/ATR both at zero
@@ -692,6 +765,9 @@ def main():
                 'is_partial': is_partial,
                 'ipo_date': profile.get('ipo_date'),
                 'current_price': current_price,
+                'daily_change_pct': breadth_data['daily_change_pct'],
+                'at_52w_high': breadth_data['at_52w_high'],
+                'at_52w_low': breadth_data['at_52w_low'],
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
                 'ma_200': ma_data['ma_200'] if ma_data else None,
@@ -789,6 +865,9 @@ def main():
             'is_partial': stock['is_partial'],
             'ipo_date': stock.get('ipo_date'),
             'current_price': stock.get('current_price'),
+            'daily_change_pct': stock.get('daily_change_pct'),
+            'at_52w_high': stock.get('at_52w_high', False),
+            'at_52w_low': stock.get('at_52w_low', False),
             'ma_50': stock.get('ma_50'),
             'ma_150': stock.get('ma_150'),
             'ma_200': stock.get('ma_200'),
@@ -819,6 +898,11 @@ def main():
             except ValueError:
                 pass
 
+    # Aggregate breadth (Finviz-style) — counts of stocks closing up vs down
+    # today and stocks at a fresh 52-week high/low. Excludes stocks where
+    # daily_change_pct couldn't be computed (e.g. < 2 bars).
+    breadth_summary = aggregate_breadth(output_data)
+
     # Save rankings.json
     rankings_output = {
         'last_updated': datetime.now().isoformat(),
@@ -830,6 +914,7 @@ def main():
         'full_calculations': full_calculations,
         'partial_calculations': partial_calculations,
         'stage_2_stocks': stage_2_count,
+        'breadth': breadth_summary,
         'market_cap_distribution': {k: v for k, v in cap_counts.items() if v > 0},
         'update_type': 'full_rebuild',
         'data_source': 'Financial Modeling Prep',
@@ -961,6 +1046,7 @@ def daily_update():
             ma_data = calculate_moving_averages(stock_prices)
             adr_20 = calculate_adr(stock_prices, period=20)
             atr_14 = calculate_atr(stock_prices, period=14)
+            breadth_data = calculate_breadth_metrics(stock_prices)
             current_price = round(stock_prices[-1]['c'], 2)
 
             # Liveness filter: drop halted/frozen stocks (zero ADR & ATR over
@@ -1006,6 +1092,9 @@ def daily_update():
                 'is_partial': is_partial,
                 'ipo_date': profile.get('ipo_date'),
                 'current_price': current_price,
+                'daily_change_pct': breadth_data['daily_change_pct'],
+                'at_52w_high': breadth_data['at_52w_high'],
+                'at_52w_low': breadth_data['at_52w_low'],
                 'ma_50': ma_data['ma_50'] if ma_data else None,
                 'ma_150': ma_data['ma_150'] if ma_data else None,
                 'ma_200': ma_data['ma_200'] if ma_data else None,
@@ -1068,6 +1157,9 @@ def daily_update():
             'is_partial': stock['is_partial'],
             'ipo_date': stock.get('ipo_date'),
             'current_price': stock.get('current_price'),
+            'daily_change_pct': stock.get('daily_change_pct'),
+            'at_52w_high': stock.get('at_52w_high', False),
+            'at_52w_low': stock.get('at_52w_low', False),
             'ma_50': stock.get('ma_50'),
             'ma_150': stock.get('ma_150'),
             'ma_200': stock.get('ma_200'),
@@ -1094,6 +1186,8 @@ def daily_update():
             except ValueError:
                 pass
 
+    breadth_summary = aggregate_breadth(output_data)
+
     rankings_output = {
         'last_updated': datetime.now().isoformat(),
         'formula_used': 'Flexible: Adapts to available data',
@@ -1102,6 +1196,7 @@ def daily_update():
         'includes_market_data': True,
         'total_stocks': len(output_data),
         'stage_2_stocks': stage_2_count,
+        'breadth': breadth_summary,
         'market_cap_distribution': {k: v for k, v in cap_counts.items() if v > 0},
         'update_type': 'daily_incremental',
         'data_source': 'Financial Modeling Prep',
